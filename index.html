@@ -9,6 +9,11 @@
   <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
   <script src="https://unpkg.com/konva@9/konva.min.js"></script>
   <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      overflow: hidden;
+    }
     #canvas-container {
       position: relative;
       width: 100vw;
@@ -165,47 +170,46 @@
         addPlayIcon();
       });
 
-      imageFileInput.change(function() {
-        const file = this.files[0];
-        if (file) {
-          const reader = new FileReader();
-          reader.onload = function(e) {
+      function loadJsonBackgroundAndIcons(data) {
+        if (data.background) {
             const imageObj = new Image();
             imageObj.onload = function() {
-              if (backgroundImage) backgroundImage.destroy();
-
-              const imageWidth = imageObj.width;
-              const imageHeight = imageObj.height;
-
-              const aspectRatio = imageWidth / imageHeight;
-              let newWidth, newHeight;
-
-              if (aspectRatio > 1) { // Wider than tall
-                newWidth = stage.width();
-                newHeight = newWidth / aspectRatio;
-              } else { // Taller than wide
-                newHeight = stage.height();
-                newWidth = newHeight * aspectRatio;
-              }
-
-              backgroundImage = new Konva.Image({
-                x: (stage.width() - newWidth) / 2,
-                y: (stage.height() - newHeight) / 2,
-                image: imageObj,
-                width: newWidth,
-                height: newHeight,
-                listening: false,
-              });
-
-              backgroundLayer.add(backgroundImage);
-              backgroundImage.moveToBottom();
-              backgroundLayer.batchDraw();
+                if (backgroundImage) backgroundImage.destroy();
+    
+                adjustBackgroundImage(imageObj);
+    
+                // Xóa các icon hiện có
+                playIcons.forEach(icon => icon.destroy());
+                playIcons = [];
+    
+                // Tính toán vị trí mới của các icon dựa trên kích thước hình nền mới
+                data.icons.forEach(iconData => {
+                    const iconX = iconData.x * backgroundImage.width() + backgroundImage.x();
+                    const iconY = iconData.y * backgroundImage.height() + backgroundImage.y();
+                    addPlayIcon(iconX, iconY, iconData.sound);
+                });
             };
-            imageObj.src = e.target.result;
-          };
-          reader.readAsDataURL(file);
+            imageObj.src = data.background;
         }
-      });
+    }
+    
+    // Đảm bảo gọi adjustBackgroundImage khi tải hình ảnh mới
+    imageFileInput.change(function() {
+        const file = this.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const imageObj = new Image();
+                imageObj.onload = function() {
+                    if (backgroundImage) backgroundImage.destroy();
+                    adjustBackgroundImage(imageObj);
+                };
+                imageObj.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+    
 
       saveJsonButton.on('click', function() {
         if (!backgroundImage) return;
@@ -303,8 +307,72 @@
         input.click();
       });
       
-      
 
+      function adjustBackgroundImage(imageObj) {
+        const imageWidth = imageObj.width;
+        const imageHeight = imageObj.height;
+
+        const stageWidth = stage.width();
+        const stageHeight = stage.height();
+
+        const aspectRatio = imageWidth / imageHeight;
+        let newWidth, newHeight;
+
+        if (aspectRatio > stageWidth / stageHeight) {
+          newWidth = stageWidth;
+          newHeight = newWidth / aspectRatio;
+        } else {
+          newHeight = stageHeight;
+          newWidth = newHeight * aspectRatio;
+        }
+
+         backgroundImage = new Konva.Image({
+          x: (stageWidth - newWidth) / 2,
+          y: (stageHeight - newHeight) / 2,
+          image: imageObj,
+          width: newWidth,
+          height: newHeight,
+          listening: false,
+        });
+
+        backgroundLayer.clear();
+        backgroundLayer.add(backgroundImage);
+        backgroundLayer.batchDraw();
+      }
+
+      // Running method
+      /*
+      function adjustBackgroundImage(imageObj) {
+        const stageWidth = stage.width();
+        const stageHeight = stage.height();
+        const imageAspectRatio = imageObj.width / imageObj.height;
+        const stageAspectRatio = stageWidth / stageHeight;
+    
+        let newWidth, newHeight;
+    
+        if (imageAspectRatio > stageAspectRatio) {
+            // Hình ảnh rộng hơn tỷ lệ màn hình, căn theo chiều ngang
+            newWidth = stageWidth;
+            newHeight = newWidth / imageAspectRatio;
+        } else {
+            // Hình ảnh cao hơn tỷ lệ màn hình, căn theo chiều dọc
+            newHeight = stageHeight;
+            newWidth = newHeight * imageAspectRatio;
+        }
+    
+        backgroundImage = new Konva.Image({
+            x: (stageWidth - newWidth) / 2,
+            y: (stageHeight - newHeight) / 2,
+            image: imageObj,
+            width: newWidth,
+            height: newHeight,
+            listening: false,
+        });
+        backgroundImage.moveToBottom();
+        backgroundLayer.add(backgroundImage);
+        backgroundLayer.batchDraw();
+    }
+*/
       saveIconButton.on('click', function() {
         if (currentIcon) {
           currentIcon.setAttrs({
