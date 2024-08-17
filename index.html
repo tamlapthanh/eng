@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Interactive Canvas with Play Icons</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+  <script src="https://unpkg.com/konva@9/konva.min.js"></script>
+  <style>
+    #canvas-container {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+    }
+    #canvas {
+      width: 100%;
+      height: 100%;
+    }
+    .play-icon {
+      cursor: pointer;
+    }
+    .setting-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      z-index: 10;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <div id="canvas"></div>
+    <button class="btn btn-primary setting-btn" data-bs-toggle="modal" data-bs-target="#settingsModal">Settings</button>
+  </div>
+
+  <!-- Settings Modal -->
+  <div class="modal fade" id="settingsModal" tabindex="-1" aria-labelledby="settingsModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="settingsModalLabel">Settings</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <input type="file" id="upload-image" class="form-control" />
+          </div>
+          <button id="save-json" class="btn btn-primary">Save JSON</button>
+          <button id="load-json" class="btn btn-secondary">Load JSON</button>
+          <button id="add-icon" class="btn btn-success">Add Play Icon</button>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Icon Modal -->
+  <div class="modal fade" id="editIconModal" tabindex="-1" aria-labelledby="editIconModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="editIconModalLabel">Edit Icon</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="icon-sound-url" class="form-label">Sound URL or Filename</label>
+            <input type="text" id="icon-sound-url" class="form-control" />
+          </div>
+          <div class="mb-3">
+            <label for="icon-x" class="form-label">X Position</label>
+            <input type="number" id="icon-x" class="form-control" />
+          </div>
+          <div class="mb-3">
+            <label for="icon-y" class="form-label">Y Position</label>
+            <input type="number" id="icon-y" class="form-control" />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" id="save-icon" class="btn btn-primary">Save</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    $(document).ready(function() {
+      const stage = new Konva.Stage({
+        container: 'canvas',
+        width: window.innerWidth,
+        height: window.innerHeight,
+      });
+
+      const backgroundLayer = new Konva.Layer();
+      const iconLayer = new Konva.Layer();
+      stage.add(backgroundLayer);
+      stage.add(iconLayer);
+
+      const imageFileInput = $('#upload-image');
+      const saveJsonButton = $('#save-json');
+      const loadJsonButton = $('#load-json');
+      const addIconButton = $('#add-icon');
+      const editIconModal = new bootstrap.Modal($('#editIconModal')[0]);
+      const iconSoundUrlInput = $('#icon-sound-url');
+      const iconXInput = $('#icon-x');
+      const iconYInput = $('#icon-y');
+      const saveIconButton = $('#save-icon');
+
+      let backgroundImage = null;
+      let playIcons = [];
+      let currentIcon = null;
+
+      function playSound(url) {
+        if (url) {
+          const audio = new Audio(url);
+          audio.play();
+        }
+      }
+
+      function addPlayIcon(x, y, sound) {
+        Konva.Image.fromURL('assets/play_icon.png', function(icon) {
+            icon.setAttrs({
+                x: x || Math.random() * (stage.width() - 50),
+                y: y || Math.random() * (stage.height() - 50),
+                width: 28,
+                height: 28,
+            });
+    
+            icon.setAttr('sound', sound || '');
+            icon.draggable(true);
+            icon.on('click', () => {
+              currentIcon = icon;
+              iconSoundUrlInput.val(icon.getAttr('sound') || '');
+              iconXInput.val(icon.x());
+              iconYInput.val(icon.y());
+              if (icon.getAttr('sound')) {
+                playSound(icon.getAttr('sound'));
+              } else {
+                editIconModal.show();
+              }
+            });
+            playIcons.push(icon);
+    
+            // Change cursor on hover
+            icon.on('mouseover', function() {
+              document.body.style.cursor = 'pointer';
+            });
+            icon.on('mouseout', function() {
+              document.body.style.cursor = 'default';
+            });
+    
+            iconLayer.add(icon);
+            icon.moveToTop();
+            iconLayer.batchDraw();
+        });
+    }
+    
+
+      addIconButton.on('click', function() {
+        addPlayIcon();
+      });
+
+      imageFileInput.change(function() {
+        const file = this.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = function(e) {
+            const imageObj = new Image();
+            imageObj.onload = function() {
+              if (backgroundImage) backgroundImage.destroy();
+
+              const imageWidth = imageObj.width;
+              const imageHeight = imageObj.height;
+
+              const aspectRatio = imageWidth / imageHeight;
+              let newWidth, newHeight;
+
+              if (aspectRatio > 1) { // Wider than tall
+                newWidth = stage.width();
+                newHeight = newWidth / aspectRatio;
+              } else { // Taller than wide
+                newHeight = stage.height();
+                newWidth = newHeight * aspectRatio;
+              }
+
+              backgroundImage = new Konva.Image({
+                x: (stage.width() - newWidth) / 2,
+                y: (stage.height() - newHeight) / 2,
+                image: imageObj,
+                width: newWidth,
+                height: newHeight,
+                listening: false,
+              });
+
+              backgroundLayer.add(backgroundImage);
+              backgroundImage.moveToBottom();
+              backgroundLayer.batchDraw();
+            };
+            imageObj.src = e.target.result;
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+
+      saveJsonButton.on('click', function() {
+        if (!backgroundImage) return;
+      
+        const backgroundSize = {
+          width: backgroundImage.width(),
+          height: backgroundImage.height(),
+        };
+      
+        const data = {
+          background: backgroundImage.image().src,
+          icons: playIcons.map(icon => ({
+            x: (icon.x() - backgroundImage.x()) / backgroundSize.width,
+            y: (icon.y() - backgroundImage.y()) / backgroundSize.height,
+            sound: icon.getAttr('sound')
+          })),
+          backgroundSize: backgroundSize // Lưu kích thước hình nền hiện tại
+        };
+      
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        $('<a></a>')
+          .attr('href', url)
+          .attr('download', 'config.json')
+          .appendTo('body')[0].click();
+        URL.revokeObjectURL(url);
+      });
+      
+      loadJsonButton.on('click', function() {
+
+
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'application/json';
+        input.onchange = function(event) {
+          const file = event.target.files[0];
+          if (file) {
+            backgroundLayer.clear();
+            iconLayer.clear();
+  
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+              const data = JSON.parse(e.target.result);
+              if (data.background) {
+                const imageObj = new Image();
+                imageObj.onload = function() {
+                  if (backgroundImage) backgroundImage.destroy();
+      
+                  const imageWidth = imageObj.width;
+                  const imageHeight = imageObj.height;
+      
+                  const aspectRatio = imageWidth / imageHeight;
+                  let newWidth, newHeight;
+      
+                  if (aspectRatio > 1) { // Hình rộng hơn cao
+                    newWidth = stage.width();
+                    newHeight = newWidth / aspectRatio;
+                  } else { // Hình cao hơn rộng
+                    newHeight = stage.height();
+                    newWidth = newHeight * aspectRatio;
+                  }
+      
+                  backgroundImage = new Konva.Image({
+                    x: (stage.width() - newWidth) / 2,
+                    y: (stage.height() - newHeight) / 2,
+                    image: imageObj,
+                    width: newWidth,
+                    height: newHeight,
+                    listening: false,
+                  });
+                  backgroundImage.moveToBottom();
+                  backgroundLayer.add(backgroundImage);
+                  backgroundLayer.batchDraw();
+      
+                  // Xóa các icon hiện có
+                  playIcons.forEach(icon => icon.destroy());
+                  playIcons = [];
+      
+                  // Tính toán vị trí mới của các icon dựa trên kích thước hình nền mới
+                  data.icons.forEach(iconData => {
+                    const iconX = iconData.x * newWidth + backgroundImage.x();
+                    const iconY = iconData.y * newHeight + backgroundImage.y();
+                    addPlayIcon(iconX, iconY, iconData.sound);
+                  
+                  });
+                  
+                };
+                imageObj.src = data.background;
+              }
+            };
+            reader.readAsText(file);
+          }
+        };
+        input.click();
+      });
+      
+      
+
+      saveIconButton.on('click', function() {
+        if (currentIcon) {
+          currentIcon.setAttrs({
+            x: parseFloat(iconXInput.val()),
+            y: parseFloat(iconYInput.val()),
+            sound: iconSoundUrlInput.val(),
+          });
+          iconLayer.batchDraw();
+          editIconModal.hide();
+        }
+      });
+    });
+  </script>
+</body>
+</html>
