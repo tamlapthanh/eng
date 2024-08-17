@@ -3,8 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Interactive Canvas with Play Icons</title>
+  <title>English 2/7</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
   <script src="https://unpkg.com/konva@9/konva.min.js"></script>
@@ -32,12 +33,43 @@
       right: 10px;
       z-index: 10;
     }
+    
+    /* Buttons positioned on the sides */
+    .side-btn {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 10;
+      font-size: 15px; /* Smaller icon size */
+      width: 28px; /* Smaller button size */
+      height: 28px; /* Smaller button size */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0; /* Remove padding */
+    }
+    .left-btn {
+      left: 10px;
+    }
+    .right-btn {
+      right: 10px;
+    }
+
   </style>
 </head>
 <body>
   <div id="canvas-container">
     <div id="canvas"></div>
     <button class="btn btn-primary setting-btn" data-bs-toggle="modal" data-bs-target="#settingsModal">Settings</button>
+
+<!-- New Buttons with Icons -->
+<button id="previous_page" class="btn btn-primary side-btn left-btn">
+  <i class="bi bi-chevron-left"></i> <!-- Previous Page Icon -->
+</button>
+<button id="next_page"  class="btn btn-primary side-btn right-btn">
+  <i class="bi bi-chevron-right"></i> <!-- Next Page Icon -->
+</button>
+
   </div>
 
   <!-- Settings Modal -->
@@ -55,14 +87,20 @@
           <div class="mb-3">
             <label for="json-dropdown" class="form-label">Select JSON Config</label>
             <select id="json-dropdown" class="form-select">
-              <option value="">Chọn page</option>
-              <option value="assets/data/page_1.json">Page 1</option>
-              <option value="assets/data/page_2.json">Page 2</option>
+              <option value="1" selected="selected">Page 1</option>
+              <option value="2">Page 2</option>
+              <option value="3">Page 3</option>
               <!-- Thêm nhiều tùy chọn JSON nếu cần -->
             </select>
           </div>
           <button id="load-json" class="btn btn-secondary">Load JSON</button>
           <button id="add-icon" class="btn btn-success">Add Play Icon</button>
+        </div>
+        <div>
+          <button id="save-json" class="btn btn-primary">Save JSON</button>
+        </div>
+        <div>
+          <button id="clearButton" class="btn btn-danger">Clear</button>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -109,6 +147,10 @@
         height: window.innerHeight,
       });
 
+      let  IS_EDIT_MODE = false;
+      let PATH_SOUND = "assets/sound/student/";
+      let CURRENT_PAGE_INDEX = 1;
+      let PATH_JSON = "assets/data/page_X.json";
       const backgroundLayer = new Konva.Layer();
       const iconLayer = new Konva.Layer();
       stage.add(backgroundLayer);
@@ -123,15 +165,28 @@
       const iconXInput = $('#icon-x');
       const iconYInput = $('#icon-y');
       const saveIconButton = $('#save-icon');
+      const saveJsonButton = $('#save-json');
+
+      const previous_page = $('#previous_page');
+      const next_page = $('#next_page');
+      
 
       let backgroundImage = null;
       let playIcons = [];
       let currentIcon = null;
+      let audio = null;
 
-      function playSound(url) {
-        if (url) {
-          const audio = new Audio(url);
-          audio.play();
+      function playSound(fileName) {       
+        if (fileName) {
+          let url = PATH_SOUND + fileName;
+          if (null == audio) {
+            audio = new Audio(url);
+            audio.play();
+          } else {
+            audio.pause();
+            audio = new Audio(url);
+            audio.play();
+          }
         }
       }
 
@@ -152,7 +207,7 @@
             iconSoundUrlInput.val(icon.getAttr('sound') || '');
             iconXInput.val(icon.x());
             iconYInput.val(icon.y());
-            if (icon.getAttr('sound')) {
+            if (icon.getAttr('sound') && IS_EDIT_MODE == false) {
               playSound(icon.getAttr('sound'));
             } else {
               editIconModal.show();
@@ -167,6 +222,7 @@
           // Change cursor on hover
           icon.on('mouseover', function() {
             document.body.style.cursor = 'pointer';
+            
           });
           icon.on('mouseout', function() {
             document.body.style.cursor = 'default';
@@ -210,6 +266,7 @@
       imageFileInput.change(function() {
         const file = this.files[0];
         if (file) {
+           IS_EDIT_MODE = true;
             const reader = new FileReader();
             reader.onload = function(e) {
                 const imageObj = new Image();
@@ -223,11 +280,12 @@
         }
       });
 
-      loadJsonButton.on('click', function() {
-        const selectedJson = jsonDropdown.val();
-        
-        if (selectedJson) {
-          fetch(selectedJson)
+      function loadPage() {
+        CURRENT_PAGE_INDEX = parseInt(jsonDropdown.val(), 10);
+
+        if (CURRENT_PAGE_INDEX) {
+          const urlJson = PATH_JSON.replace("X",  CURRENT_PAGE_INDEX); 
+          fetch(urlJson)
             .then(response => response.json())
             .then(data => {
               backgroundLayer.clear();
@@ -235,7 +293,14 @@
               loadJsonBackgroundAndIcons(data);
             })
             .catch(error => console.error('Error loading JSON:', error));
+        } else {
+          CURRENT_PAGE_INDEX = 1;
+          loadPage();
         }
+        fitStageIntoParentContainer();
+      }
+      loadJsonButton.on('click', function() {
+        loadPage();
       });
 
       function adjustBackgroundImage(imageObj) {
@@ -281,7 +346,7 @@
         stage.batchDraw();
       }
 
-      window.addEventListener('resize', fitStageIntoParentContainer);
+      window.addEventListener('resize', loadPage);
 
       saveIconButton.on('click', function() {
         if (currentIcon) {
@@ -294,6 +359,89 @@
           editIconModal.hide();
         }
       });
+
+      saveJsonButton.on('click', function() {
+        if (!backgroundImage) return;
+      
+        const backgroundSize = {
+          width: backgroundImage.width(),
+          height: backgroundImage.height(),
+        };
+      
+        const data = {
+          background: backgroundImage.image().src,
+          icons: playIcons.map(icon => ({
+            x: (icon.x() - backgroundImage.x()) / backgroundSize.width,
+            y: (icon.y() - backgroundImage.y()) / backgroundSize.height,
+            sound: icon.getAttr('sound')
+          })),
+          backgroundSize: backgroundSize // Lưu kích thước hình nền hiện tại
+        };
+      
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        $('<a></a>')
+          .attr('href', url)
+          .attr('download', 'config.json')
+          .appendTo('body')[0].click();
+        URL.revokeObjectURL(url);
+      });
+
+      // Hàm để xóa tất cả các play icon và làm lại từ đầu, bao gồm cả hình nền
+  function clearCanvas() {
+    IS_EDIT_MODE = false;
+    // Xóa tất cả các play icons
+    playIcons.forEach(function(icon) {
+      icon.destroy();  // Xóa biểu tượng khỏi layer
+    });
+    playIcons = [];  // Xóa danh sách biểu tượng
+    iconLayer.batchDraw();  // Vẽ lại layer để cập nhật sự thay đổi
+
+    // Xóa hình nền
+    backgroundLayer.destroyChildren();  // Xóa tất cả các thành phần trên backgroundLayer
+    backgroundLayer.draw();  // Vẽ lại để cập nhật sự thay đổi
+
+    // Thiết lập lại kích thước canvas nếu cần
+    fitStageIntoParentContainer();  // Đảm bảo canvas phù hợp với kích thước mới
+
+    // Nếu cần reset thêm gì đó như là dữ liệu hay trạng thái thì thêm vào đây
+  }
+
+  // Thêm sự kiện cho nút Clear
+  function addClickAndTouchEvents(element, handler) {
+    element.on('click', handler);
+    element.on('touchend', handler);
+  }
+
+  previous_page.on('click', function() {
+    CURRENT_PAGE_INDEX = CURRENT_PAGE_INDEX  -1 ;
+    if (CURRENT_PAGE_INDEX < 1) {
+      CURRENT_PAGE_INDEX = 3;
+    }
+    jsonDropdown.val(CURRENT_PAGE_INDEX).change();
+    loadPage();
+  });
+
+  next_page.on('click', function() {
+    CURRENT_PAGE_INDEX = CURRENT_PAGE_INDEX  + 1 ;
+    if (CURRENT_PAGE_INDEX > 3) {
+      CURRENT_PAGE_INDEX = 1;
+    }
+    jsonDropdown.val(CURRENT_PAGE_INDEX).change();
+    loadPage();
+  });
+
+  
+
+  const clearButton = $('#clearButton');
+  addClickAndTouchEvents(clearButton, function() {
+    if (confirm('Are you sure you want to clear the canvas? This action cannot be undone.')) {
+      clearCanvas();
+    }
+  });
+
+    // Load page 1 
+    loadPage();
 
     });
   </script>
