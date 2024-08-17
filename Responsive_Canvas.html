@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script src="https://unpkg.com/konva@9.3.14/konva.min.js"></script>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <meta charset="utf-8" />
+    <title>Konva Full Screen Canvas Demo</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        background-color: #f0f0f0;
+      }
+
+      #stage-parent {
+        width: 100%;
+        height: 100vh; /* Full viewport height */
+        position: relative;
+      }
+
+      #container {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container-fluid">
+      <div id="stage-parent">
+        <div id="container"></div>
+      </div>
+    </div>
+
+    <script>
+      var stage = new Konva.Stage({
+        container: 'container',
+        width: window.innerWidth,
+        height: window.innerHeight,
+      });
+
+      var layer = new Konva.Layer();
+      stage.add(layer);
+
+      function addBorder() {
+        const borderWidth = 10; // Width of the border
+        const borderColor = 'black'; // Color of the border
+
+        var border = new Konva.Rect({
+          x: 0,
+          y: 0,
+          width: stage.width(),
+          height: stage.height(),
+          stroke: borderColor,
+          strokeWidth: borderWidth,
+          listening: false,
+        });
+
+        layer.add(border);
+      }
+
+      function loadBackgroundImage() {
+        const imageObj = new Image();
+        imageObj.onload = function() {
+          const imageWidth = imageObj.width;
+          const imageHeight = imageObj.height;
+          const stageWidth = stage.width();
+          const stageHeight = stage.height();
+
+          const aspectRatioImage = imageWidth / imageHeight;
+          const aspectRatioStage = stageWidth / stageHeight;
+
+          let newWidth, newHeight;
+
+          if (aspectRatioImage > aspectRatioStage) {
+            newWidth = stageWidth;
+            newHeight = newWidth / aspectRatioImage;
+          } else {
+            newHeight = stageHeight;
+            newWidth = newHeight * aspectRatioImage;
+          }
+
+          const backgroundImage = new Konva.Image({
+            x: (stageWidth - newWidth) / 2,
+            y: (stageHeight - newHeight) / 2,
+            image: imageObj,
+            width: newWidth,
+            height: newHeight,
+            listening: false,
+          });
+
+          layer.add(backgroundImage);
+          layer.batchDraw();
+        };
+        imageObj.src = 'assets/img/page_1.png'; // Path to the background image
+      }
+
+      function fitStageIntoParentContainer() {
+        var container = document.querySelector('#stage-parent');
+        var containerWidth = container.offsetWidth;
+        var containerHeight = container.offsetHeight;
+
+        // Update the stage size and scale
+        stage.width(containerWidth);
+        stage.height(containerHeight);
+
+        // Adjust the scale to fit the background image
+        var scale = Math.min(containerWidth / stage.width(), containerHeight / stage.height());
+        stage.scale({ x: scale, y: scale });
+
+        // Clear previous images
+        layer.find('Image').forEach(image => image.destroy());
+
+        // Load and add background image
+        loadBackgroundImage();
+      
+      }
+
+      fitStageIntoParentContainer();
+      
+      window.addEventListener('resize', fitStageIntoParentContainer);
+    </script>
+  </body>
+</html>
