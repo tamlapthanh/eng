@@ -52,7 +52,15 @@
           <div class="mb-3">
             <input type="file" id="upload-image" class="form-control" />
           </div>
-          <button id="save-json" class="btn btn-primary">Save JSON</button>
+          <div class="mb-3">
+            <label for="json-dropdown" class="form-label">Select JSON Config</label>
+            <select id="json-dropdown" class="form-select">
+              <option value="">Chọn page</option>
+              <option value="assets/data/page_1.json">Page 1</option>
+              <option value="assets/data/page_2.json">Page 2</option>
+              <!-- Thêm nhiều tùy chọn JSON nếu cần -->
+            </select>
+          </div>
           <button id="load-json" class="btn btn-secondary">Load JSON</button>
           <button id="add-icon" class="btn btn-success">Add Play Icon</button>
         </div>
@@ -107,9 +115,9 @@
       stage.add(iconLayer);
 
       const imageFileInput = $('#upload-image');
-      const saveJsonButton = $('#save-json');
       const loadJsonButton = $('#load-json');
       const addIconButton = $('#add-icon');
+      const jsonDropdown = $('#json-dropdown');
       const editIconModal = new bootstrap.Modal($('#editIconModal')[0]);
       const iconSoundUrlInput = $('#icon-sound-url');
       const iconXInput = $('#icon-x');
@@ -163,8 +171,7 @@
             icon.moveToTop();
             iconLayer.batchDraw();
         });
-    }
-    
+      }
 
       addIconButton.on('click', function() {
         addPlayIcon();
@@ -191,10 +198,10 @@
             };
             imageObj.src = data.background;
         }
-    }
-    
-    // Đảm bảo gọi adjustBackgroundImage khi tải hình ảnh mới
-    imageFileInput.change(function() {
+      }
+
+      // Đảm bảo gọi adjustBackgroundImage khi tải hình ảnh mới
+      imageFileInput.change(function() {
         const file = this.files[0];
         if (file) {
             const reader = new FileReader();
@@ -208,105 +215,22 @@
             };
             reader.readAsDataURL(file);
         }
-    });
-    
-
-      saveJsonButton.on('click', function() {
-        if (!backgroundImage) return;
-      
-        const backgroundSize = {
-          width: backgroundImage.width(),
-          height: backgroundImage.height(),
-        };
-      
-        const data = {
-          background: backgroundImage.image().src,
-          icons: playIcons.map(icon => ({
-            x: (icon.x() - backgroundImage.x()) / backgroundSize.width,
-            y: (icon.y() - backgroundImage.y()) / backgroundSize.height,
-            sound: icon.getAttr('sound')
-          })),
-          backgroundSize: backgroundSize // Lưu kích thước hình nền hiện tại
-        };
-      
-        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        $('<a></a>')
-          .attr('href', url)
-          .attr('download', 'config.json')
-          .appendTo('body')[0].click();
-        URL.revokeObjectURL(url);
       });
-      
+
       loadJsonButton.on('click', function() {
-
-
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.accept = 'application/json';
-        input.onchange = function(event) {
-          const file = event.target.files[0];
-          if (file) {
-            backgroundLayer.clear();
-            iconLayer.clear();
-  
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-              const data = JSON.parse(e.target.result);
-              if (data.background) {
-                const imageObj = new Image();
-                imageObj.onload = function() {
-                  if (backgroundImage) backgroundImage.destroy();
-      
-                  const imageWidth = imageObj.width;
-                  const imageHeight = imageObj.height;
-      
-                  const aspectRatio = imageWidth / imageHeight;
-                  let newWidth, newHeight;
-      
-                  if (aspectRatio > 1) { // Hình rộng hơn cao
-                    newWidth = stage.width();
-                    newHeight = newWidth / aspectRatio;
-                  } else { // Hình cao hơn rộng
-                    newHeight = stage.height();
-                    newWidth = newHeight * aspectRatio;
-                  }
-      
-                  backgroundImage = new Konva.Image({
-                    x: (stage.width() - newWidth) / 2,
-                    y: (stage.height() - newHeight) / 2,
-                    image: imageObj,
-                    width: newWidth,
-                    height: newHeight,
-                    listening: false,
-                  });
-                  backgroundImage.moveToBottom();
-                  backgroundLayer.add(backgroundImage);
-                  backgroundLayer.batchDraw();
-      
-                  // Xóa các icon hiện có
-                  playIcons.forEach(icon => icon.destroy());
-                  playIcons = [];
-      
-                  // Tính toán vị trí mới của các icon dựa trên kích thước hình nền mới
-                  data.icons.forEach(iconData => {
-                    const iconX = iconData.x * newWidth + backgroundImage.x();
-                    const iconY = iconData.y * newHeight + backgroundImage.y();
-                    addPlayIcon(iconX, iconY, iconData.sound);
-                  
-                  });
-                  
-                };
-                imageObj.src = data.background;
-              }
-            };
-            reader.readAsText(file);
-          }
-        };
-        input.click();
+        const selectedJson = jsonDropdown.val();
+        
+        if (selectedJson) {
+          fetch(selectedJson)
+            .then(response => response.json())
+            .then(data => {
+              backgroundLayer.clear();
+              iconLayer.clear();
+              loadJsonBackgroundAndIcons(data);
+            })
+            .catch(error => console.error('Error loading JSON:', error));
+        }
       });
-      
 
       function adjustBackgroundImage(imageObj) {
         const imageWidth = imageObj.width;
@@ -318,72 +242,53 @@
         const aspectRatio = imageWidth / imageHeight;
         let newWidth, newHeight;
 
-        if (aspectRatio > stageWidth / stageHeight) {
-          newWidth = stageWidth;
-          newHeight = newWidth / aspectRatio;
-        } else {
+        if (stageWidth / stageHeight > aspectRatio) {
+          newWidth = stageHeight * aspectRatio;
           newHeight = stageHeight;
-          newWidth = newHeight * aspectRatio;
+        } else {
+          newWidth = stageWidth;
+          newHeight = stageWidth / aspectRatio;
         }
 
-         backgroundImage = new Konva.Image({
+        backgroundImage = new Konva.Image({
           x: (stageWidth - newWidth) / 2,
           y: (stageHeight - newHeight) / 2,
           image: imageObj,
           width: newWidth,
           height: newHeight,
-          listening: false,
         });
 
-        backgroundLayer.clear();
         backgroundLayer.add(backgroundImage);
         backgroundLayer.batchDraw();
+        stage.find('Image').forEach((image) => {
+          image.moveToBottom();
+        });
+        stage.on('resize', function() {
+          fitStageIntoParentContainer();
+        });
+        fitStageIntoParentContainer();
       }
 
-      // Running method
-      /*
-      function adjustBackgroundImage(imageObj) {
-        const stageWidth = stage.width();
-        const stageHeight = stage.height();
-        const imageAspectRatio = imageObj.width / imageObj.height;
-        const stageAspectRatio = stageWidth / stageHeight;
-    
-        let newWidth, newHeight;
-    
-        if (imageAspectRatio > stageAspectRatio) {
-            // Hình ảnh rộng hơn tỷ lệ màn hình, căn theo chiều ngang
-            newWidth = stageWidth;
-            newHeight = newWidth / imageAspectRatio;
-        } else {
-            // Hình ảnh cao hơn tỷ lệ màn hình, căn theo chiều dọc
-            newHeight = stageHeight;
-            newWidth = newHeight * imageAspectRatio;
-        }
-    
-        backgroundImage = new Konva.Image({
-            x: (stageWidth - newWidth) / 2,
-            y: (stageHeight - newHeight) / 2,
-            image: imageObj,
-            width: newWidth,
-            height: newHeight,
-            listening: false,
-        });
-        backgroundImage.moveToBottom();
-        backgroundLayer.add(backgroundImage);
-        backgroundLayer.batchDraw();
-    }
-*/
+      function fitStageIntoParentContainer() {
+        stage.width(window.innerWidth);
+        stage.height(window.innerHeight);
+        stage.batchDraw();
+      }
+
+      window.addEventListener('resize', fitStageIntoParentContainer);
+
       saveIconButton.on('click', function() {
         if (currentIcon) {
           currentIcon.setAttrs({
-            x: parseFloat(iconXInput.val()),
-            y: parseFloat(iconYInput.val()),
-            sound: iconSoundUrlInput.val(),
+            x: parseFloat(iconXInput.val()) || currentIcon.x(),
+            y: parseFloat(iconYInput.val()) || currentIcon.y(),
+            sound: iconSoundUrlInput.val()
           });
           iconLayer.batchDraw();
           editIconModal.hide();
         }
       });
+
     });
   </script>
 </body>
