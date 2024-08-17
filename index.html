@@ -60,7 +60,7 @@
 <body>
   <div id="canvas-container">
     <div id="canvas"></div>
-    <button class="btn btn-primary setting-btn" data-bs-toggle="modal" data-bs-target="#settingsModal">Settings</button>
+    <button class="btn btn-primary setting-btn" data-bs-toggle="modal" data-bs-target="#settingsModal"><i class="bi bi-gear"></i></button>
 
 <!-- New Buttons with Icons -->
 <button id="previous_page" class="btn btn-primary side-btn left-btn">
@@ -83,6 +83,7 @@
         <div class="modal-body">
           <div class="mb-3">
             <input type="file" id="upload-image" class="form-control" />
+            <button id="save-json" class="btn btn-primary">Save JSON</button>
           </div>
           <div class="mb-3">
             <label for="json-dropdown" class="form-label">Select JSON Config</label>
@@ -92,12 +93,9 @@
               <option value="3">Page 3</option>
               <!-- Thêm nhiều tùy chọn JSON nếu cần -->
             </select>
-          </div>
-          <button id="load-json" class="btn btn-secondary">Load JSON</button>
-          <button id="add-icon" class="btn btn-success">Add Play Icon</button>
         </div>
         <div>
-          <button id="save-json" class="btn btn-primary">Save JSON</button>
+          <button id="add-icon" class="btn btn-success">Add Play Icon</button>
         </div>
         <div>
           <button id="clearButton" class="btn btn-danger">Clear</button>
@@ -150,6 +148,7 @@
       let  IS_EDIT_MODE = false;
       let PATH_SOUND = "assets/sound/student/";
       let CURRENT_PAGE_INDEX = 1;
+      let MAX_PAGE_NUM = 10;
       let PATH_JSON = "assets/data/page_X.json";
       const backgroundLayer = new Konva.Layer();
       const iconLayer = new Konva.Layer();
@@ -157,7 +156,6 @@
       stage.add(iconLayer);
 
       const imageFileInput = $('#upload-image');
-      const loadJsonButton = $('#load-json');
       const addIconButton = $('#add-icon');
       const jsonDropdown = $('#json-dropdown');
       const editIconModal = new bootstrap.Modal($('#editIconModal')[0]);
@@ -264,6 +262,7 @@
 
       // Đảm bảo gọi adjustBackgroundImage khi tải hình ảnh mới
       imageFileInput.change(function() {
+        clearCanvas();
         const file = this.files[0];
         if (file) {
            IS_EDIT_MODE = true;
@@ -299,7 +298,8 @@
         }
         fitStageIntoParentContainer();
       }
-      loadJsonButton.on('click', function() {
+
+      $('#json-dropdown').change(function() {
         loadPage();
       });
 
@@ -413,10 +413,30 @@
     element.on('touchend', handler);
   }
 
+  function populatePage() {
+    jsonDropdown.empty();
+    var defaultIndex = 1; // Index to be selected
+    // Add options dynamically
+    for (var i = 1; i <= MAX_PAGE_NUM; i++) {
+      var option = $('<option>', {
+        value: i,
+        text: 'Page ' + i
+      });
+
+      // Set the default selected option
+      if (i === defaultIndex) {
+        option.prop('selected', true);
+      }
+
+      jsonDropdown.append(option);
+    }
+    
+  }
+
   previous_page.on('click', function() {
     CURRENT_PAGE_INDEX = CURRENT_PAGE_INDEX  -1 ;
     if (CURRENT_PAGE_INDEX < 1) {
-      CURRENT_PAGE_INDEX = 3;
+      CURRENT_PAGE_INDEX = MAX_PAGE_NUM;
     }
     jsonDropdown.val(CURRENT_PAGE_INDEX).change();
     loadPage();
@@ -424,7 +444,7 @@
 
   next_page.on('click', function() {
     CURRENT_PAGE_INDEX = CURRENT_PAGE_INDEX  + 1 ;
-    if (CURRENT_PAGE_INDEX > 3) {
+    if (CURRENT_PAGE_INDEX > MAX_PAGE_NUM) {
       CURRENT_PAGE_INDEX = 1;
     }
     jsonDropdown.val(CURRENT_PAGE_INDEX).change();
@@ -432,15 +452,14 @@
   });
 
   
+  $('#clearButton').on('click', function() {
+    clearCanvas();
+    // $('#settingsModal').modal('hide');
 
-  const clearButton = $('#clearButton');
-  addClickAndTouchEvents(clearButton, function() {
-    if (confirm('Are you sure you want to clear the canvas? This action cannot be undone.')) {
-      clearCanvas();
-    }
   });
 
-    // Load page 1 
+    // Load page 1
+    populatePage(); 
     loadPage();
 
     });
