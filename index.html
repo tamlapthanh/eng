@@ -137,41 +137,47 @@
 
       function addPlayIcon(x, y, sound) {
         Konva.Image.fromURL('assets/play_icon.png', function(icon) {
-            icon.setAttrs({
-                x: x || Math.random() * (stage.width() - 50),
-                y: y || Math.random() * (stage.height() - 50),
-                width: 28,
-                height: 28,
-            });
-    
-            icon.setAttr('sound', sound || '');
-            icon.draggable(true);
-            icon.on('click', () => {
-              currentIcon = icon;
-              iconSoundUrlInput.val(icon.getAttr('sound') || '');
-              iconXInput.val(icon.x());
-              iconYInput.val(icon.y());
-              if (icon.getAttr('sound')) {
-                playSound(icon.getAttr('sound'));
-              } else {
-                editIconModal.show();
-              }
-            });
-            playIcons.push(icon);
-    
-            // Change cursor on hover
-            icon.on('mouseover', function() {
-              document.body.style.cursor = 'pointer';
-            });
-            icon.on('mouseout', function() {
-              document.body.style.cursor = 'default';
-            });
-    
-            iconLayer.add(icon);
-            icon.moveToTop();
-            iconLayer.batchDraw();
+          icon.setAttrs({
+            x: x || Math.random() * (stage.width() - 50),
+            y: y || Math.random() * (stage.height() - 50),
+            width: 28,
+            height: 28,
+          });
+      
+          icon.setAttr('sound', sound || '');
+          icon.draggable(true);
+      
+          function handleInteraction() {
+            currentIcon = icon;
+            iconSoundUrlInput.val(icon.getAttr('sound') || '');
+            iconXInput.val(icon.x());
+            iconYInput.val(icon.y());
+            if (icon.getAttr('sound')) {
+              playSound(icon.getAttr('sound'));
+            } else {
+              editIconModal.show();
+            }
+          }
+      
+          icon.on('click', handleInteraction);
+          icon.on('touchend', handleInteraction);
+      
+          playIcons.push(icon);
+      
+          // Change cursor on hover
+          icon.on('mouseover', function() {
+            document.body.style.cursor = 'pointer';
+          });
+          icon.on('mouseout', function() {
+            document.body.style.cursor = 'default';
+          });
+      
+          iconLayer.add(icon);
+          icon.moveToTop();
+          iconLayer.batchDraw();
         });
       }
+      
 
       addIconButton.on('click', function() {
         addPlayIcon();
