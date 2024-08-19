@@ -81,10 +81,22 @@
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
-          <div class="mb-3">
+
+          <div class="form-group">
+            <label for="imageDropdown">Choose a background image:</label>
+            <select id="imageDropdown" class="form-select">
+              <!-- Options will be populated by JavaScript -->
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="upload-image">Choose a background image:</label>
             <input type="file" id="upload-image" class="form-control" />
             <button id="save-json" class="btn btn-primary">Save JSON</button>
           </div>
+
+
+
           <div class="mb-3">
             <label for="json-dropdown" class="form-label">Select JSON Config</label>
             <select id="json-dropdown" class="form-select">
@@ -155,6 +167,7 @@
       stage.add(backgroundLayer);
       stage.add(iconLayer);
 
+      const imageDropdown = $('#imageDropdown');
       const imageFileInput = $('#upload-image');
       const addIconButton = $('#add-icon');
       const jsonDropdown = $('#json-dropdown');
@@ -189,12 +202,13 @@
       }
 
       function addPlayIcon(x, y, sound) {
+        icon_size = 18;
         Konva.Image.fromURL('assets/play_icon.png', function(icon) {
           icon.setAttrs({
             x: x || Math.random() * (stage.width() - 50),
             y: y || Math.random() * (stage.height() - 50),
-            width: 28,
-            height: 28,
+            width: icon_size,
+            height: icon_size,
           });
       
           icon.setAttr('sound', sound || '');
@@ -301,6 +315,14 @@
 
       $('#json-dropdown').change(function() {
         loadPage();
+      });
+
+      imageDropdown.change(function() {
+          var selectedImage = $('#imageDropdown').val();
+          if (selectedImage) {
+            loadBackgroundImage(selectedImage);
+            $('#settingsModal').modal('hide');
+          }
       });
 
       function adjustBackgroundImage(imageObj) {
@@ -413,9 +435,35 @@
     element.on('touchend', handler);
   }
 
+  function loadBackgroundImage(imageUrl) {
+    clearCanvas();
+    const imageObj = new Image();
+    imageObj.onload = function() {
+        if (backgroundImage) backgroundImage.destroy();
+        adjustBackgroundImage(imageObj);
+    };
+    imageObj.src = imageUrl;
+  }
+ 
+  function populateImageDropdown() {
+       imageDropdown.empty();
+      for (var i = 1; i <= MAX_PAGE_NUM; i++) {
+        var value = 'assets/img/page_' + i + '.png';
+        var option = $('<option>', {
+          value:  value,
+          text: 'Page ' + i
+        });
+
+        // Set the default selected option
+        if (i === 1) {
+          option.prop('selected', true);
+        }
+        imageDropdown.append(option);
+    }
+  }
+
   function populatePage() {
     jsonDropdown.empty();
-    var defaultIndex = 1; // Index to be selected
     // Add options dynamically
     for (var i = 1; i <= MAX_PAGE_NUM; i++) {
       var option = $('<option>', {
@@ -424,7 +472,7 @@
       });
 
       // Set the default selected option
-      if (i === defaultIndex) {
+      if (i === 1) {
         option.prop('selected', true);
       }
 
@@ -460,6 +508,7 @@
 
     // Load page 1
     populatePage(); 
+    populateImageDropdown();
     loadPage();
 
     });
