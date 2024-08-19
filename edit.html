@@ -61,8 +61,9 @@
   <div id="canvas-container">
     <div id="canvas"></div>
     <button class="btn btn-primary setting-btn" data-bs-toggle="modal" data-bs-target="#settingsModal"><i class="bi bi-gear"></i></button>
+  </div>
 
-<!-- New Buttons with Icons -->
+  <!-- New Buttons with Icons -->
 <button id="previous_page" class="btn btn-primary side-btn left-btn">
   <i class="bi bi-chevron-left"></i> <!-- Previous Page Icon -->
 </button>
@@ -70,57 +71,55 @@
   <i class="bi bi-chevron-right"></i> <!-- Next Page Icon -->
 </button>
 
-  </div>
-
   <!-- Settings Modal -->
   <div class="modal fade" id="settingsModal" tabindex="-12" aria-labelledby="settingsModalLabel" aria-hidden="true">
     <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title" id="settingsModalLabel">Settings</h5>
+          <h3 class="modal-title" id="settingsModalLabel">Settings</h3>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
-          <div class="form-group">
-            <label for="image-dropdown">Choose a background image:</label>
-            <select id="image-dropdown" class="form-select">
-              <!-- Options will be populated by JavaScript -->
-            </select>
+
+          <div class="card">
+            <div class="card-header">
+              Select a background image:
+            </div>
+            <div class="card-body">
+              <select id="image-dropdown" class="form-select">
+                <!-- Options will be populated by JavaScript -->
+              </select>
+              <input type="file" id="upload-image" class="form-control" />
+            </div>
           </div>
 
-          <div class="form-group">
-            <label for="upload-image">Choose a background image:</label>
-            <input type="file" id="upload-image" class="form-control" />
+          <div class="card">
+            <div class="card-header">
+             Edit play sound icon:
+            </div>
+            <div class="card-body">
+              <input type="text" id="icon-sound-url" class="form-control" />
+              <button type="button" id="save-icon" class="btn btn-primary">Save Icon</button>
+              <button  type="button"  class="btn btn-success add-icon" data-param="1">Add  Icon (1)</button>
+              <button  type="button"  class="btn btn-success add-icon" data-param="2">Add  Icon (2)</button>
+              <button  type="button"  class="btn btn-success add-icon" data-param="3">Add  Icon (3)</button>
+              <button type="button" id="delete-icon" class="btn btn-danger">Delete Icon</button>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              Select JSON
+            </div>
+            <div class="card-body">
+              <input type="text" id="jump-to-index-jso" class="form-control" />
+              <select id="json-dropdown" class="form-select"></select>
+            </div>
           </div>
 
-          <div class="form-group">
-            <label for="save-json">Save JSON file:</label>
-            <button id="save-json" class="btn btn-primary" class="form-control">Save</button>
-          </div>
-
-          <div class="form-group">
-            <label for="icon-sound-url" class="form-label">Sound URL or Filename</label>
-            <input type="text" id="icon-sound-url" class="form-control" />
-            <button type="button" id="save-icon" class="btn btn-primary">Save Icon</button>
-            
-          </div>
-
-          <div class="form-group">
-            <label for="json-dropdown" class="form-label">Select JSON</label>
-            <select id="json-dropdown" class="form-select">
-            </select>
-        </div>
-
-        <div>
-          <button id="add-icon" class="btn btn-success">Add Play Icon</button>
-        </div>
-
-
-        <div>
-          <button id="clearButton" class="btn btn-danger">Clear</button>
-        </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          <button id="clearButton" class="btn btn-danger">Clear</button>
+          <button id="save-json" class="btn btn-primary" class="form-control">Save JSON</button>
+          
         </div>
 
       </div>
@@ -135,9 +134,7 @@
         width: window.innerWidth,
         height: window.innerHeight,
       });
-
       let PATH_ASSETS_IMG = "http://127.0.0.1:5500/assets/img/" ;
-      let  IS_EDIT_MODE = false;
       let PATH_SOUND = "assets/sound/student/";
       let CURRENT_PAGE_INDEX = 1;
       let MAX_PAGE_NUM = 67;
@@ -151,7 +148,7 @@
 
       //const imageDropdown = $('#imageDropdown');
       const imageFileInput = $('#upload-image');
-      const addIconButton = $('#add-icon');
+      // const addIconButton = $('#add-icon');
       // const jsonDropdown = $('#json-dropdown');
       const iconSoundUrlInput = $('#icon-sound-url');
       const iconXInput = $('#icon-x');
@@ -170,7 +167,7 @@
 
       function playSound(fileName) {       
         if (fileName) {
-          let url = PATH_SOUND + fileName + ".mp3";
+          let url = PATH_SOUND + fileName;
           if (null == audio) {
             audio = new Audio(url);
             audio.play();
@@ -182,65 +179,27 @@
         }
       }
 
-
-
-      function getIconSize() {
-        let  icon_size = 21;
-          const width = window.innerWidth;
-          const userAgent = navigator.userAgent.toLowerCase();
-      
-          if (width < 768 || /mobile|android|iphone|ipod|blackberry|iemobile|opera mini/i.test(userAgent)) {
-            icon_size =  15;
-          } else if ((width >= 768 && width <= 1024) || /tablet|ipad|playbook|silk/i.test(userAgent)) {
-            icon_size =  17;
-          } else {
-            icon_size =  21;
-          }
-
-          return icon_size;
-      } 
-
       function addPlayIcon(x, y, sound) {
-        icon_size = getIconSize();
+        icon_size = 18;
         Konva.Image.fromURL('assets/play_icon.png', function(icon) {
           icon.setAttrs({
-            x: x || Math.random() * (stage.width() - 50),
+            x: x ||  (stage.width() - 150),
             y: y || Math.random() * (stage.height() - 50),
             width: icon_size,
             height: icon_size,
           });
       
           icon.setAttr('sound', sound || '');
-          // icon.draggable(true);
+          icon.draggable(true);
       
           function handleInteraction() {
               currentIcon = icon;
               iconSoundUrlInput.val(icon.getAttr('sound') || '');
               iconXInput.val(icon.x());
               iconYInput.val(icon.y());
-         
-              if (IS_EDIT_MODE) {
-                $('#settingsModal').modal('show');
-              } else {
-                if (icon.getAttr('sound')) {
-                  playSound(icon.getAttr('sound'));
-                } else {
-                  alert("Not found the sound id.")
-                }
-                
-              }
-            
-          }
-            /*
-            if (icon.getAttr('sound')) {
-              playSound(icon.getAttr('sound'));
-            } else {
-              console.log("Icon clicked"); // Log kiểm tra
               $('#settingsModal').modal('show');
-            }
-            */
+          }
 
-      
           icon.on('click', handleInteraction);
           icon.on('touchend', handleInteraction);
       
@@ -262,8 +221,11 @@
       }
       
 
-      $('#add-icon').on('click', function() {
-        addPlayIcon();
+      $('.add-icon').on('click', function() {
+        var max = parseInt( $(this).data('param'), 10) ;
+        for (var i = 0; i < max; i++) {
+          addPlayIcon();
+        }        
       });
 
       function loadJsonBackgroundAndIcons(data) {
@@ -285,7 +247,7 @@
                     addPlayIcon(iconX, iconY, iconData.sound);
                 });
             };
-            imageObj.src = PATH_ASSETS_IMG +  data.background;
+            imageObj.src = PATH_ASSETS_IMG + data.background;
         }
       }
 
@@ -294,7 +256,6 @@
         clearCanvas();
         const file = this.files[0];
         if (file) {
-           IS_EDIT_MODE = true;
             const reader = new FileReader();
             reader.onload = function(e) {
                 const imageObj = new Image();
@@ -326,6 +287,7 @@
           CURRENT_PAGE_INDEX = 1;
           loadPage();
         }
+        $('#settingsModal').modal('hide');
         fitStageIntoParentContainer();
       }
 
@@ -337,7 +299,6 @@
           var selectedImage = $('#image-dropdown').val();
           if (selectedImage) {
             loadBackgroundImage(selectedImage);
-            $('#settingsModal').modal('hide');
           }
       });
 
@@ -387,7 +348,23 @@
 
       window.addEventListener('resize', loadPage);
 
-      
+      $('#delete-icon').on('click', function() {
+        if (currentIcon) {
+          // Xóa biểu tượng khỏi danh sách và từ layer
+          const index = playIcons.indexOf(currentIcon);
+          if (index > -1) {
+            playIcons.splice(index, 1);
+          }
+          currentIcon.destroy();
+          iconLayer.batchDraw();
+    
+          // Reset các giá trị trong modal sau khi xóa
+          iconSoundUrlInput.val('');
+          currentIcon = null;
+    
+          $('#settingsModal').modal('hide');
+        }
+      });
 
       saveIconButton.on('click', function() {
         if (currentIcon) {
@@ -401,6 +378,7 @@
         }
       });
 
+    
       saveJsonButton.on('click', function() {
         if (!backgroundImage) return;
       
@@ -410,7 +388,7 @@
         };
       
         const data = {
-          background: backgroundImage.image().src,
+          background: backgroundImage.image().src.replace(PATH_ASSETS_IMG, ""),
           icons: playIcons.map(icon => ({
             x: (icon.x() - backgroundImage.x()) / backgroundSize.width,
             y: (icon.y() - backgroundImage.y()) / backgroundSize.height,
@@ -421,26 +399,24 @@
       
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
-        var saveFileName = $('#image-dropdown').val() + ".json";
+        var saveFileName = $('#json-dropdown').val() + ".json";
         $('<a></a>')
           .attr('href', url)
           .attr('download',  saveFileName)
           .appendTo('body')[0].click();
-        URL.revokeObjectURL(url);
-      });
+      }); 
+ 
 
       // Hàm để xóa tất cả các play icon và làm lại từ đầu, bao gồm cả hình nền
   function clearCanvas() {
-    if(audio) {
+    if(audio)
       audio.pause();
-    }
-
-    IS_EDIT_MODE = false;
     // Xóa tất cả các play icons
     playIcons.forEach(function(icon) {
       icon.destroy();  // Xóa biểu tượng khỏi layer
     });
     playIcons = [];  // Xóa danh sách biểu tượng
+    iconLayer.destroyChildren();
     iconLayer.batchDraw();  // Vẽ lại layer để cập nhật sự thay đổi
 
     // Xóa hình nền
@@ -512,7 +488,7 @@
       CURRENT_PAGE_INDEX = MAX_PAGE_NUM;
     }
     $('#json-dropdown').val(CURRENT_PAGE_INDEX).change();
-    //loadPage();
+   // loadPage();
   });
 
   next_page.on('click', function() {
@@ -523,20 +499,22 @@
     $('#json-dropdown').val(CURRENT_PAGE_INDEX).change();
    // loadPage();
   });
-
   
   $('#clearButton').on('click', function() {
     clearCanvas();
-    // $('#settingsModal').modal('hide');
-
   });
+
+  $('#jump-to-index-jso').on('change', function() {
+    var inputValue = $(this).val();
+    $('#json-dropdown').val(inputValue).change();
+});
 
     // Load page 1
     // populateDropdown(jsonDropdown, "/assets/page.json");
     // populateDropdown(imageDropdown, "/assets/img.json");
 
-    popDropdown ($('#json-dropdown'), "Page", MIN_PAGE_NUM, MAX_PAGE_NUM);
-    popDropdown ($('#image-dropdown'), "Image", MIN_PAGE_NUM, MAX_PAGE_NUM)
+    popDropdown ($('#json-dropdown'), "Page", 4, MAX_PAGE_NUM);
+    popDropdown ($('#image-dropdown'), "Image", 4, MAX_PAGE_NUM)
 
     loadPage();
 
