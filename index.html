@@ -175,57 +175,107 @@
 
         // start zoom
         let zoomLevel = 1;
-  const zoomStep = 0.1;
-  const minZoom = 0.5;
-  const maxZoom = 2;
+        const zoomStep = 0.1;
+        const minZoom = 0.5;
+        const maxZoom = 2;
+      
+        function setZoom(scale) {
+          stage.scale({ x: scale, y: scale });
+          stage.batchDraw();
+        }
+      
+        $('#zoom-in').on('click', function() {
+          if (zoomLevel < maxZoom) {
+            zoomLevel += zoomStep;
+            setZoom(zoomLevel);
+          }
+        });
+      
+        $('#zoom-out').on('click', function() {
+          if (zoomLevel > minZoom) {
+            zoomLevel -= zoomStep;
+            setZoom(zoomLevel);
+          }
+        });
+      
+        // Mouse wheel zoom
+        stage.on('wheel', function(e) {
+          e.evt.preventDefault();
+          const oldScale = stage.scaleX();
+          const pointer = stage.getPointerPosition();
+          
+          const mousePointTo = {
+            x: (pointer.x - stage.x()) / oldScale,
+            y: (pointer.y - stage.y()) / oldScale,
+          };
+          
+          const direction = e.evt.deltaY > 0 ? -1 : 1;
+          zoomLevel = Math.max(minZoom, Math.min(maxZoom, zoomLevel + direction * zoomStep));
+          
+          setZoom(zoomLevel);
+          
+          const newScale = stage.scaleX();
+          const newPos = {
+            x: pointer.x - mousePointTo.x * newScale,
+            y: pointer.y - mousePointTo.y * newScale,
+          };
+          
+          stage.position(newPos);
+          stage.batchDraw();
+        });
+      
+        // Pinch-to-zoom for touch devices
+        let isPinching = false;
+        let lastScale = 1;
+      
+        stage.on('touchstart', function (e) {
+          if (e.evt.touches.length === 2) {
+            isPinching = true;
+            const touch1 = e.evt.touches[0];
+            const touch2 = e.evt.touches[1];
+            const dx = touch1.pageX - touch2.pageX;
+            const dy = touch1.pageY - touch2.pageY;
+            lastScale = Math.sqrt(dx * dx + dy * dy);
+          }
+        });
+      
+        stage.on('touchmove', function (e) {
+          if (isPinching && e.evt.touches.length === 2) {
+            const touch1 = e.evt.touches[0];
+            const touch2 = e.evt.touches[1];
+            const dx = touch1.pageX - touch2.pageX;
+            const dy = touch1.pageY - touch2.pageY;
+            const newScale = Math.sqrt(dx * dx + dy * dy);
+            const scaleChange = newScale / lastScale;
+            lastScale = newScale;
+      
+            zoomLevel = Math.max(minZoom, Math.min(maxZoom, zoomLevel * scaleChange));
+            setZoom(zoomLevel);
+      
+            const pointer = stage.getPointerPosition();
+            const oldScale = stage.scaleX();
+            const mousePointTo = {
+              x: (pointer.x - stage.x()) / oldScale,
+              y: (pointer.y - stage.y()) / oldScale,
+            };
+      
+            const updatedScale = stage.scaleX();
+            const newPos = {
+              x: pointer.x - mousePointTo.x * updatedScale,
+              y: pointer.y - mousePointTo.y * updatedScale,
+            };
+            
+            stage.position(newPos);
+            stage.batchDraw();
+          }
+        });
+      
+        stage.on('touchend', function (e) {
+          if (e.evt.touches.length < 2) {
+            isPinching = false;
+          }
+        });
 
-  function setZoom(scale) {
-    // Update scale for both x and y
-    stage.scale({ x: scale, y: scale });
-    stage.batchDraw();  // Redraw the stage with the new scale
-  }
-
-  $('#zoom-in').on('click', function() {
-    if (zoomLevel < maxZoom) {
-      zoomLevel += zoomStep;
-      setZoom(zoomLevel);
-    }
-  });
-
-  $('#zoom-out').on('click', function() {
-    if (zoomLevel > minZoom) {
-      zoomLevel -= zoomStep;
-      setZoom(zoomLevel);
-    }
-  });
-
-  // Mouse wheel zoom
-  stage.on('wheel', function(e) {
-    e.evt.preventDefault();
-    const oldScale = stage.scaleX();
-    const pointer = stage.getPointerPosition();
-
-    const mousePointTo = {
-      x: (pointer.x - stage.x()) / oldScale,
-      y: (pointer.y - stage.y()) / oldScale,
-    };
-
-    // Zoom direction: in or out
-    const direction = e.evt.deltaY > 0 ? -1 : 1;
-
-    // Adjust zoom level
-    zoomLevel = Math.max(minZoom, Math.min(maxZoom, zoomLevel + direction * zoomStep));
-
-    setZoom(zoomLevel);
-
-    const newScale = stage.scaleX();
-    const newPos = {
-      x: pointer.x - mousePointTo.x * newScale,
-      y: pointer.y - mousePointTo.y * newScale,
-    };
-    stage.position(newPos);
-    stage.batchDraw();
-  });
         // end zoom
 
         const iconSoundUrlInput = $('#icon-sound-url');
