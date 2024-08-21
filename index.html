@@ -185,29 +185,32 @@
         let zoomLevel = 1;
         const zoomStep = 0.1;
         const minZoom = 0.5;
-        const maxZoom = 2.5;
-
+        const maxZoom = 3;
+    
         let isPinching = false;
-
+    
         function setZoom(scale) {
           stage.scale({ x: scale, y: scale });
           stage.batchDraw();
         }
-
+    
+        // Zoom In button
         $('#zoom-in').on('click', function () {
           if (zoomLevel < maxZoom) {
             zoomLevel += zoomStep;
             setZoom(zoomLevel);
           }
         });
-
+    
+        // Zoom Out button
         $('#zoom-out').on('click', function () {
           if (zoomLevel > minZoom) {
             zoomLevel -= zoomStep;
             setZoom(zoomLevel);
           }
         });
-
+    
+        // Pinch-to-zoom with gestures
         interact('#canvas').gesturable({
           onstart: function () {
             isPinching = true;
@@ -226,7 +229,41 @@
             stage.draggable(true);  // Re-enable dragging after pinch-to-zoom
           }
         });
-
+    
+        // Zoom with mouse wheel
+        stage.on('wheel', function (event) {
+          event.evt.preventDefault();
+          const oldScale = stage.scaleX();
+          const pointer = stage.getPointerPosition();
+    
+          const scaleBy = 1.1;
+          let newScale = oldScale;
+    
+          if (event.evt.deltaY > 0) {
+            newScale = oldScale / scaleBy;
+          } else {
+            newScale = oldScale * scaleBy;
+          }
+    
+          // Limit the zoom level
+          newScale = Math.max(minZoom, Math.min(maxZoom, newScale));
+    
+          const mousePointTo = {
+            x: (pointer.x - stage.x()) / oldScale,
+            y: (pointer.y - stage.y()) / oldScale,
+          };
+    
+          const newPos = {
+            x: pointer.x - mousePointTo.x * newScale,
+            y: pointer.y - mousePointTo.y * newScale,
+          };
+    
+          zoomLevel = newScale;
+          stage.scale({ x: newScale, y: newScale });
+          stage.position(newPos);
+          stage.batchDraw();
+        });
+    
         interact('#canvas').draggable({
           listeners: {
             move(event) {
