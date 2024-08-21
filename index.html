@@ -12,6 +12,7 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
   <script src="https://unpkg.com/konva@9/konva.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/interactjs@1.10.11/dist/interact.min.js"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -174,107 +175,52 @@
         stage.add(iconLayer);
 
         // start zoom
-        let zoomLevel = 1;
-        const zoomStep = 0.1;
-        const minZoom = 0.5;
-        const maxZoom = 2;
-      
-        function setZoom(scale) {
-          stage.scale({ x: scale, y: scale });
-          stage.batchDraw();
-        }
-      
-        $('#zoom-in').on('click', function() {
-          if (zoomLevel < maxZoom) {
-            zoomLevel += zoomStep;
-            setZoom(zoomLevel);
-          }
-        });
-      
-        $('#zoom-out').on('click', function() {
-          if (zoomLevel > minZoom) {
-            zoomLevel -= zoomStep;
-            setZoom(zoomLevel);
-          }
-        });
-      
-        // Mouse wheel zoom
-        stage.on('wheel', function(e) {
-          e.evt.preventDefault();
-          const oldScale = stage.scaleX();
-          const pointer = stage.getPointerPosition();
-          
-          const mousePointTo = {
-            x: (pointer.x - stage.x()) / oldScale,
-            y: (pointer.y - stage.y()) / oldScale,
-          };
-          
-          const direction = e.evt.deltaY > 0 ? -1 : 1;
-          zoomLevel = Math.max(minZoom, Math.min(maxZoom, zoomLevel + direction * zoomStep));
-          
-          setZoom(zoomLevel);
-          
-          const newScale = stage.scaleX();
-          const newPos = {
-            x: pointer.x - mousePointTo.x * newScale,
-            y: pointer.y - mousePointTo.y * newScale,
-          };
-          
-          stage.position(newPos);
-          stage.batchDraw();
-        });
-      
-        // Pinch-to-zoom for touch devices
-        let isPinching = false;
-        let lastScale = 1;
-      
-        stage.on('touchstart', function (e) {
-          if (e.evt.touches.length === 2) {
-            isPinching = true;
-            const touch1 = e.evt.touches[0];
-            const touch2 = e.evt.touches[1];
-            const dx = touch1.pageX - touch2.pageX;
-            const dy = touch1.pageY - touch2.pageY;
-            lastScale = Math.sqrt(dx * dx + dy * dy);
-          }
-        });
-      
-        stage.on('touchmove', function (e) {
-          if (isPinching && e.evt.touches.length === 2) {
-            const touch1 = e.evt.touches[0];
-            const touch2 = e.evt.touches[1];
-            const dx = touch1.pageX - touch2.pageX;
-            const dy = touch1.pageY - touch2.pageY;
-            const newScale = Math.sqrt(dx * dx + dy * dy);
-            const scaleChange = newScale / lastScale;
-            lastScale = newScale;
-      
-            zoomLevel = Math.max(minZoom, Math.min(maxZoom, zoomLevel * scaleChange));
-            setZoom(zoomLevel);
-      
-            const pointer = stage.getPointerPosition();
-            const oldScale = stage.scaleX();
-            const mousePointTo = {
-              x: (pointer.x - stage.x()) / oldScale,
-              y: (pointer.y - stage.y()) / oldScale,
-            };
-      
-            const updatedScale = stage.scaleX();
-            const newPos = {
-              x: pointer.x - mousePointTo.x * updatedScale,
-              y: pointer.y - mousePointTo.y * updatedScale,
-            };
-            
-            stage.position(newPos);
-            stage.batchDraw();
-          }
-        });
-      
-        stage.on('touchend', function (e) {
-          if (e.evt.touches.length < 2) {
-            isPinching = false;
-          }
-        });
+       // start zoom
+       let zoomLevel = 1;
+       const zoomStep = 0.1;
+       const minZoom = 0.5;
+       const maxZoom = 2;
+
+       function setZoom(scale) {
+         stage.scale({ x: scale, y: scale });
+         stage.batchDraw();
+       }
+
+       $('#zoom-in').on('click', function () {
+         if (zoomLevel < maxZoom) {
+           zoomLevel += zoomStep;
+           setZoom(zoomLevel);
+         }
+       });
+
+       $('#zoom-out').on('click', function () {
+         if (zoomLevel > minZoom) {
+           zoomLevel -= zoomStep;
+           setZoom(zoomLevel);
+         }
+       });
+
+       // Use interact.js for pinch-to-zoom
+       interact('#canvas').gesturable({
+         onmove: function (event) {
+           const { dx, dy, da } = event;
+           const scale = stage.scaleX() * (1 + da / 100);
+           stage.scale({ x: scale, y: scale });
+           stage.batchDraw();
+         }
+       });
+
+       // Handle drag
+       interact('#canvas').draggable({
+         listeners: {
+           move(event) {
+             const { dx, dy } = event;
+             stage.x(stage.x() + dx);
+             stage.y(stage.y() + dy);
+             stage.batchDraw();
+           }
+         }
+       });
 
         // end zoom
 
