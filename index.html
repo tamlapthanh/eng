@@ -113,6 +113,7 @@
           container: 'canvas',
           width: window.innerWidth,
           height: window.innerHeight,
+          draggable: true,  // Enable dragging (panning) on the stage
         });
 
         // let PATH_ASSETS_IMG = "https://tamlapthanh.github.io/english27/assets/img/";
@@ -132,9 +133,10 @@
   const minZoom = 0.5;
   const maxZoom = 2;
   let lastDist = 0;  // Track the last distance between two touch points
+  let isDragging = false;
+  let startDragOffset = { x: 0, y: 0 };
 
   function setZoom(scale, pointer) {
-    // Update scale for both x and y
     stage.scale({ x: scale, y: scale });
 
     if (pointer) {
@@ -189,6 +191,43 @@
       x: (pointer.x - stage.x()) / oldScale,
       y: (pointer.y - stage.y()) / oldScale,
     };
+
+    const direction = e.evt.deltaY > 0 ? -1 : 1;  // Zoom in or out
+    zoomLevel = Math.max(minZoom, Math.min(maxZoom, zoomLevel + direction * 0.1));
+
+    setZoom(zoomLevel, pointer);
+
+    const newScale = stage.scaleX();
+    const newPos = {
+      x: pointer.x - mousePointTo.x * newScale,
+      y: pointer.y - mousePointTo.y * newScale,
+    };
+    stage.position(newPos);
+    stage.batchDraw();
+  });
+
+  // Enable panning (dragging the background image)
+  stage.on('mousedown touchstart', function (e) {
+    isDragging = true;
+    startDragOffset = {
+      x: stage.x() - e.evt.clientX,
+      y: stage.y() - e.evt.clientY,
+    };
+  });
+
+  stage.on('mousemove touchmove', function (e) {
+    if (isDragging) {
+      stage.position({
+        x: e.evt.clientX + startDragOffset.x,
+        y: e.evt.clientY + startDragOffset.y,
+      });
+      stage.batchDraw();
+    }
+  });
+
+  stage.on('mouseup touchend', function () {
+    isDragging = false;
+  });
 
     const direction = e.evt.deltaY > 0 ? -1 : 1;  // Zoom in or out
     zoomLevel = Math.max(minZoom, Math.min(maxZoom, zoomLevel + direction * 0.1));
