@@ -175,52 +175,63 @@
         stage.add(iconLayer);
 
         // start zoom
-       // start zoom
-       let zoomLevel = 1;
-       const zoomStep = 0.1;
-       const minZoom = 0.5;
-       const maxZoom = 2;
-
-       function setZoom(scale) {
-         stage.scale({ x: scale, y: scale });
-         stage.batchDraw();
-       }
-
-       $('#zoom-in').on('click', function () {
-         if (zoomLevel < maxZoom) {
-           zoomLevel += zoomStep;
-           setZoom(zoomLevel);
-         }
-       });
-
-       $('#zoom-out').on('click', function () {
-         if (zoomLevel > minZoom) {
-           zoomLevel -= zoomStep;
-           setZoom(zoomLevel);
-         }
-       });
-
-       // Use interact.js for pinch-to-zoom
-       interact('#canvas').gesturable({
-         onmove: function (event) {
-           const { dx, dy, da } = event;
-           const scale = stage.scaleX() * (1 + da / 100);
-           stage.scale({ x: scale, y: scale });
-           stage.batchDraw();
-         }
-       });
-
-       // Handle drag
-       interact('#canvas').draggable({
-         listeners: {
-           move(event) {
-             const { dx, dy } = event;
-             stage.x(stage.x() + dx);
-             stage.y(stage.y() + dy);
-             stage.batchDraw();
-           }
-         }
-       });
+        let zoomLevel = 1;
+        const zoomStep = 0.1;
+        const minZoom = 0.5;
+        const maxZoom = 2;
+    
+        let isPinching = false;
+    
+        function setZoom(scale) {
+          stage.scale({ x: scale, y: scale });
+          stage.batchDraw();
+        }
+    
+        $('#zoom-in').on('click', function () {
+          if (zoomLevel < maxZoom) {
+            zoomLevel += zoomStep;
+            setZoom(zoomLevel);
+          }
+        });
+    
+        $('#zoom-out').on('click', function () {
+          if (zoomLevel > minZoom) {
+            zoomLevel -= zoomStep;
+            setZoom(zoomLevel);
+          }
+        });
+    
+        interact('#canvas').gesturable({
+          onstart: function () {
+            isPinching = true;
+            stage.draggable(false);  // Disable dragging during pinch-to-zoom
+          },
+          onmove: function (event) {
+            const { da } = event;
+            const scale = stage.scaleX() * (1 + da / 100);
+            if (scale >= minZoom && scale <= maxZoom) {
+              stage.scale({ x: scale, y: scale });
+              stage.batchDraw();
+            }
+          },
+          onend: function () {
+            isPinching = false;
+            stage.draggable(true);  // Re-enable dragging after pinch-to-zoom
+          }
+        });
+    
+        interact('#canvas').draggable({
+          listeners: {
+            move(event) {
+              if (!isPinching) {  // Only allow dragging if not pinching
+                const { dx, dy } = event;
+                stage.x(stage.x() + dx);
+                stage.y(stage.y() + dy);
+                stage.batchDraw();
+              }
+            }
+          }
+        });
 
         // end zoom
 
