@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>English 2/7 1.0.4</title>
+  <title>English 2/7 1.0.1</title>
   <link rel="manifest" " href=" manifest.json" />
   <link rel="shortcut icon" type="image/png" href="assets/favicon.png" />
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -113,6 +113,7 @@
           container: 'canvas',
           width: window.innerWidth,
           height: window.innerHeight,
+          draggable: true,  // Enable dragging (panning) on the stage
         });
 
         // let PATH_ASSETS_IMG = "https://tamlapthanh.github.io/english27/assets/img/";
@@ -133,13 +134,9 @@
         const minZoom = 0.5;
         const maxZoom = 2;
         let lastDist = 0;  // Track the last distance between two touch points
-        let isDragging = false;
-        let startDragOffset = { x: 0, y: 0 };
-        let lastMousePos = { x: 0, y: 0 };
-        let velocity = { x: 0, y: 0 };
-        const friction = 0.95;
       
         function setZoom(scale, pointer) {
+          // Update scale for both x and y
           stage.scale({ x: scale, y: scale });
       
           if (pointer) {
@@ -151,36 +148,6 @@
           }
       
           stage.batchDraw();  // Redraw the stage with the new scale
-        }
-      
-        function limitStagePosition() {
-          const stageWidth = stage.width();
-          const stageHeight = stage.height();
-          const scaledWidth = stageWidth * stage.scaleX();
-          const scaledHeight = stageHeight * stage.scaleY();
-          
-          let newX = stage.x();
-          let newY = stage.y();
-      
-          // Adjust position to ensure stage is within bounds
-          if (scaledWidth < window.innerWidth) {
-            newX = (window.innerWidth - scaledWidth) / 2;
-          } else if (newX > 0) {
-            newX = 0;
-          } else if (newX + scaledWidth < window.innerWidth) {
-            newX = window.innerWidth - scaledWidth;
-          }
-      
-          if (scaledHeight < window.innerHeight) {
-            newY = (window.innerHeight - scaledHeight) / 2;
-          } else if (newY > 0) {
-            newY = 0;
-          } else if (newY + scaledHeight < window.innerHeight) {
-            newY = window.innerHeight - scaledHeight;
-          }
-      
-          stage.position({ x: newX, y: newY });
-          stage.batchDraw();
         }
       
         // Detect pinch gesture (multi-touch)
@@ -226,7 +193,7 @@
           };
       
           const direction = e.evt.deltaY > 0 ? -1 : 1;  // Zoom in or out
-          zoomLevel = Math.max(minZoom, Math.min(maxZoom, zoomLevel + direction * 0.05));
+          zoomLevel = Math.max(minZoom, Math.min(maxZoom, zoomLevel + direction * 0.1));
       
           setZoom(zoomLevel, pointer);
       
@@ -236,61 +203,9 @@
             y: pointer.y - mousePointTo.y * newScale,
           };
           stage.position(newPos);
-          limitStagePosition();
+          stage.batchDraw();
         });
       
-        // Enable panning (dragging the background image)
-        stage.on('mousedown touchstart', function (e) {
-          isDragging = true;
-          startDragOffset = {
-            x: stage.x() - e.evt.clientX,
-            y: stage.y() - e.evt.clientY,
-          };
-          lastMousePos = {
-            x: e.evt.clientX,
-            y: e.evt.clientY,
-          };
-        });
-      
-        stage.on('mousemove touchmove', function (e) {
-          if (isDragging) {
-            const newX = e.evt.clientX + startDragOffset.x;
-            const newY = e.evt.clientY + startDragOffset.y;
-            stage.position({ x: newX, y: newY });
-            stage.batchDraw();
-      
-            // Calculate velocity
-            velocity.x = e.evt.clientX - lastMousePos.x;
-            velocity.y = e.evt.clientY - lastMousePos.y;
-      
-            lastMousePos = {
-              x: e.evt.clientX,
-              y: e.evt.clientY,
-            };
-          }
-        });
-      
-        stage.on('mouseup touchend', function () {
-          isDragging = false;
-      
-          // Add momentum to the drag
-          const momentum = () => {
-            if (!isDragging) {
-              stage.position({
-                x: stage.x() + velocity.x,
-                y: stage.y() + velocity.y,
-              });
-              velocity.x *= friction;
-              velocity.y *= friction;
-              if (Math.abs(velocity.x) > 0.5 || Math.abs(velocity.y) > 0.5) {
-                requestAnimationFrame(momentum);
-              }
-              limitStagePosition();
-              stage.batchDraw();
-            }
-          };
-          requestAnimationFrame(momentum);
-        });
         // end zoom
 
         const iconSoundUrlInput = $('#icon-sound-url');
