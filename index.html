@@ -49,11 +49,19 @@
       display: flex;
       flex-direction: column; /* Arrange buttons in a column */
       gap: 3px; /* Space between buttons */
+      display: none; /* Ẩn trên các thiết bị lớn */
+    }
+
+    /* Media query cho thiết bị di động */
+    @media (max-width: 768px) {
+      .zoom-controls {
+        display: flex; /* Hiển thị trên thiết bị di động */
+      }
     }
     
     .small-btn {
-      width: 30px; /* Adjust width for smaller button */
-      height: 30px; /* Adjust height for smaller button */
+      width: 28px; /* Adjust width for smaller button */
+      height: 28px; /* Adjust height for smaller button */
       display: flex;
       align-items: center;
       justify-content: center;
