@@ -44,34 +44,43 @@
 
     .zoom-controls {
       position: absolute;
-      top: 45px; /* Adjust this value to position it below the setting button */
+      top: 45px;
+      /* Adjust this value to position it below the setting button */
       right: 10px;
       z-index: 10;
       display: flex;
-      flex-direction: column; /* Arrange buttons in a column */
-      gap: 3px; /* Space between buttons */
-      display: none; /* Ẩn trên các thiết bị lớn */
+      flex-direction: column;
+      /* Arrange buttons in a column */
+      gap: 3px;
+      /* Space between buttons */
+      display: none;
+      /* Ẩn trên các thiết bị lớn */
     }
 
     /* Media query cho thiết bị di động */
     @media (max-width: 768px) {
       .zoom-controls {
-        display: flex; /* Hiển thị trên thiết bị di động */
+        display: flex;
+        /* Hiển thị trên thiết bị di động */
       }
     }
-    
+
     .small-btn {
-      width: 28px; /* Adjust width for smaller button */
-      height: 28px; /* Adjust height for smaller button */
+      width: 28px;
+      /* Adjust width for smaller button */
+      height: 28px;
+      /* Adjust height for smaller button */
       display: flex;
       align-items: center;
       justify-content: center;
       padding: 0;
-      font-size: 16px; /* Adjust font size for smaller icon */
+      font-size: 16px;
+      /* Adjust font size for smaller icon */
     }
-    
+
     .zoom-controls .btn {
-      border-radius: 50%; /* Make buttons circular */
+      border-radius: 50%;
+      /* Make buttons circular */
     }
 
     /* Buttons positioned on the sides */
@@ -107,9 +116,8 @@
   <div id="canvas-container">
     <div id="canvas"></div>
 
-
-
-    <button class="btn btn-primary setting-btn small-btn" data-bs-toggle="modal" data-bs-target="#settingsModal"><i class="bi bi-gear"></i></button>
+    <button class="btn btn-primary setting-btn small-btn" data-bs-toggle="modal" data-bs-target="#settingsModal"><i
+        class="bi bi-gear"></i></button>
 
     <!-- Zoom Controls -->
     <div class="zoom-controls">
@@ -120,7 +128,6 @@
         <i class="bi bi-zoom-out"></i>
       </button>
     </div>
-
 
     <!-- New Buttons with Icons -->
     <button id="previous_page" class="btn btn-primary side-btn left-btn">
@@ -178,29 +185,29 @@
         let zoomLevel = 1;
         const zoomStep = 0.1;
         const minZoom = 0.5;
-        const maxZoom = 2;
-    
+        const maxZoom = 2.5;
+
         let isPinching = false;
-    
+
         function setZoom(scale) {
           stage.scale({ x: scale, y: scale });
           stage.batchDraw();
         }
-    
+
         $('#zoom-in').on('click', function () {
           if (zoomLevel < maxZoom) {
             zoomLevel += zoomStep;
             setZoom(zoomLevel);
           }
         });
-    
+
         $('#zoom-out').on('click', function () {
           if (zoomLevel > minZoom) {
             zoomLevel -= zoomStep;
             setZoom(zoomLevel);
           }
         });
-    
+
         interact('#canvas').gesturable({
           onstart: function () {
             isPinching = true;
@@ -219,7 +226,7 @@
             stage.draggable(true);  // Re-enable dragging after pinch-to-zoom
           }
         });
-    
+
         interact('#canvas').draggable({
           listeners: {
             move(event) {
@@ -238,7 +245,7 @@
         const iconSoundUrlInput = $('#icon-sound-url');
         const iconXInput = $('#icon-x');
         const iconYInput = $('#icon-y');
-         const previous_page = $('#previous_page');
+        const previous_page = $('#previous_page');
         const next_page = $('#next_page');
 
         let backgroundImage = null;
@@ -282,7 +289,7 @@
 
           // don't show sound icon that are x
           if ("x" == sound) {
-            return ;
+            return;
           }
 
           icon_size = getIconSize();
