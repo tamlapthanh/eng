@@ -128,6 +128,82 @@
         stage.add(backgroundLayer);
         stage.add(iconLayer);
 
+        let zoomLevel = 1;
+  const minZoom = 0.5;
+  const maxZoom = 2;
+  let lastDist = 0;  // Track the last distance between two touch points
+
+  function setZoom(scale, pointer) {
+    // Update scale for both x and y
+    stage.scale({ x: scale, y: scale });
+
+    if (pointer) {
+      const newPos = {
+        x: pointer.x - (pointer.x - stage.x()) * scale / stage.scaleX(),
+        y: pointer.y - (pointer.y - stage.y()) * scale / stage.scaleY(),
+      };
+      stage.position(newPos);
+    }
+
+    stage.batchDraw();  // Redraw the stage with the new scale
+  }
+
+  // Detect pinch gesture (multi-touch)
+  stage.on('touchmove', function (e) {
+    e.evt.preventDefault();
+    const touch1 = e.evt.touches[0];
+    const touch2 = e.evt.touches[1];
+
+    // Only proceed if there are two touch points
+    if (touch1 && touch2) {
+      const dist = Math.sqrt(
+        Math.pow(touch2.clientX - touch1.clientX, 2) +
+        Math.pow(touch2.clientY - touch1.clientY, 2)
+      );
+
+      if (lastDist) {
+        const scaleChange = dist / lastDist;
+        zoomLevel = Math.max(minZoom, Math.min(maxZoom, zoomLevel * scaleChange));
+        const pointer = {
+          x: (touch1.clientX + touch2.clientX) / 2,
+          y: (touch1.clientY + touch2.clientY) / 2,
+        };
+        setZoom(zoomLevel, pointer);
+      }
+      lastDist = dist;  // Update lastDist for next event
+    }
+  });
+
+  // Reset lastDist when touch ends
+  stage.on('touchend', function () {
+    lastDist = 0;
+  });
+
+  // Implement mouse wheel zoom (for desktop)
+  stage.on('wheel', function (e) {
+    e.evt.preventDefault();
+    const oldScale = stage.scaleX();
+    const pointer = stage.getPointerPosition();
+
+    const mousePointTo = {
+      x: (pointer.x - stage.x()) / oldScale,
+      y: (pointer.y - stage.y()) / oldScale,
+    };
+
+    const direction = e.evt.deltaY > 0 ? -1 : 1;  // Zoom in or out
+    zoomLevel = Math.max(minZoom, Math.min(maxZoom, zoomLevel + direction * 0.1));
+
+    setZoom(zoomLevel, pointer);
+
+    const newScale = stage.scaleX();
+    const newPos = {
+      x: pointer.x - mousePointTo.x * newScale,
+      y: pointer.y - mousePointTo.y * newScale,
+    };
+    stage.position(newPos);
+    stage.batchDraw();
+  });
+
         const iconSoundUrlInput = $('#icon-sound-url');
         const iconXInput = $('#icon-x');
         const iconYInput = $('#icon-y');
@@ -283,7 +359,7 @@
           const stageWidth = stage.width();
           const stageHeight = stage.height();
 
-          const aspectRatio = imageWidth / imageHeight;
+          let aspectRatio = imageWidth / imageHeight;
           let newWidth, newHeight;
 
           if (stageWidth / stageHeight > aspectRatio) {
