@@ -126,13 +126,18 @@
       <button id="zoom-out" class="btn btn-info small-btn">
         <i class="bi bi-zoom-out"></i>
       </button>
+
+      <button id="playing-sound" class="btn btn-success small-btn">
+        <i class="bi bi-megaphone"></i>
+      </button>
+
     </div>
 
     <!-- New Buttons with Icons -->
     <button id="previous_page" class="btn btn-info side-btn left-btn">
       <i class="bi bi-chevron-left"></i> <!-- Previous Page Icon -->
     </button>
-    <button id="next_page" class="btn btn-info side-btn right-btn">
+    <button id="next_page" class="btn btn-info side-btn right-btn ">
       <i class="bi bi-chevron-right"></i> <!-- Next Page Icon -->
     </button>
 
@@ -292,6 +297,7 @@
         function playSound(fileName) {
           if (fileName && "x" != fileName) {
             let url = PATH_SOUND + fileName + ".mp3";
+            $("#playing-sound").show();
             if (null == audio) {
               audio = new Audio(url);
               audio.play();
@@ -300,6 +306,10 @@
               audio = new Audio(url);
               audio.play();
             }
+            audio.addEventListener("ended", (event) => {
+              $("#playing-sound").hide();
+            });
+
           }
         }
 
@@ -486,7 +496,8 @@
         function clearCanvas() {
           if (audio) {
             audio.pause();
-          }
+          } 
+          $("#playing-sound").hide();      
           // Xóa tất cả các play icons
           playIcons.forEach(function (icon) {
             icon.destroy();  // Xóa biểu tượng khỏi layer
