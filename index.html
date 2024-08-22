@@ -398,6 +398,27 @@
         }
 
 
+        async function fetchWithCache(url) {
+          const cacheName = 'json-cache-v1';
+          const cache = await caches.open(cacheName);
+      
+          // Kiểm tra cache trước khi fetch
+          const cachedResponse = await cache.match(url);
+          if (cachedResponse) {
+            console.log('Serving from cache:', url);
+            return cachedResponse.json();
+          }
+      
+          // Nếu không có trong cache, thực hiện fetch từ mạng
+          const networkResponse = await fetch(url);
+          const responseBody = await networkResponse.json();
+      
+          // Lưu vào cache
+          cache.put(url, new Response(JSON.stringify(responseBody)));
+      
+          console.log('Fetching from network:', url);
+          return responseBody;
+        }
 
         function loadPage() {
           clearCanvas();
@@ -406,16 +427,15 @@
 
           if (CURRENT_PAGE_INDEX) {
             const urlJson = PATH_JSON.replace("X", CURRENT_PAGE_INDEX);
-            fetch(urlJson)
-              .then(response => response.json())
-              .then(data => {
-                backgroundLayer.clear();
-                iconLayer.clear();
-                loadJsonBackgroundAndIcons(data);
-              })
-              .catch(error => console.error('Error loading JSON:', error));
-          } else {
-            CURRENT_PAGE_INDEX = 1;
+            fetchWithCache(urlJson)
+            .then(data => {
+              backgroundLayer.clear();
+              iconLayer.clear();
+              loadJsonBackgroundAndIcons(data);
+            })
+            .catch(error => console.error('Error loading JSON:', error));
+        } else {
+            CURRENT_PAGE_INDEX = MAX_PAGE_NUM;
             loadPage();
           }
           fitStageIntoParentContainer();
@@ -535,7 +555,7 @@
 
         previous_page.on('click', function () {
           CURRENT_PAGE_INDEX = CURRENT_PAGE_INDEX - 1;
-          if (CURRENT_PAGE_INDEX < 1) {
+          if (CURRENT_PAGE_INDEX < MAX_PAGE_NUM) {
             CURRENT_PAGE_INDEX = MAX_PAGE_NUM;
           }
           $('#json-dropdown').val(CURRENT_PAGE_INDEX).change();
@@ -544,7 +564,7 @@
         next_page.on('click', function () {
           CURRENT_PAGE_INDEX = CURRENT_PAGE_INDEX + 1;
           if (CURRENT_PAGE_INDEX > MAX_PAGE_NUM) {
-            CURRENT_PAGE_INDEX = 1;
+            CURRENT_PAGE_INDEX = MIN_PAGE_NUM;
           }
           $('#json-dropdown').val(CURRENT_PAGE_INDEX).change();
         });
