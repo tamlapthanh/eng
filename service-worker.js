@@ -4,8 +4,6 @@ self.addEventListener('install', function(event) {
         return cache.addAll([
           '/',
           'assets/icons/icon-192x192.png',
-          'assets/icons/icon.png',
-          'assets/music_icon.svg',
           'assets/favicon.png',
         ]);
       })
