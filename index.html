@@ -312,7 +312,16 @@
           }
         }
 
+        function isNotMobile () {
+          const width = window.innerWidth;
+          const userAgent = navigator.userAgent.toLowerCase();
 
+          if (width < 768 || /mobile|android|iphone|ipod|blackberry|iemobile|opera mini/i.test(userAgent)) {
+            return false;
+          } else {
+            return true;
+          }
+        }
 
         function getIconSize() {
           let icon_size = 21;
@@ -458,9 +467,15 @@
             newHeight = stageWidth / aspectRatio;
           }
 
+          let x = 0;
+          let y = 0;
+          if (isNotMobile()) {
+            x=  (stageWidth - newWidth) / 2;
+            y = (stageHeight - newHeight) / 2;
+          }
           backgroundImage = new Konva.Image({
-            x: (stageWidth - newWidth) / 2,
-            y: (stageHeight - newHeight) / 2,
+            x: x,
+            y: y,
             image: imageObj,
             width: newWidth,
             height: newHeight,
