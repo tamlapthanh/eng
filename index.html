@@ -562,6 +562,19 @@
 
         }
 
+       
+       $('#playing-sound').on('click', function () {
+            if (audio) {
+              if(audio.paused) {
+                audio.play();
+                $('#playing-sound').removeClass("btn-danger");
+              } else {
+                audio.pause();
+                $('#playing-sound').addClass("btn-danger");
+             }
+          }
+        });
+
         previous_page.on('click', function () {
           CURRENT_PAGE_INDEX = CURRENT_PAGE_INDEX - 1;
           if (CURRENT_PAGE_INDEX < MIN_PAGE_NUM) {
