@@ -44,7 +44,7 @@
 
     .zoom-controls {
       position: absolute;
-      top: 45px;
+      top: 40px;
       /* Adjust this value to position it below the setting button */
       right: 10px;
       z-index: 10;
@@ -66,15 +66,15 @@
     }
 
     .small-btn {
-      width: 28px;
+      width: 26px;
       /* Adjust width for smaller button */
-      height: 28px;
+      height: 26px;
       /* Adjust height for smaller button */
       display: flex;
       align-items: center;
       justify-content: center;
       padding: 0;
-      font-size: 16px;
+      font-size: 15px;
       /* Adjust font size for smaller icon */
     }
 
@@ -91,9 +91,9 @@
       z-index: 10;
       font-size: 15px;
       /* Smaller icon size */
-      width: 28px;
+      width: 26px;
       /* Smaller button size */
-      height: 28px;
+      height: 26px;
       /* Smaller button size */
       display: flex;
       align-items: center;
@@ -121,19 +121,19 @@
 
     <!-- Zoom Controls -->
     <div class="zoom-controls">
-      <button id="zoom-in" class="btn btn-primary small-btn">
+      <button id="zoom-in" class="btn btn-info small-btn">
         <i class="bi bi-zoom-in"></i>
       </button>
-      <button id="zoom-out" class="btn btn-primary small-btn">
+      <button id="zoom-out" class="btn btn-info small-btn">
         <i class="bi bi-zoom-out"></i>
       </button>
     </div>
 
     <!-- New Buttons with Icons -->
-    <button id="previous_page" class="btn btn-primary side-btn left-btn">
+    <button id="previous_page" class="btn btn-info side-btn left-btn">
       <i class="bi bi-chevron-left"></i> <!-- Previous Page Icon -->
     </button>
-    <button id="next_page" class="btn btn-primary side-btn right-btn">
+    <button id="next_page" class="btn btn-info side-btn right-btn">
       <i class="bi bi-chevron-right"></i> <!-- Next Page Icon -->
     </button>
 
@@ -555,7 +555,7 @@
 
         previous_page.on('click', function () {
           CURRENT_PAGE_INDEX = CURRENT_PAGE_INDEX - 1;
-          if (CURRENT_PAGE_INDEX < MAX_PAGE_NUM) {
+          if (CURRENT_PAGE_INDEX < MIN_PAGE_NUM) {
             CURRENT_PAGE_INDEX = MAX_PAGE_NUM;
           }
           $('#json-dropdown').val(CURRENT_PAGE_INDEX).change();
