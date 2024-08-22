@@ -433,7 +433,7 @@
           if (data.background) {
             const imageObj = new Image();
             imageObj.onload = function () {
-              if (backgroundImage) backgroundImage.destroy();
+              //if (backgroundImage) backgroundImage.destroy();
 
               adjustBackgroundImage(imageObj);
 
@@ -579,7 +579,7 @@
           clearCanvas();
           const imageObj = new Image();
           imageObj.onload = function () {
-            if (backgroundImage) backgroundImage.destroy();
+            //if (backgroundImage) backgroundImage.destroy();
             adjustBackgroundImage(imageObj);
           };
           imageUrl = PATH_IMG.replace("X", imageUrl);
