@@ -399,23 +399,11 @@
 
 
         async function fetchWithCache(url) {
-          const cacheName = 'json-cache-v1';
-          const cache = await caches.open(cacheName);
-      
-          // Kiểm tra cache trước khi fetch
-          const cachedResponse = await cache.match(url);
-          if (cachedResponse) {
-            console.log('Serving from cache:', url);
-            return cachedResponse.json();
-          }
-      
+    
           // Nếu không có trong cache, thực hiện fetch từ mạng
           const networkResponse = await fetch(url);
           const responseBody = await networkResponse.json();
-      
-          // Lưu vào cache
-          cache.put(url, new Response(JSON.stringify(responseBody)));
-      
+
           console.log('Fetching from network:', url);
           return responseBody;
         }
