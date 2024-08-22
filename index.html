@@ -53,15 +53,13 @@
       /* Arrange buttons in a column */
       gap: 3px;
       /* Space between buttons */
-      display: none;
-      /* Ẩn trên các thiết bị lớn */
+      /* Ẩn trên các thiết bị lớn    display: none; */
     }
 
     /* Media query cho thiết bị di động */
     @media (max-width: 430px) {
       .zoom-controls {
         display: flex;
-        /* Hiển thị trên thiết bị di động */
       }
     }
 
@@ -179,9 +177,7 @@
         let MAX_PAGE_NUM = 66;
         let MIN_PAGE_NUM = 4
         let PATH_JSON = "assets/data/X.json";
-        let PATH_JSON_DATA =  "assets/data/data.json";
         let PATH_IMG = "assets/img/X.png";
-        let DATA_ARRAY ;
         const backgroundLayer = new Konva.Layer();
         const iconLayer = new Konva.Layer();
         stage.add(backgroundLayer);
@@ -315,15 +311,7 @@
           }
         }
 
-        function isMobile() {
-          const width = window.innerWidth;
-          const userAgent = navigator.userAgent.toLowerCase();
-          if (width < 768 || /mobile|android|iphone|ipod|blackberry|iemobile|opera mini/i.test(userAgent)) {
-            true;
-          } else {
-            return false;
-          }
-        }
+
 
         function getIconSize() {
           let icon_size = 21;
@@ -417,12 +405,8 @@
 
 
         async function fetchWithCache(url) {
-    
-          // Nếu không có trong cache, thực hiện fetch từ mạng
           const networkResponse = await fetch(url);
           const responseBody = await networkResponse.json();
-
-          console.log('Fetching from network:', url);
           return responseBody;
         }
 
@@ -432,7 +416,6 @@
             CURRENT_PAGE_INDEX = parseInt($('#json-dropdown').val(), 10);
         
             if (CURRENT_PAGE_INDEX) {
-              /*
               const urlJson = PATH_JSON.replace("X", CURRENT_PAGE_INDEX);
               fetchWithCache(urlJson)
               .then(data => {
@@ -441,12 +424,6 @@
                 loadJsonBackgroundAndIcons(data);
               })
               .catch(error => console.error('Error loading JSON:', error));
-              */
-
-              backgroundLayer.clear();
-              iconLayer.clear();
-              let data = DATA_ARRAY[CURRENT_PAGE_INDEX -1];
-              loadJsonBackgroundAndIcons(data);
             } else {
               CURRENT_PAGE_INDEX = MAX_PAGE_NUM;
               loadPage();
@@ -480,16 +457,9 @@
             newHeight = stageWidth / aspectRatio;
           }
 
-          let x = 0;
-          let y = 0;
-          if (isMobile() == false) {
-               x = (stageWidth - newWidth) / 2;
-               y = (stageHeight - newHeight) / 2;
-          }
-
           backgroundImage = new Konva.Image({
-            x: x,
-            y: y,
+            x: (stageWidth - newWidth) / 2,
+            y: (stageHeight - newHeight) / 2,
             image: imageObj,
             width: newWidth,
             height: newHeight,
@@ -601,18 +571,9 @@
           clearCanvas();
         });
 
-        
-        function loadData() {
-          fetch(PATH_JSON_DATA)
-          .then(response => response.json())
-          .then(data => {
-              DATA_ARRAY= data;
-              loadPage();
-          }).catch(error => console.error('Error fetching the JSON file:', error));
-      
-        }
+
         popDropdown($('#json-dropdown'), "Page", MIN_PAGE_NUM, MAX_PAGE_NUM);
-        loadData();
+        loadPage();
 
       });
     </script>
