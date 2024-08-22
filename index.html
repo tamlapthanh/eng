@@ -294,6 +294,7 @@
         let audio = null;
 
         function playSound(fileName) {
+          $('#playing-sound').removeClass("btn-danger");
           if (fileName && "x" != fileName) {
             let url = PATH_SOUND + fileName + ".mp3";
             $("#playing-sound").show();
