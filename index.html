@@ -140,14 +140,15 @@
 </head>
 
 <body>
+
+
+  <div id="canvas-container">
+
          <!-- Loading Spinner Overlay -->
          <div class="overlay" id="spinnerOverlay">
           <i class="fas fa-spinner spinner-icon"></i>
       </div>
-
-  <div id="canvas-container">
-
-
+      
     <div id="canvas"></div>
 
     <button class="btn btn-primary setting-btn small-btn" data-bs-toggle="modal" data-bs-target="#settingsModal"><i
@@ -446,8 +447,10 @@
                 const iconY = iconData.y * backgroundImage.height() + backgroundImage.y();
                 addPlayIcon(iconX, iconY, iconData.sound);
               });
+              hideSpinner();
             };
             imageObj.src = PATH_ASSETS_IMG + data.background;
+            
           }
         }
 
@@ -472,7 +475,7 @@
                 backgroundLayer.clear();
                 iconLayer.clear();
                 loadJsonBackgroundAndIcons(data);
-               hideSpinner();
+             
               })
               .catch(error => console.error('Error loading JSON:', error));
             } else {
