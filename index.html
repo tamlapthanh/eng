@@ -84,9 +84,7 @@
       gap: 3px;
       display: none; /* Initially hidden */
     }
-
-    
-
+  
     .small-btn {
       width: 28px;
       /* Adjust width for smaller button */
@@ -130,6 +128,17 @@
       right: 10px;
     }
     
+    /* Hiệu ứng hover cho label */
+    .form-check-label:hover {
+      background-color: #f0f8ff; /* Thay đổi màu nền khi hover */
+      cursor: pointer;           /* Thay đổi con trỏ chuột */
+    }
+
+    /* Tùy chọn khi radio button được chọn */
+    .form-check-input:checked + .form-check-label {
+      background-color: #d1e7dd;  /* Thay đổi màu nền khi đã chọn */
+    }
+
   </style>
 </head>
 
@@ -171,7 +180,7 @@
       </button>
 
 
-      <button id="draw-mode-btn"class="btn btn-info btn-sm">
+      <button id="draw-mode-btn"class="btn btn-warning btn-sm">
         <i id="draw-icon" class="bi bi-hand-index"></i>
       </button>
 
@@ -197,11 +206,23 @@
         </div>
         <div class="modal-body">
           
-
+          <div class="form-check">
+            <input class="form-check-input" type="radio" name="options" id="radio_student_book" value="student" checked>
+            <label class="form-check-label" for="radio_student_book">
+              Student book
+            </label>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="radio" name="options" id="radio_work_book"  value="work">
+            <label class="form-check-label" for="radio_work_book">
+              Workbook
+            </label>
+          </div>
+          <hr class="my-4 border border-primary">
           <div class="input-group flex-nowrap">
             <select id="json-dropdown" class="form-select"></select>
           </div>
-
+          <hr class="my-4 border border-primary">
           <div class="input-group flex-nowrap">
             <input type="text" id="jump-to-index-jso" class="form-control" placeholder="Jump to which page?" />
           </div>
@@ -225,7 +246,8 @@
         });
 
         //let PATH_ROOT = "assets/books/27/student";
-        let PATH_ROOT = "assets/books/27/work";
+        let PATH_ROOT = "assets/books/27/";
+        let DATA_TYPE = "student";
         let CURRENT_PAGE_INDEX = 4;
         let MAX_PAGE_NUM = 66;
         let MIN_PAGE_NUM = 4;
@@ -233,19 +255,19 @@
         const global_const = {
           get PATH_ASSETS_IMG() {
             //   PATH_ASSETS_IMG = "assets/img/";
-            return PATH_ROOT + "/img/";
+            return PATH_ROOT + DATA_TYPE +  "/img/";
           },
           get PATH_IMG() {
             //  PATH_IMG = "assets/img/X.webp";
-            return PATH_ROOT + "/img/X.webp";
+            return PATH_ROOT + DATA_TYPE + "/img/X.webp";
           },
           get PATH_SOUND() {
             //  PATH_SOUND = "assets/sound/student/";
-            return PATH_ROOT + "/sound/";
+            return PATH_ROOT +DATA_TYPE + "/sound/";
           },
           get PATH_JSON() {
             //  PATH_JSON = "assets/data/X.json";
-            return PATH_ROOT + "/data/X.json";
+            return PATH_ROOT + DATA_TYPE + "/data/X.json";
           }
         };
 
@@ -281,7 +303,7 @@ $('#draw-mode-btn').on('click', function () {
   if (isDrawingMode) {
       // Thay đổi icon thành "cọ vẽ"
       $('#draw-icon').removeClass('bi-hand-index').addClass('bi-brush');
-      $('#draw-mode-btn').removeClass('btn-info').addClass('btn-danger'); 
+      $('#draw-mode-btn').removeClass('btn-warning').addClass('btn-danger'); 
       $('button').not('#draw-mode-btn').prop('disabled', true);
 
     // Khóa drag và vô hiệu hóa lắng nghe của các lớp khác
@@ -298,7 +320,7 @@ $('#draw-mode-btn').on('click', function () {
     iconLayer.listening(true);
     drawingLayer.listening(false); // Vô hiệu hóa lắng nghe lớp vẽ
     $('#draw-icon').removeClass('bi-brush').addClass('bi-hand-index');
-    $('#draw-mode-btn').removeClass('btn-danger').addClass('btn-info'); // Đổi màu
+    $('#draw-mode-btn').removeClass('btn-danger').addClass('btn-warning'); // Đổi màu
     $('button').prop('disabled', false);
   }
 
@@ -770,6 +792,9 @@ stage.on('mouseup touchend', function (e) {
           backgroundLayer.destroyChildren();  // Xóa tất cả các thành phần trên backgroundLayer
           backgroundLayer.draw();  // Vẽ lại để cập nhật sự thay đổi
 
+          drawingLayer.destroyChildren();
+          drawingLayer.draw();
+
           // Thiết lập lại kích thước canvas nếu cần
           fitStageIntoParentContainer();  // Đảm bảo canvas phù hợp với kích thước mới
 
@@ -865,6 +890,20 @@ stage.on('mouseup touchend', function (e) {
           zoomControls.style.display = (zoomControls.style.display === 'none' || zoomControls.style.display === '') 
             ? 'flex' 
             : 'none';
+        });
+
+            // Event listener for radio button click/change
+        $('input[name="options"]').on('click', function() {
+          
+
+            var selectedValue = $(this).val();
+            if (DATA_TYPE != selectedValue) {
+              DATA_TYPE = selectedValue;
+              loadPage();
+              $('#settingsModal').modal('hide');
+            }
+
+          
         });
 
         popDropdown($('#json-dropdown'), "Page", MIN_PAGE_NUM, MAX_PAGE_NUM, CURRENT_PAGE_INDEX);
