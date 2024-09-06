@@ -139,6 +139,14 @@
       background-color: #d1e7dd;  /* Thay đổi màu nền khi đã chọn */
     }
 
+    #undo-btn {
+      display: none; /* Ẩn nút theo mặc định */
+    }
+    
+    .show-button #undo-btn {
+      display: block; /* Hiển thị nút khi có class .show-button */
+    }
+
   </style>
 </head>
 
@@ -182,6 +190,10 @@
 
       <button id="draw-mode-btn"class="btn btn-warning btn-sm">
         <i id="draw-icon" class="bi bi-hand-index"></i>
+      </button>
+
+      <button id="undo-btn" class="btn btn-warning btn-sm">
+        <i class="bi bi-arrow-counterclockwise"></i>
       </button>
 
     </div>
@@ -296,6 +308,8 @@
 let isDrawingMode = false;
 // Biến để lưu trạng thái vẽ đang diễn ra
 let isDrawing = false;
+let lastLine;
+let lines = []; // Mảng lưu các đường vẽ
 
 $('#draw-mode-btn').on('click', function () {
   isDrawingMode = !isDrawingMode;
@@ -304,7 +318,8 @@ $('#draw-mode-btn').on('click', function () {
       // Thay đổi icon thành "cọ vẽ"
       $('#draw-icon').removeClass('bi-hand-index').addClass('bi-brush');
       $('#draw-mode-btn').removeClass('btn-warning').addClass('btn-danger'); 
-      $('button').not('#draw-mode-btn').prop('disabled', true);
+      $('button').not('#draw-mode-btn, #undo-btn').prop('disabled', true);
+      $('#undo-btn').removeClass('d-none').addClass('d-block');
 
     // Khóa drag và vô hiệu hóa lắng nghe của các lớp khác
     stage.draggable(false);
@@ -322,6 +337,7 @@ $('#draw-mode-btn').on('click', function () {
     $('#draw-icon').removeClass('bi-brush').addClass('bi-hand-index');
     $('#draw-mode-btn').removeClass('btn-danger').addClass('btn-warning'); // Đổi màu
     $('button').prop('disabled', false);
+    $('#undo-btn').removeClass('d-block').addClass('d-none');
   }
 
   // Cập nhật stage
@@ -353,6 +369,7 @@ stage.on('mousedown touchstart', function (e) {
     lineJoin: 'round',
   });
   drawingLayer.add(lastLine);
+  lines.push(lastLine); // Lưu đường vẽ vào mảng
 });
 
 // Xử lý khi di chuyển chuột (hoặc touch) trong khi vẽ
@@ -374,6 +391,13 @@ stage.on('mouseup touchend', function (e) {
   }
 });
 
+$('#undo-btn').on('click', function () {
+  if (lines.length > 0) {
+    const lastLine = lines.pop(); // Lấy đường vẽ cuối cùng
+    lastLine.destroy(); // Xóa đường vẽ khỏi canvas
+    drawingLayer.batchDraw(); // Cập nhật canvas
+  }
+});
 
         // end of xu ly ve tren canva
     
