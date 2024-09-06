@@ -119,7 +119,7 @@
         <div class="modal-footer">
           <button id="clearButton" class="btn btn-danger">Clear</button>
           <button id="save-json" class="btn btn-primary" class="form-control">Save JSON</button>
-          
+          <button id="send-json" class="btn btn-success">Send JSON to Server</button>
         </div>
 
       </div>
@@ -134,13 +134,13 @@
         width: window.innerWidth,
         height: window.innerHeight,
       });
-      let PATH_ASSETS_IMG = "http://127.0.0.1:5500/assets/img/" ;
+      let PATH_ASSETS_IMG = "assets/img_webpp/" ;
       let PATH_SOUND = "assets/sound/student/";
       let CURRENT_PAGE_INDEX = 1;
       let MAX_PAGE_NUM = 67;
       let MIN_PAGE_NUM = 4
       let PATH_JSON = "assets/data/X.json";
-      let PATH_IMG   = "assets/img/X.png";
+      let PATH_IMG   = "assets/img_webpp/X.png";
       const backgroundLayer = new Konva.Layer();
       const iconLayer = new Konva.Layer();
       stage.add(backgroundLayer);
@@ -507,6 +507,76 @@
   $('#jump-to-index-jso').on('change', function() {
     var inputValue = $(this).val();
     $('#json-dropdown').val(inputValue).change();
+});
+
+
+function getFileNameFromUrl(imageSrc) {
+  try {
+      const url = new URL(imageSrc);
+      const pathname = url.pathname;
+      const fileName = pathname.substring(pathname.lastIndexOf('/') + 1);
+      return fileName;
+  } catch (e) {
+      console.error('Invalid URL:', e);
+      return null;
+  }
+}
+
+function sendJsonToServer() {
+  const backgroundSize = {
+    width: backgroundImage.width(),
+    height: backgroundImage.height(),
+  };
+
+  const fileName = getFileNameFromUrl(backgroundImage.image().src);
+  const jsonData = {
+    background: fileName,
+    icons: playIcons.map(icon => ({
+      x: (icon.x() - backgroundImage.x()) / backgroundSize.width,
+      y: (icon.y() - backgroundImage.y()) / backgroundSize.height,
+      sound: icon.getAttr('sound')
+    })),
+    backgroundSize: backgroundSize
+  };
+
+  console.log('Data to send:', JSON.stringify(jsonData, null, 2)); // Kiểm tra dữ liệu trước khi gửi
+
+  let SERVER_URL = "http://localhost:8080/api/save-json";
+  const SAVAE_FOLDER = "D:/Working/Study/KHoi/zizi/english27/assets/data/";
+  const saveFileName = $('#json-dropdown').val() + ".json";
+  
+  // Tạo đối tượng dữ liệu JSON
+  const dataToSend = {
+    file_name: saveFileName,
+    save_folder: SAVAE_FOLDER,
+    json: JSON.stringify(jsonData) // Chuyển đổi đối tượng thành chuỗi JSON
+  };
+
+  fetch(SERVER_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(dataToSend)
+  })
+  .then(response => response.json())
+  .then(data => {
+    console.log('Success:', data);
+    alert('JSON data sent successfully!');
+  })
+  .catch(error => {
+    console.log('Error:', error);
+    alert('Failed to send JSON data.');
+  });
+}
+
+
+
+
+
+// Event listener for the "Send JSON to Server" button
+$('#send-json').click(function() {
+  sendJsonToServer();
 });
 
     // Load page 1
