@@ -129,18 +129,46 @@
   <script>
     $(document).ready(function() {
 
-      const stage = new Konva.Stage({
+       //let PATH_ROOT = "assets/books/27/student";
+       // let CURRENT_PAGE_INDEX = 4;
+      // let MAX_PAGE_NUM = 66;
+      // let MIN_PAGE_NUM = 4;
+
+       let PATH_ROOT = "assets/books/27/work";
+       let CURRENT_PAGE_INDEX = 1;
+      let MAX_PAGE_NUM = 65;
+      let MIN_PAGE_NUM = 1;
+      let SERVER_URL = "http://localhost:8080/api/save-json";
+      const SAVAE_FOLDER = "D:/Working/Study/KHoi/zizi/english27/assets/books/27/work/data/";
+
+       const global_const = {
+         get PATH_ASSETS_IMG() {
+           //   PATH_ASSETS_IMG = "assets/img/";
+           return PATH_ROOT + "/img/";
+         },
+         get PATH_IMG() {
+           //  PATH_IMG = "assets/img/X.webp";
+           return PATH_ROOT + "/img/X.webp";
+         },
+         get PATH_SOUND() {
+           //  PATH_SOUND = "assets/sound/student/";
+           return PATH_ROOT + "/sound/";
+         },
+         get PATH_JSON() {
+           //  PATH_JSON = "assets/data/X.json";
+           return PATH_ROOT + "/data/X.json";
+         }
+       };
+
+
+
+
+       const stage = new Konva.Stage({
         container: 'canvas',
         width: window.innerWidth,
         height: window.innerHeight,
       });
-      let PATH_ASSETS_IMG = "assets/img_webpp/" ;
-      let PATH_SOUND = "assets/sound/student/";
-      let CURRENT_PAGE_INDEX = 1;
-      let MAX_PAGE_NUM = 67;
-      let MIN_PAGE_NUM = 4
-      let PATH_JSON = "assets/data/X.json";
-      let PATH_IMG   = "assets/img_webpp/X.png";
+
       const backgroundLayer = new Konva.Layer();
       const iconLayer = new Konva.Layer();
       stage.add(backgroundLayer);
@@ -167,7 +195,7 @@
 
       function playSound(fileName) {       
         if (fileName) {
-          let url = PATH_SOUND + fileName;
+          let url = global_const.PATH_SOUND + fileName;
           if (null == audio) {
             audio = new Audio(url);
             audio.play();
@@ -247,7 +275,7 @@
                     addPlayIcon(iconX, iconY, iconData.sound);
                 });
             };
-            imageObj.src = PATH_ASSETS_IMG + data.background;
+            imageObj.src = global_const.PATH_ASSETS_IMG + data.background;
         }
       }
 
@@ -274,7 +302,7 @@
         CURRENT_PAGE_INDEX = parseInt($('#json-dropdown').val(), 10);
 
         if (CURRENT_PAGE_INDEX) {
-          const urlJson = PATH_JSON.replace("X",  CURRENT_PAGE_INDEX); 
+          const urlJson = global_const.PATH_JSON.replace("X",  CURRENT_PAGE_INDEX); 
           fetch(urlJson)
             .then(response => response.json())
             .then(data => {
@@ -388,7 +416,7 @@
         };
       
         const data = {
-          background: backgroundImage.image().src.replace(PATH_ASSETS_IMG, ""),
+          background: backgroundImage.image().src.replace(global_const.PATH_ASSETS_IMG, ""),
           icons: playIcons.map(icon => ({
             x: (icon.x() - backgroundImage.x()) / backgroundSize.width,
             y: (icon.y() - backgroundImage.y()) / backgroundSize.height,
@@ -442,7 +470,7 @@
         if (backgroundImage) backgroundImage.destroy();
         adjustBackgroundImage(imageObj);
     };
-    imageUrl = PATH_IMG.replace("X", imageUrl);
+    imageUrl = global_const.PATH_IMG.replace("X", imageUrl);
     imageObj.src = imageUrl;
   }
  
@@ -541,8 +569,7 @@ function sendJsonToServer() {
 
   console.log('Data to send:', JSON.stringify(jsonData, null, 2)); // Kiểm tra dữ liệu trước khi gửi
 
-  let SERVER_URL = "http://localhost:8080/api/save-json";
-  const SAVAE_FOLDER = "D:/Working/Study/KHoi/zizi/english27/assets/data/";
+
   const saveFileName = $('#json-dropdown').val() + ".json";
   
   // Tạo đối tượng dữ liệu JSON

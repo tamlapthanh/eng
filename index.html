@@ -85,6 +85,8 @@
       display: none; /* Initially hidden */
     }
 
+    
+
     .small-btn {
       width: 28px;
       /* Adjust width for smaller button */
@@ -168,6 +170,11 @@
          <img src="assets/icons/icons8-sound.gif" alt="Icon" style="width: 14px; height: 14px;">
       </button>
 
+
+      <button id="draw-mode-btn"class="btn btn-info btn-sm">
+        <i id="draw-icon" class="bi bi-hand-index"></i>
+      </button>
+
     </div>
 
     <!-- New Buttons with Icons -->
@@ -214,22 +221,40 @@
           container: 'canvas',
           width: window.innerWidth,
           height: window.innerHeight,
-          draggable: true,
+          draggable: false,
         });
 
-        // let PATH_ASSETS_IMG = "https://tamlapthanh.github.io/english27/assets/img/";
-        let PATH_ASSETS_IMG = "assets/img_webpp/";
-        let PATH_SOUND = "assets/sound/student/";
+        //let PATH_ROOT = "assets/books/27/student";
+        let PATH_ROOT = "assets/books/27/work";
         let CURRENT_PAGE_INDEX = 4;
         let MAX_PAGE_NUM = 66;
-        let MIN_PAGE_NUM = 4
-        let PATH_JSON = "assets/data/X.json";
-        // let PATH_IMG = "assets/img/X.png";
-        let PATH_IMG = "assets/img_webpp/X.webp";
+        let MIN_PAGE_NUM = 4;
+
+        const global_const = {
+          get PATH_ASSETS_IMG() {
+            //   PATH_ASSETS_IMG = "assets/img/";
+            return PATH_ROOT + "/img/";
+          },
+          get PATH_IMG() {
+            //  PATH_IMG = "assets/img/X.webp";
+            return PATH_ROOT + "/img/X.webp";
+          },
+          get PATH_SOUND() {
+            //  PATH_SOUND = "assets/sound/student/";
+            return PATH_ROOT + "/sound/";
+          },
+          get PATH_JSON() {
+            //  PATH_JSON = "assets/data/X.json";
+            return PATH_ROOT + "/data/X.json";
+          }
+        };
+
         const backgroundLayer = new Konva.Layer();
         const iconLayer = new Konva.Layer();
+        const drawingLayer = new Konva.Layer(); // Layer để vẽ
         stage.add(backgroundLayer);
         stage.add(iconLayer);
+        stage.add(drawingLayer);
 
         // start zoom
         let zoomLevel = 1;
@@ -243,6 +268,92 @@
           stage.scale({ x: scale, y: scale });
           stage.batchDraw();
         }
+
+        // xu ly ve tren canva
+// Biến để lưu trạng thái có đang ở chế độ vẽ hay không
+let isDrawingMode = false;
+// Biến để lưu trạng thái vẽ đang diễn ra
+let isDrawing = false;
+
+$('#draw-mode-btn').on('click', function () {
+  isDrawingMode = !isDrawingMode;
+
+  if (isDrawingMode) {
+      // Thay đổi icon thành "cọ vẽ"
+      $('#draw-icon').removeClass('bi-hand-index').addClass('bi-brush');
+      $('#draw-mode-btn').removeClass('btn-info').addClass('btn-danger'); 
+      $('button').not('#draw-mode-btn').prop('disabled', true);
+
+    // Khóa drag và vô hiệu hóa lắng nghe của các lớp khác
+    stage.draggable(false);
+
+    backgroundLayer.listening(false);
+    iconLayer.listening(false);
+    drawingLayer.listening(true);  // Chỉ lớp vẽ được phép lắng nghe
+  } else {
+    // Bật lại drag và lắng nghe các lớp khác
+    stage.draggable(true);
+
+    backgroundLayer.listening(true);
+    iconLayer.listening(true);
+    drawingLayer.listening(false); // Vô hiệu hóa lắng nghe lớp vẽ
+    $('#draw-icon').removeClass('bi-brush').addClass('bi-hand-index');
+    $('#draw-mode-btn').removeClass('btn-danger').addClass('btn-info'); // Đổi màu
+    $('button').prop('disabled', false);
+  }
+
+  // Cập nhật stage
+  stage.batchDraw();
+});
+
+// Hàm chuyển đổi tọa độ từ canvas sang tọa độ của stage (đã được zoom)
+function getRelativePointerPosition() {
+  const transform = stage.getAbsoluteTransform().copy();
+  transform.invert();  // Đảo ngược transform để lấy tọa độ chính xác
+  const pos = stage.getPointerPosition();
+  return transform.point(pos); // Trả về tọa độ đã điều chỉnh
+}
+
+// Xử lý bắt đầu vẽ
+stage.on('mousedown touchstart', function (e) {
+  if (!isDrawingMode) return;  // Chỉ cho phép vẽ khi ở chế độ vẽ
+
+  isDrawing = true;  // Bắt đầu vẽ
+
+  const pos = getRelativePointerPosition();  // Lấy tọa độ đã điều chỉnh
+
+  lastLine = new Konva.Line({
+    stroke: 'red',
+    strokeWidth: 3,
+    globalCompositeOperation: 'source-over',
+    points: [pos.x, pos.y],  // Sử dụng tọa độ đã điều chỉnh
+    lineCap: 'round',
+    lineJoin: 'round',
+  });
+  drawingLayer.add(lastLine);
+});
+
+// Xử lý khi di chuyển chuột (hoặc touch) trong khi vẽ
+stage.on('mousemove touchmove', function (e) {
+  if (!isDrawing) return;  // Chỉ vẽ nếu đang trong quá trình vẽ
+
+  const pos = getRelativePointerPosition();  // Lấy tọa độ đã điều chỉnh
+
+  let newPoints = lastLine.points().concat([pos.x, pos.y]);
+  lastLine.points(newPoints);
+  drawingLayer.batchDraw();
+});
+
+// Xử lý khi kết thúc vẽ
+stage.on('mouseup touchend', function (e) {
+  if (isDrawing) {
+    isDrawing = false;  // Dừng vẽ
+    lastLine = null;    // Xóa đường vẽ cuối cùng
+  }
+});
+
+
+        // end of xu ly ve tren canva
     
         // Zoom In button
         $('#zoom-in').on('click', function () {
@@ -351,7 +462,7 @@
         interact('#canvas').draggable({
           listeners: {
             move(event) {
-              if (!isPinching) {  // Only allow dragging if not pinching
+              if (!isPinching && !isDrawingMode) {  // Only allow dragging if not pinching
                 const { dx, dy } = event;
                 stage.x(stage.x() + dx);
                 stage.y(stage.y() + dy);
@@ -407,7 +518,7 @@
           $('#playing-sound').removeClass("btn-danger");
           if (fileName && "x" != fileName.trim()) {
 
-            let url = PATH_SOUND + fileName.trim()+ ".mp3";
+            let url = global_const.PATH_SOUND + fileName.trim()+ ".mp3";
             $("#playing-sound").show();
             if (null == audio) {
               audio = new Audio(url);
@@ -545,7 +656,7 @@
               });
               hideSpinner();
             };
-            imageObj.src = PATH_ASSETS_IMG + data.background;
+            imageObj.src = global_const.PATH_ASSETS_IMG + data.background;
             
           }
         }
@@ -565,7 +676,7 @@
             showSpinner();
 
             if (CURRENT_PAGE_INDEX) {
-              const urlJson = PATH_JSON.replace("X", CURRENT_PAGE_INDEX);
+              const urlJson = global_const.PATH_JSON.replace("X", CURRENT_PAGE_INDEX);
               fetchWithCache(urlJson)
               .then(data => {
                 backgroundLayer.clear();
@@ -678,7 +789,7 @@
             //if (backgroundImage) backgroundImage.destroy();
             adjustBackgroundImage(imageObj);
           };
-          imageUrl = PATH_IMG.replace("X", imageUrl);
+          imageUrl = global_const.PATH_IMG.replace("X", imageUrl);
           imageObj.src = imageUrl;
         }
 
