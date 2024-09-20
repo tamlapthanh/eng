@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quiz Toán học</title>
+  <link rel="shortcut icon" type="image/png" href="assets/favicon.png" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+  <script src="https://unpkg.com/konva@9/konva.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/interactjs@1.10.11/dist/interact.min.js"></script>
+  <style>
+body {
+    overflow: hidden; /* Ẩn scrollbar */
+    margin: 0; /* Xóa margin mặc định của body */
+  }
+  #konva-canvas {
+    border: 1px solid #000;
+    width: 100vw; /* Chiều rộng 100% của viewport */
+    height: 100vh; /* Chiều cao 100% của viewport */
+  }
+  </style>
+</head>
+<body>
+
+<div id="konva-canvas"></div>
+
+<script>
+window.addEventListener('load', function() {
+
+// Tạo Konva Stage và Layer
+var stage = new Konva.Stage({
+  container: 'konva-canvas',
+  width: window.innerWidth,
+  height: window.innerHeight
+});
+
+var layer = new Konva.Layer();
+stage.add(layer);
+
+var equationText = new Konva.Text({
+  x: stage.width() / 2,
+  y: stage.height() / 2 - 60,
+  text: 'Đang tải...',
+  fontSize: 30,
+  fontFamily: 'Calibri',
+  fill: 'black',
+  align: 'center'
+});
+
+var feedbackText = new Konva.Text({
+  x: stage.width() / 2,
+  y: stage.height() / 2 + 20,
+  text: '',
+  fontSize: 30,
+  fontFamily: 'Calibri',
+  fill: 'blue',
+  align: 'center'
+});
+
+layer.add(equationText);
+layer.add(feedbackText);
+
+// Tải icon PNG cho "loa" và "micro"
+var questionIcon = new Image();
+questionIcon.src = 'assets/sound-100.png';  // Đường dẫn tới icon PNG loa
+
+var speakingIcon = new Image();
+speakingIcon.src = 'assets/record-100.png';  // Đường dẫn tới icon PNG micro
+
+var questionImage = new Konva.Image({
+  x: stage.width() / 2 - 100,
+  y: stage.height() / 2 + 100,
+  image: questionIcon,
+  width: 50,
+  height: 50,
+  visible: false
+});
+
+var answerImage = new Konva.Image({
+  x: stage.width() / 2 + 50,
+  y: stage.height() / 2 + 100,
+  image: speakingIcon,
+  width: 50,
+  height: 50,
+  visible: false
+});
+
+layer.add(questionImage);
+layer.add(answerImage);
+layer.draw();
+
+var correctAnswer;
+var recognitionTimeout;
+
+// Hàm tạo phép tính
+function generateEquation() {
+  // Clear feedback text
+  feedbackText.text('');
+  layer.draw();
+
+  // Generate random numbers ensuring no negative results
+  let num1 = 1;
+  let num2 = 2;
+  while (num1 < num2) {
+     num1 = Math.floor(Math.random() * 10); // Số thứ nhất
+     num2 = Math.floor(Math.random() * 10); // Số thứ hai 
+  }
+
+  // Chọn phép toán ngẫu nhiên
+  const operation = Math.random() > 0.5 ? '+' : '-';
+  let equation, text;
+
+  if (operation === '+') {
+    equation = `${num1} + ${num2}`;
+    text = `${num1} cộng ${num2} bằng bao nhiêu ?`;
+  } else {
+    equation = `${num1} - ${num2}`;
+    text = `${num1} trừ ${num2} bằng bao nhiêu ?`;
+  }
+
+  // Tính toán đáp án
+  correctAnswer = eval(equation);
+
+  // Cập nhật văn bản trên canvas
+  equationText.text('Câu hỏi: ' + equation + " = ?");
+  equationText.x((stage.width() - equationText.getClientRect().width) / 2);
+  feedbackText.x((stage.width() - feedbackText.getClientRect().width) / 2);
+  layer.draw();
+
+  // Đọc phép tính
+  speakEquation(text);
+}
+function speakEquation(equation) {
+
+ var utterance = new SpeechSynthesisUtterance();
+  utterance.text = equation
+  utterance.lang = 'vi-VN';
+  window.speechSynthesis.speak(utterance);
+
+    // Lắng nghe sự kiện "start" khi bắt đầu đọc
+   utterance.onstart = function() {
+    questionImage.visible(true);
+    answerImage.visible(false);
+
+    feedbackText.text('Đang đọc câu hỏi...');
+    feedbackText.x((stage.width() - feedbackText.getClientRect().width) / 2);
+    layer.draw();
+  };
+
+  utterance.onend = function() {
+    startSpeechRecognition();  // Bắt đầu nhận diện giọng nói khi đọc xong
+  };
+}
+
+function speakResult(text) {
+ var utterance = new SpeechSynthesisUtterance();
+  utterance.text = text;
+  utterance.lang = 'vi-VN';
+  window.speechSynthesis.speak(utterance);
+
+  // Sau khi phản hồi kết thúc, tạo câu hỏi mới sau 1 giây
+  utterance.onend = function() {
+    setTimeout(() => {
+      generateEquation();  // Tạo câu hỏi mới sau khi trả lời xong
+    }, 1000);
+  };
+}
+
+// Khởi tạo SpeechRecognition để nhận diện giọng nói
+const recognition = new webkitSpeechRecognition() || new SpeechRecognition();
+
+// Cấu hình recognition
+recognition.continuous = false; // Không nhận diện liên tục
+recognition.interimResults = false; // Không nhận kết quả tạm thời
+recognition.lang = 'vi-VN';
+
+// Cờ để kiểm soát trạng thái
+let isRecognitionActive = false;
+
+// Hàm để dừng nhận diện
+function stopRecognition() {
+  if (isRecognitionActive) {
+    recognition.stop(); // Dừng recognition
+    console.log('Đã dừng nhận diện.');
+  }
+}
+
+
+// Xử lý sự kiện khi nhận diện giọng nói kết thúc (sau khi stop)
+recognition.onend = function() {
+  console.log('Recognition đã dừng.');
+  isRecognitionActive = false; // Đặt cờ về false khi đã dừng
+};
+
+recognition.onresult = function(event) {
+  console.log("onresult");
+  if (event.results.length > 0) {
+
+      clearTimeout(recognitionTimeout);  // Hủy bỏ timeout khi có kết quả
+
+      const spokenText = keepNumbersAndSigns(event.results[0][0].transcript);
+
+      if (parseInt(spokenText) === correctAnswer) {
+        feedbackText.text('Đúng! Kết quả là: ' + spokenText);
+        feedbackText.fill('green');
+        speakResult('Đúng rồi, bằng ' + + correctAnswer);  // Nói "Đúng" rồi sau đó gọi hàm tạo câu hỏi mới
+      } else {
+        feedbackText.text(`Sai! Bạn nói: ${spokenText}, đúng là: ${correctAnswer}`);
+        feedbackText.fill('red');
+        speakResult('Sai, đúng phải là ' + correctAnswer);  // Nói "Sai" rồi sau đó gọi hàm tạo câu hỏi mới
+      }
+
+      feedbackText.x((stage.width() - feedbackText.getClientRect().width) / 2);
+      layer.draw();
+
+      // Ẩn icon micro sau khi người dùng trả lời
+      answerImage.visible(false);
+      layer.draw();
+  } else {
+    console.log('Không có kết quả.');
+  }
+};
+
+
+recognition.onnomatch = () => {
+  console.log('Không nhận diện được giọng nói.');
+};
+
+recognition.onaudiostart = () => {
+  console.log("onaudiostart::");
+  feedbackText.text('Trả lời đi em.....');
+    feedbackText.fill('orange');
+    feedbackText.x((stage.width() - feedbackText.getClientRect().width) / 2);
+    layer.draw();
+
+    questionImage.visible(false);
+    answerImage.visible(true);
+    layer.draw();
+};
+
+
+// Xử lý khi người dùng ngừng nói
+recognition.onspeechend = function() {
+  console.log('Người dùng ngừng nói.');
+  stopRecognition();
+};
+
+
+recognition.onerror = function(event) {
+  console.log("onerror::");
+  clearTimeout(recognitionTimeout);  // Hủy bỏ timeout nếu có lỗi
+  feedbackText.text('Có lỗi trong việc nhận diện giọng nói!');
+  feedbackText.fill('red');
+  feedbackText.x((stage.width() - feedbackText.getClientRect().width) / 2);
+  layer.draw();
+
+  speakResult('Bỏ qua, câu tiếp theo.');  // Nếu lỗi, bỏ qua và tiếp tục câu hỏi tiếp theo
+};
+
+
+// Lắng nghe sự kiện "start" khi bắt đầu nhận diện giọng nói
+recognition.onstart = function(event) {
+    console.log("onstart::");
+
+};
+
+// Bắt đầu nhận diện giọng nói
+function startSpeechRecognition() {
+
+  if (!isRecognitionActive) {
+    recognition.start();
+    isRecognitionActive = true; // Đặt cờ khi bắt đầu
+
+    // Đặt thời gian chờ 5 giây để bỏ qua nếu không có câu trả lời
+    recognitionTimeout = setTimeout(() => {
+      recognition.stop();  // Dừng nhận diện sau 5 giây
+      feedbackText.text('Sao không trả lời. Bỏ qua nhé');
+      feedbackText.fill('red');
+      feedbackText.x((stage.width() - feedbackText.getClientRect().width) / 2);
+      layer.draw();
+
+      // Bỏ qua và tạo câu hỏi mới sau 1 giây
+      setTimeout(() => {
+        generateEquation();
+      }, 1000);
+    
+    }, 7000);  // 7 giây thời gian chờ
+
+  } else {
+    stopRecognition() ;
+  }
+
+ 
+}
+
+// Khởi động chương trình
+generateEquation();
+
+// Đảm bảo canvas tự động điều chỉnh kích thước khi thay đổi kích thước cửa sổ
+window.addEventListener('resize', function() {
+  stage.width(window.innerWidth);
+  stage.height(window.innerHeight);
+  equationText.x((stage.width() - equationText.getClientRect().width) / 2);
+  feedbackText.x((stage.width() - feedbackText.getClientRect().width) / 2);
+  layer.draw();
+});
+
+});
+
+// function keepNumbersAndSigns(str) {
+//   console.log("keepNumbersAndSigns::" + str);
+//   str = convertTextToNumber(str);
+//   var ret = str.replace(/[^0-9+-]/g, '');
+//   return ret
+// }
+
+function keepNumbersAndSigns(text) {
+    const numbersMap = {
+        "không": 0,
+        "một": 1,
+        "hai": 2,
+        "hài": 2,
+        "ba": 3,
+        "bà": 3,
+        "bốn": 4,
+        "bún": 4,
+        "năm": 5,
+        "sáu": 6,
+        "bảy": 7,
+        "tám": 8,
+        "chín": 9,
+        "chính": 9,
+        "mười": 10,
+        "mười một": 11,
+        "mười hai": 12,
+        "hai mươi": 20,
+        "ba mươi": 30,
+        "bốn mươi": 40,
+        "năm mươi": 50,
+        "sáu mươi": 60,
+        "bảy mươi": 70,
+        "tám mươi": 80,
+        "chín mươi": 90
+    };
+
+    if (text) {
+      
+      let firstWord = text.split(' ')[0];
+
+      // Loại bỏ khoảng trắng dư thừa
+      firstWord = firstWord.trim().toLowerCase();
+      
+      // Tìm số tương ứng trong map
+      text = numbersMap[firstWord] || text; // Trả về null nếu không tìm thấy
+
+      var ret = text.replace(/[^0-9+-]/g, '');
+      return ret ;
+    } else {
+      return null;
+    }
+
+}
+
+</script>
+
+</body>
+</html>
