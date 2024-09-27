@@ -178,7 +178,6 @@ window.addEventListener('load', function () {
             answerFullText = replaceAnswerText(spokenText)
             equationText.text(answerFullText);
             equationText.x((stage.width() - equationText.getClientRect().width) / 2);
-            layer.draw();
 
             processResult();
 
@@ -197,7 +196,6 @@ window.addEventListener('load', function () {
     recognition.onaudiostart = () => {
         console.log("onaudiostart::");
         feedbackText.text('Đọc lớn kết quả ?');
-        feedbackText.fill('orange');
         feedbackText.x((stage.width() - feedbackText.getClientRect().width) / 2);
         layer.draw();
 
@@ -209,15 +207,15 @@ window.addEventListener('load', function () {
     recognition.onspeechend = function () {
 
         console.log('Người dùng ngừng nói.');
-        if (!spokenText || "" == spokenText) {
+        // if (!spokenText || "" == spokenText) {
    
-            var text = "Không trả lời, hỏi tiếp";
-            feedbackText.text(text);
-            feedbackText.x((stage.width() - feedbackText.getClientRect().width) / 2);
-            layer.draw();
-            speakResult(text);
-            setTimeout(generateEquation, 2000);
-        }
+        //     var text = "Không trả lời, hỏi tiếp";
+        //     feedbackText.text(text);
+        //     feedbackText.x((stage.width() - feedbackText.getClientRect().width) / 2);
+        //     layer.draw();
+        //     speakResult(text);
+        //     setTimeout(generateEquation, 2000);
+        // }
     };
 
     function processResult() {
@@ -228,10 +226,12 @@ window.addEventListener('load', function () {
             if (spokenNumber && parseInt(spokenNumber) === correctAnswer) {
                 feedbackText.text('Đúng! Kết quả là: ' + spokenNumber);
                 feedbackText.fill('green');
+                feedbackText.x((stage.width() - feedbackText.getClientRect().width) / 2);
                 speakResult('Đúng rồi, bằng ' + + correctAnswer);  // Nói "Đúng" rồi sau đó gọi hàm tạo câu hỏi mới
             } else {
                 feedbackText.text(`Sai! Bạn nói: ${spokenNumber}, đúng là: ${correctAnswer}`);
                 feedbackText.fill('red');
+                feedbackText.x((stage.width() - feedbackText.getClientRect().width) / 2);
                 speakResult('Sai, đúng phải là ' + correctAnswer);  // Nói "Sai" rồi sau đó gọi hàm tạo câu hỏi mới
             }
 
@@ -248,8 +248,7 @@ window.addEventListener('load', function () {
 
     recognition.onerror = function (event) {
         console.log("onerror::");
-        feedbackText.text('Có lỗi trong việc nhận diện giọng nói!');
-        feedbackText.fill('red');
+        feedbackText.text('Không nhận diện giọng nói!');
         feedbackText.x((stage.width() - feedbackText.getClientRect().width) / 2);
         layer.draw();
         speakResult('Bỏ qua, câu tiếp theo.');  // Nếu lỗi, bỏ qua và tiếp tục câu hỏi tiếp theo
