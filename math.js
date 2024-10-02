@@ -130,9 +130,7 @@ window.addEventListener('load', function () {
 
         // Lắng nghe sự kiện "start" khi bắt đầu đọc
         utterance.onstart = function () {
-            feedbackText.text('Đang đọc câu hỏi...');
-            feedbackText.x((stage.width() - feedbackText.getClientRect().width) / 2);
-            layer.draw();
+            updateFeedbackText('Đang đọc câu hỏi...');
         };
 
         // ** Automatically start speech recognition after question is spoken **
@@ -175,15 +173,17 @@ window.addEventListener('load', function () {
         clearTimeout(responseTimeout);
         clearInterval(countdownInterval);
         countdownText.visible(false);  // Hide the countdown after answer
+        updateFeedbackText("onresult");
 
         if (event.results.length > 0) {
             //spokenText = event.results[0][0].transcript;
-            spokenText = event.results[0][event.results.length - 1].transcript; // Lấy kết quả cuối cùng
+            spokenText = event.results[0][0].transcript; // Lấy kết quả cuối cùng
             var answerFullText = replaceAnswerText(spokenText);
             equationText.text(answerFullText);
             equationText.x((stage.width() - equationText.getClientRect().width) / 2);
             processResult();
         } else {
+            updateFeedbackText("Không có kết quả.");
             generateEquation();
             console.log('Không có kết quả.');
         }
@@ -191,34 +191,37 @@ window.addEventListener('load', function () {
 
     recognition.onnomatch = () => {
         console.log('Không nhận diện được giọng nói.');
+        updateFeedbackText('Không nhận diện được giọng nói.' + spokenText);
     };
 
     recognition.onaudiostart = () => {
-        feedbackText.text('Đọc lớn kết quả ?');
-        feedbackText.x((stage.width() - feedbackText.getClientRect().width) / 2);
-        layer.draw();
+        updateFeedbackText('onaudiostart, Đọc lớn kết quả ?');
     };
 
     recognition.onspeechend = function () {
         console.log('Người dùng ngừng nói.');
-        feedbackText.text('Người dùng ngừng nói:' + spokenText);
-        feedbackText.x((stage.width() - feedbackText.getClientRect().width) / 2);
-        layer.draw();  
+        updateFeedbackText('onspeechend, đã ngừng nói:' + spokenText);
     };
 
+    function updateFeedbackText(text) {
+        feedbackText.text(text);
+        feedbackText.x((stage.width() - feedbackText.getClientRect().width) / 2);
+        layer.draw();
+    }
     function processResult() {
         try {
+
             if (spokenText.length > 0) {
+                let text = "";
                 var spokenNumber = keepNumbersAndSigns(spokenText);
                 if (spokenNumber && parseInt(spokenNumber) === correctAnswer) {
-                    feedbackText.text('Đúng! Kết quả là: ' + spokenNumber);
+                    text = 'Đúng! Kết quả là: ' + spokenNumber;
                     speakResult('Đúng rồi, bằng ' + correctAnswer);
                 } else {
-                    feedbackText.text(`Sai! Bạn nói: ${spokenNumber}, đúng là: ${correctAnswer}`);
+                    text = `Sai! Bạn nói: ${spokenNumber}, đúng là: ${correctAnswer}`
                     speakResult('Sai, đúng phải là ' + correctAnswer);
                 }
-                feedbackText.x((stage.width() - feedbackText.getClientRect().width) / 2);
-                layer.draw();  
+                updateFeedbackText(text);
             } 
 
             setTimeout(generateEquation, 2000);
@@ -229,9 +232,7 @@ window.addEventListener('load', function () {
     }
 
     recognition.onerror = function (event) {
-        feedbackText.text('Không nhận diện giọng nói!');
-        feedbackText.x((stage.width() - feedbackText.getClientRect().width) / 2);
-        layer.draw();
+        updateFeedbackText('Không nhận diện giọng nói!');
         speakResult('Bỏ qua, câu tiếp theo.');
         generateEquation();
     };
@@ -244,10 +245,7 @@ window.addEventListener('load', function () {
 
 // ** Start speech recognition without user clicking **
 function startSpeechRecognition() {
-            //feedbackText.text("Nhấn vào micro.");
-            //feedbackText.x((stage.width() - feedbackText.getClientRect().width) / 2);
-            
-            // Start recognition only if it's not already active
+           
         // Check if the recognition object is initialized
         if (recognition) {
             // Start recognition only if it's not already active
@@ -259,6 +257,7 @@ function startSpeechRecognition() {
                 responseTimeout = setTimeout(() => {
                     recognition.stop(); // Stop recognition after timeout
                     recognitionActive = false; // Reset the recognition state
+                    updateFeedbackText("responseTimeout, startSpeechRecognition");
                     processResult();
                 }, countdownDuration * 1000); // countdownDuration * 1000 Set the timeout to duration (in seconds)
             } else {
@@ -266,9 +265,7 @@ function startSpeechRecognition() {
             }
         } else {
             // If recognition is not available, provide feedback
-            feedbackText.text("Nhận diện giọng nói không khả dụng.");
-            feedbackText.x((stage.width() - feedbackText.getClientRect().width) / 2);
-            layer.draw();
+            updateFeedbackText("Nhận diện giọng nói không khả dụng.");
         }
 
     }
