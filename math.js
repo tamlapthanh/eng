@@ -74,18 +74,35 @@ window.addEventListener('load', function () {
         clearTimeout(responseTimeout);
         clearInterval(countdownInterval);
 
-        // Generate random numbers ensuring no negative results
+        // Generate Random Equation
+        const resultRandom = generateRandomEquation();
+
+        // Tính toán đáp án
+        correctAnswer = eval(resultRandom.equation);
+
+        // Cập nhật văn bản trên canvas
+        questionText = getQuestionText(resultRandom.equation);
+        equationText.text(questionText);
+        equationText.x((stage.width() - equationText.getClientRect().width) / 2);
+        feedbackText.x((stage.width() - feedbackText.getClientRect().width) / 2);
+        layer.draw();
+
+        // Đọc phép tính
+        speakEquation(resultRandom.text);
+    }
+
+    function generateRandomEquation() {
         let num1 = 1;
         let num2 = 2;
         while (num1 < num2) {
             num1 = Math.floor(Math.random() * 10); // Số thứ nhất
-            num2 = Math.floor(Math.random() * 10); // Số thứ hai 
+            num2 = Math.floor(Math.random() * 10); // Số thứ hai
         }
-
+    
         // Chọn phép toán ngẫu nhiên
         const operation = Math.random() > 0.5 ? '+' : '-';
         let equation, text;
-
+    
         if (operation === '+') {
             equation = `${num1} + ${num2}`;
             text = `${num1} cộng ${num2} bằng bao nhiêu ?`;
@@ -93,19 +110,8 @@ window.addEventListener('load', function () {
             equation = `${num1} - ${num2}`;
             text = `${num1} trừ ${num2} bằng bao nhiêu ?`;
         }
-
-        // Tính toán đáp án
-        correctAnswer = eval(equation);
-
-        // Cập nhật văn bản trên canvas
-        questionText = getQuestionText(equation);
-        equationText.text(questionText);
-        equationText.x((stage.width() - equationText.getClientRect().width) / 2);
-        feedbackText.x((stage.width() - feedbackText.getClientRect().width) / 2);
-        layer.draw();
-
-        // Đọc phép tính
-        speakEquation(text);
+    
+        return { equation, text };
     }
 
     function getQuestionText(equation) {
@@ -178,6 +184,7 @@ window.addEventListener('load', function () {
             equationText.x((stage.width() - equationText.getClientRect().width) / 2);
             processResult();
         } else {
+            generateEquation();
             console.log('Không có kết quả.');
         }
     };
@@ -246,37 +253,17 @@ function startSpeechRecognition() {
             if (!recognitionActive) {
                 recognitionActive = true; // Set recognition state to active
                 recognition.start(); // Start listening for speech
-/*
-                // Set up event handlers for recognition
-                recognition.onresult = function(event) {
-                    // Handle the speech result
-                    spokenText = event.results[0][event.results.length - 1].transcript; // Lấy kết quả cuối cùng
-                    var answerFullText = replaceAnswerText(spokenText);
-                    equationText.text(answerFullText);
-                    equationText.x((stage.width() - equationText.getClientRect().width) / 2);
-                    processResult();
-                };
-
-                recognition.onerror = function(event) {
-                    // Handle any errors during recognition
-                    console.error("Speech recognition error detected: " + event.error);
-                    feedbackText.text("Lỗi nhận diện giọng nói. Vui lòng thử lại.");
-                    feedbackText.x((stage.width() - feedbackText.getClientRect().width) / 2);
-                    layer.draw();
-                    recognitionActive = false; // Reset the recognition state
-                    setTimeout(generateEquation, 2000); // Move to the next question after an error
-                };
-*/
+            
                 // Start a timeout for user response (e.g., 15 seconds)
                 responseTimeout = setTimeout(() => {
                     recognition.stop(); // Stop recognition after timeout
-                    recognitionActive = false; // Reset the recognition state
-                    feedbackText.text("Hết giờ, câu khác");
-                    feedbackText.x((stage.width() - feedbackText.getClientRect().width) / 2);
-                    layer.draw();
-                    speakResult("Hết giờ, câu khác.");
-                    setTimeout(generateEquation, 2000); // Generate a new question after 2 seconds
-                }, countdownDuration * 1000); // Set the timeout to duration (in seconds)
+                    // recognitionActive = false; // Reset the recognition state
+                    // feedbackText.text("Hết giờ, câu khác");
+                    // feedbackText.x((stage.width() - feedbackText.getClientRect().width) / 2);
+                    // layer.draw();
+                    // speakResult("Hết giờ, câu khác.");
+                    // setTimeout(generateEquation, 2000); // Generate a new question after 2 seconds
+                }, 2000); // countdownDuration * 1000 Set the timeout to duration (in seconds)
             } else {
                 console.warn("Recognition is already active.");
             }
