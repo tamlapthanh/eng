@@ -29,6 +29,20 @@ body {
       z-index: 10;
     }
 
+    .zoom-controls {
+      position: absolute;
+      top: 42px;
+      /* Adjust this value to position it below the setting button */
+      right: 10px;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      /* Arrange buttons in a column */
+      gap: 3px;
+    }
+
+    
+
   </style>
 </head>
 <body>
@@ -39,6 +53,12 @@ body {
   
 <div id="konva-canvas"></div>
 
+   <!-- Zoom Controls -->
+   <div class="zoom-controls">
+      <button id="reboot-app" class="btn btn-warning btn-sm">
+        <i class="bi bi-bootstrap-reboot"></i>
+      </button>
+    </div>
 <script src="math.js"></script>
 
 </body>

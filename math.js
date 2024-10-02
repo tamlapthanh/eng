@@ -326,6 +326,11 @@ function startSpeechRecognition() {
         countdownText.x((stage.width() - countdownText.getClientRect().width) / 2);
         layer.draw();
     });
+
+        // Zoom In button
+    $('#reboot-app').on('click', function () {
+        generateEquation();
+    });
 });
 
 function keepNumbersAndSigns(text) {
