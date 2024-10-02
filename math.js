@@ -66,7 +66,6 @@ window.addEventListener('load', function () {
 
     function stopRecognition() {
         recognition.stop(); // Stop recognition after timeout
-        recognitionActive = false; // Reset the recognition state
     }
 
     // Hàm tạo phép tính
@@ -250,6 +249,7 @@ window.addEventListener('load', function () {
         console.log('onstart, Recognition đã bắt đầu.');
         // Start countdown only after recognition starts
         startCountdown(countdownDuration);
+        recognitionActive = true; // Set recognition state to active
     };
 
 // ** Start speech recognition without user clicking **
@@ -261,9 +261,7 @@ function startSpeechRecognition() {
         if (recognition) {
             // Start recognition only if it's not already active
             if (!recognitionActive) {
-                recognitionActive = true; // Set recognition state to active
                 recognition.start(); // Start listening for speech
-            
                 // Start a timeout for user response (e.g., 15 seconds)
                 responseTimeout = setTimeout(() => {
                     stopRecognition();
