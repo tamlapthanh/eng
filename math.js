@@ -138,9 +138,10 @@ window.addEventListener('load', function () {
         var utterance = new SpeechSynthesisUtterance(equation);
         utterance.lang = 'vi-VN';
 
-        //window.speechSynthesis.speak(utterance);
-
         updateFeedbackText('Speak Equation');
+
+        // Dùng setTimeout để chắc chắn sự kiện được kích hoạt
+        setTimeout(() => { window.speechSynthesis.speak(utterance);}, 100);
 
         // Lắng nghe sự kiện "start" khi bắt đầu đọc
         utterance.onstart = function () {
@@ -151,19 +152,6 @@ window.addEventListener('load', function () {
         utterance.onend = function () {
             startSpeechRecognition();  // Bắt đầu nhận diện giọng nói khi đọc xong
         };
-
-            // Chờ khi giọng nói đã sẵn sàng
-        const voices = window.speechSynthesis.getVoices();
-        if (voices.length === 0) {
-            updateFeedbackText('Get Voices');
-            window.speechSynthesis.onvoiceschanged = () => {
-                utterance.voice = window.speechSynthesis.getVoices()[0];
-                window.speechSynthesis.speak(utterance);
-            };
-        } else {
-            utterance.voice = voices[0];
-            window.speechSynthesis.speak(utterance);
-        }
     }
 
     function speakResult(text) {
@@ -231,7 +219,7 @@ window.addEventListener('load', function () {
     }
     function processResult() {
         try {
-
+            updateFeedbackText("Spoken Text::" + spokenText);
             if (spokenText.length > 0) {
                 let text = "";
                 var spokenNumber = keepNumbersAndSigns(spokenText);
@@ -279,8 +267,8 @@ function startSpeechRecognition() {
                 // Start a timeout for user response (e.g., 15 seconds)
                 responseTimeout = setTimeout(() => {
                     updateFeedbackText("responseTimeout, startSpeechRecognition");
-                    processResult();
-                    setTimeout(generateEquation, 2000);
+                    //processResult();
+                    setTimeout(generateEquation, 1000);
                 }, countdownDuration * 1000); // countdownDuration * 1000 Set the timeout to duration (in seconds)
             } else {
                 console.warn("Recognition is already active.");
