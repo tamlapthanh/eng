@@ -28,7 +28,7 @@ window.addEventListener('load', function () {
         x: stage.width() / 2,
         y: stage.height() / 2 - 60,
         text: 'Đang tải...',
-        fontSize: 30,
+        fontSize: 40,
         fontFamily: 'Calibri',
         fill: 'black',
         align: 'center'
@@ -38,7 +38,7 @@ window.addEventListener('load', function () {
         x: stage.width() / 2,
         y: stage.height() / 2 + 20,
         text: '',
-        fontSize: 30,
+        fontSize: 20,
         fontFamily: 'Calibri',
         fill: 'blue',
         align: 'center'
@@ -140,6 +140,8 @@ window.addEventListener('load', function () {
         utterance.lang = 'vi-VN';
         window.speechSynthesis.speak(utterance);
 
+        updateFeedbackText('Speak Equation');
+
         // Lắng nghe sự kiện "start" khi bắt đầu đọc
         utterance.onstart = function () {
             updateFeedbackText('Đang đọc câu hỏi...');
@@ -187,9 +189,10 @@ window.addEventListener('load', function () {
             equationText.text(answerFullText);
             equationText.x((stage.width() - equationText.getClientRect().width) / 2);
             processResult();
+            setTimeout(generateEquation, 2000);
         } else {
             updateFeedbackText("Không có kết quả.");
-            generateEquation();
+            setTimeout(generateEquation, 2000);
             console.log('Không có kết quả.');
         }
     };
@@ -229,7 +232,7 @@ window.addEventListener('load', function () {
                 updateFeedbackText(text);
             } 
 
-            setTimeout(generateEquation, 2000);
+            // setTimeout(generateEquation, 2000);
         } catch (error) {
             console.log("Có lỗi xảy ra:", error.message);
             alert(error.message);
@@ -250,6 +253,8 @@ window.addEventListener('load', function () {
 
 // ** Start speech recognition without user clicking **
 function startSpeechRecognition() {
+
+    updateFeedbackText("start, startSpeechRecognition");
            
         // Check if the recognition object is initialized
         if (recognition) {
@@ -262,6 +267,7 @@ function startSpeechRecognition() {
                 responseTimeout = setTimeout(() => {
                     updateFeedbackText("responseTimeout, startSpeechRecognition");
                     processResult();
+                    setTimeout(generateEquation, 2000);
                 }, countdownDuration * 1000); // countdownDuration * 1000 Set the timeout to duration (in seconds)
             } else {
                 console.warn("Recognition is already active.");
