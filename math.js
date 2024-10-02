@@ -6,7 +6,7 @@ window.addEventListener('load', function () {
     var questionText;
     var responseTimeout; // Timeout for user response
     var countdownInterval; // Interval for countdown timer
-    var countdownDuration = 6; // Set the countdown duration (in seconds)
+    var countdownDuration = 5; // Set the countdown duration (in seconds)
     let recognitionActive = false; // Track the state of recognition
 
     // Khởi tạo SpeechRecognition để nhận diện giọng nói
@@ -28,9 +28,9 @@ window.addEventListener('load', function () {
         x: stage.width() / 2,
         y: stage.height() / 2 - 60,
         text: 'Đang tải...',
-        fontSize: 40,
+        fontSize: 55,
         fontFamily: 'Calibri',
-        fill: 'black',
+        fill: 'salmon',
         align: 'center'
     });
 
@@ -48,7 +48,7 @@ window.addEventListener('load', function () {
         x: stage.width() / 2,
         y: stage.height() / 2 + 80,
         text: '',
-        fontSize: 24,
+        fontSize: 30,
         fontFamily: 'Calibri',
         fill: 'red',
         align: 'center',
@@ -126,10 +126,10 @@ window.addEventListener('load', function () {
         let num1 = getRandomNumber(10);        // Số thứ nhất ngẫu nhiên từ 0 đến 10
         let num2 = getRandomNumber(10 - num1); // Số thứ hai ngẫu nhiên sao cho tổng không vượt quá 10
 
-        // while (num1 < num2) {
-        //     num1 = Math.floor(Math.random() * 10); // Số thứ nhất
-        //     num2 = Math.floor(Math.random() * 10); // Số thứ hai
-        // }
+        while (num1 < num2) {
+            num1 = num1 = getRandomNumber(10); // Số thứ nhất
+            num2 = getRandomNumber(10 - num1); // Số thứ hai
+        }
     
         // Chọn phép toán ngẫu nhiên
         const operation = Math.random() > 0.5 ? '+' : '-';
@@ -251,10 +251,10 @@ window.addEventListener('load', function () {
                     text = `Con ai giỏi vậy ta, đúng là bằng ${parseInt(spokenNumber)}`;
                     updateText("", debugText);
                 } else {
-                    text = `Sai rồi, bạn nói ${spokenNumber}, nhưng đúng thì phải là ${parseInt(spokenNumber)}`;
+                    text = `Sai rồi, bạn nói ${spokenText}, nhưng đúng thì phải là ${parseInt(correctAnswer)}`;
                 }
             }  else {
-                text = `Không trả lời à, bằng ${correctAnswer} nhé`;
+                text = `Sao không trả lời, bằng ${correctAnswer} nhé`;
             }
             updateText(text, feedbackText);
             speakResult(text);
@@ -305,14 +305,14 @@ function startSpeechRecognition() {
     // ** Countdown Function **
     function startCountdown(duration) {
         var remainingTime = duration;
-        countdownText.text(`Thời gian còn lại: ${remainingTime} giây`);
+        countdownText.text(`${remainingTime} giây`);
         countdownText.x((stage.width() - countdownText.getClientRect().width) / 2);
         countdownText.visible(true);  // Ensure countdown is visible
         layer.draw();
     
         countdownInterval = setInterval(() => {
             remainingTime--;
-            countdownText.text(`Thời gian còn lại: ${remainingTime} giây`);
+            countdownText.text(`${remainingTime} giây`);
             countdownText.x((stage.width() - countdownText.getClientRect().width) / 2);
             layer.draw();
     
@@ -353,7 +353,10 @@ function keepNumbersAndSigns(text) {
         "bà": 3,
         "bốn": 4,
         "bún": 4,
+        "nam": 4,
+        "nằm": 5,
         "năm": 5,
+        "sáo": 6,
         "sáu": 6,
         "bảy": 7,
         "tám": 8,
