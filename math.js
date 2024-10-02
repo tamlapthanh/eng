@@ -160,9 +160,13 @@ window.addEventListener('load', function () {
         utterance.lang = 'vi-VN';
         window.speechSynthesis.speak(utterance);
 
-        // Sau khi phản hồi kết thúc, tạo câu hỏi mới sau 1 giây
+        // ** Automatically start speech recognition after question is spoken **
         utterance.onend = function () {
-            console.log("speakResult, utterance.onend");
+            // Dùng setTimeout để chắc chắn sự kiện được kích hoạt
+            setTimeout(() => {
+                console.log("setTimeout, speakResult")
+               generateEquation();
+            }, 1000);
         };
     }
 
@@ -186,14 +190,8 @@ window.addEventListener('load', function () {
         if (event.results.length > 0) {
             //spokenText = event.results[0][0].transcript;
             spokenText = event.results[0][0].transcript; // Lấy kết quả cuối cùng
-            var answerFullText = replaceAnswerText(spokenText);
-            equationText.text(answerFullText);
-            equationText.x((stage.width() - equationText.getClientRect().width) / 2);
-            processResult();
-            setTimeout(generateEquation, 2000);
         } else {
             updateFeedbackText("Không có kết quả.");
-            setTimeout(generateEquation, 2000);
             console.log('Không có kết quả.');
         }
     };
@@ -220,23 +218,23 @@ window.addEventListener('load', function () {
     function processResult() {
         try {
             updateFeedbackText("Spoken Text::" + spokenText);
+            let text = "";
             if (spokenText.length > 0) {
-                let text = "";
                 var spokenNumber = keepNumbersAndSigns(spokenText);
                 if (spokenNumber && parseInt(spokenNumber) === correctAnswer) {
                     text = 'Đúng! Kết quả là: ' + spokenNumber;
-                    speakResult('Đúng rồi, bằng ' + correctAnswer);
                 } else {
                     text = `Sai! Bạn nói: ${spokenNumber}, đúng là: ${correctAnswer}`
-                    speakResult('Sai, đúng phải là ' + correctAnswer);
                 }
-                updateFeedbackText(text);
-            } 
-
-            // setTimeout(generateEquation, 2000);
+            }  else {
+                text = "Không trả lời à.";
+            }
+            updateFeedbackText(text);
+            speakResult(text);
         } catch (error) {
             console.log("Có lỗi xảy ra:", error.message);
             alert(error.message);
+            speakResult(error.message);
         }
     }
 
@@ -267,8 +265,7 @@ function startSpeechRecognition() {
                 // Start a timeout for user response (e.g., 15 seconds)
                 responseTimeout = setTimeout(() => {
                     updateFeedbackText("responseTimeout, startSpeechRecognition");
-                    //processResult();
-                    setTimeout(generateEquation, 1000);
+                    processResult();
                 }, countdownDuration * 1000); // countdownDuration * 1000 Set the timeout to duration (in seconds)
             } else {
                 console.warn("Recognition is already active.");
