@@ -30,46 +30,31 @@ window.addEventListener('load', function () {
         align: 'center'
     });
 
+    var countdownText = new Konva.Text({
+        x: stage.width() / 2,
+        y: stage.height() / 2 + 80,
+        text: '',
+        fontSize: 24,
+        fontFamily: 'Calibri',
+        fill: 'red',
+        align: 'center',
+        visible: false  // Hidden initially
+    });
+
     layer.add(equationText);
     layer.add(feedbackText);
+    layer.add(countdownText);
 
-    // Tải icon PNG cho "loa" và "micro"
-    var questionIcon = new Image();
-    questionIcon.src = 'assets/sound-100.png';  // Đường dẫn tới icon PNG loa
-
-    var answerIcon = new Image();
-    answerIcon.src = 'assets/record-100.png';  // Đường dẫn tới icon PNG micro
-
-    var questionImage = new Konva.Image({
-        x: stage.width() / 2 - 100,
-        y: stage.height() / 2 + 100,
-        image: questionIcon,
-        width: 50,
-        height: 50,
-        visible: false
-    });
-
-    var answerImage = new Konva.Image({
-        x: stage.width() / 2 -25,
-        y: stage.height() / 2 + 100,
-        image: answerIcon,
-        width: 50,
-        height: 50,
-        visible: false
-    });
-
-
-    answerImage.on('click', clickAnswer);
-    answerImage.on('touchend', clickAnswer);
-
-   // layer.add(questionImage);
-    layer.add(answerImage);
     layer.draw();
 
     var correctAnswer;
     var recognitionTimeout;
     var spokenText;
     var questionText;
+    var responseTimeout; // Timeout for user response
+    var countdownInterval; // Interval for countdown timer
+    var countdownDuration = 10; // Set the countdown duration (in seconds)
+    let recognitionActive = false; // Track the state of recognition
 
     // Hàm tạo phép tính
     function generateEquation() {
@@ -77,7 +62,13 @@ window.addEventListener('load', function () {
         questionText = "";
         spokenText = "";
         feedbackText.text('');
+        countdownText.text('');
+        countdownText.visible(false);
         layer.draw();
+
+        // Clear any existing response timeout and countdown interval
+        clearTimeout(responseTimeout);
+        clearInterval(countdownInterval);
 
         // Generate random numbers ensuring no negative results
         let num1 = 1;
@@ -122,22 +113,19 @@ window.addEventListener('load', function () {
     }
 
     function speakEquation(equation) {
-
         var utterance = new SpeechSynthesisUtterance();
-        utterance.text = equation
+        utterance.text = equation;
         utterance.lang = 'vi-VN';
         window.speechSynthesis.speak(utterance);
 
         // Lắng nghe sự kiện "start" khi bắt đầu đọc
         utterance.onstart = function () {
-            questionImage.visible(true);
-            answerImage.visible(false);
-
             feedbackText.text('Đang đọc câu hỏi...');
             feedbackText.x((stage.width() - feedbackText.getClientRect().width) / 2);
             layer.draw();
         };
 
+        // ** Automatically start speech recognition after question is spoken **
         utterance.onend = function () {
             startSpeechRecognition();  // Bắt đầu nhận diện giọng nói khi đọc xong
         };
@@ -159,132 +147,160 @@ window.addEventListener('load', function () {
     const recognition = new webkitSpeechRecognition() || new SpeechRecognition();
 
     // Cấu hình recognition
-    recognition.continuous = false; // Không nhận diện liên tục
+    recognition.continuous = true; // Không nhận diện liên tục
     recognition.interimResults = false; // Không nhận kết quả tạm thời
     recognition.lang = 'vi-VN';
 
-
-    // Xử lý sự kiện khi nhận diện giọng nói kết thúc (sau khi stop)
+    // Ensure you are handling the recognition events correctly
     recognition.onend = function () {
         console.log('Recognition đã dừng.');
+        clearInterval(countdownInterval);  // Clear the countdown interval
+        countdownText.visible(false);  // Hide countdown after recognition ends
+        layer.draw();
     };
 
     recognition.onresult = function (event) {
         console.log("onresult");
-        if (event.results.length > 0) {
+        // Clear the timeout and countdown if user answers before the time limit
+        clearTimeout(responseTimeout);
+        clearInterval(countdownInterval);
+        countdownText.visible(false);  // Hide the countdown after answer
 
-            spokenText = event.results[0][0].transcript;
-            var answerFullText = keepNumbersAndSigns(answerFullText);
-            answerFullText = replaceAnswerText(spokenText)
+        if (event.results.length > 0) {
+            //spokenText = event.results[0][0].transcript;
+            spokenText = event.results[0][event.results.length - 1].transcript; // Lấy kết quả cuối cùng
+            var answerFullText = replaceAnswerText(spokenText);
             equationText.text(answerFullText);
             equationText.x((stage.width() - equationText.getClientRect().width) / 2);
-
             processResult();
-
-
         } else {
-
             console.log('Không có kết quả.');
         }
     };
-
 
     recognition.onnomatch = () => {
         console.log('Không nhận diện được giọng nói.');
     };
 
     recognition.onaudiostart = () => {
-        console.log("onaudiostart::");
         feedbackText.text('Đọc lớn kết quả ?');
         feedbackText.x((stage.width() - feedbackText.getClientRect().width) / 2);
         layer.draw();
-
-       
     };
 
-
-    // Xử lý khi người dùng ngừng nói
     recognition.onspeechend = function () {
-
         console.log('Người dùng ngừng nói.');
-        // if (!spokenText || "" == spokenText) {
-   
-        //     var text = "Không trả lời, hỏi tiếp";
-        //     feedbackText.text(text);
-        //     feedbackText.x((stage.width() - feedbackText.getClientRect().width) / 2);
-        //     layer.draw();
-        //     speakResult(text);
-        //     setTimeout(generateEquation, 2000);
-        // }
     };
 
     function processResult() {
         if (spokenText.length > 0) {
-
-            spokenNumber = keepNumbersAndSigns(spokenText);
-
+            var spokenNumber = keepNumbersAndSigns(spokenText);
             if (spokenNumber && parseInt(spokenNumber) === correctAnswer) {
                 feedbackText.text('Đúng! Kết quả là: ' + spokenNumber);
-                feedbackText.fill('green');
-                feedbackText.x((stage.width() - feedbackText.getClientRect().width) / 2);
-                speakResult('Đúng rồi, bằng ' + + correctAnswer);  // Nói "Đúng" rồi sau đó gọi hàm tạo câu hỏi mới
+                speakResult('Đúng rồi, bằng ' + correctAnswer);
             } else {
                 feedbackText.text(`Sai! Bạn nói: ${spokenNumber}, đúng là: ${correctAnswer}`);
-                feedbackText.fill('red');
-                feedbackText.x((stage.width() - feedbackText.getClientRect().width) / 2);
-                speakResult('Sai, đúng phải là ' + correctAnswer);  // Nói "Sai" rồi sau đó gọi hàm tạo câu hỏi mới
+                speakResult('Sai, đúng phải là ' + correctAnswer);
             }
-
             feedbackText.x((stage.width() - feedbackText.getClientRect().width) / 2);
             layer.draw();
-
-            // đọc câu hỏi khác
             setTimeout(generateEquation, 2000);
         } else {
             generateEquation();
         }
     }
 
-
     recognition.onerror = function (event) {
-        console.log("onerror::");
         feedbackText.text('Không nhận diện giọng nói!');
         feedbackText.x((stage.width() - feedbackText.getClientRect().width) / 2);
         layer.draw();
-        speakResult('Bỏ qua, câu tiếp theo.');  // Nếu lỗi, bỏ qua và tiếp tục câu hỏi tiếp theo
+        speakResult('Bỏ qua, câu tiếp theo.');
         generateEquation();
     };
 
-
-    // Lắng nghe sự kiện "start" khi bắt đầu nhận diện giọng nói
-    recognition.onstart = function (event) {
-        console.log("onstart::");
-        answerImage.visible(false);
+    recognition.onstart = function () {
+        console.log('Recognition đã bắt đầu.');
+        // Start countdown only after recognition starts
+        startCountdown(countdownDuration);
         layer.draw();
     };
 
-    // Bắt đầu nhận diện giọng nói
-    function startSpeechRecognition() {
+// ** Start speech recognition without user clicking **
+function startSpeechRecognition() {
+            //feedbackText.text("Nhấn vào micro.");
+            //feedbackText.x((stage.width() - feedbackText.getClientRect().width) / 2);
+            
+            // Start recognition only if it's not already active
+        // Check if the recognition object is initialized
+        if (recognition) {
+            // Start recognition only if it's not already active
+            if (!recognitionActive) {
+                recognitionActive = true; // Set recognition state to active
+                recognition.start(); // Start listening for speech
 
-        feedbackText.text("Nhấn vào micro.")
-        feedbackText.x((stage.width() - feedbackText.getClientRect().width) / 2);
-        questionImage.visible(false);
-        answerImage.visible(true);
+                // Set up event handlers for recognition
+                recognition.onresult = function(event) {
+                    // Handle the speech result
+                    spokenText = event.results[0][event.results.length - 1].transcript; // Lấy kết quả cuối cùng
+                    var answerFullText = replaceAnswerText(spokenText);
+                    equationText.text(answerFullText);
+                    equationText.x((stage.width() - equationText.getClientRect().width) / 2);
+                    processResult();
+                };
+
+                recognition.onerror = function(event) {
+                    // Handle any errors during recognition
+                    console.error("Speech recognition error detected: " + event.error);
+                    feedbackText.text("Lỗi nhận diện giọng nói. Vui lòng thử lại.");
+                    feedbackText.x((stage.width() - feedbackText.getClientRect().width) / 2);
+                    layer.draw();
+                    recognitionActive = false; // Reset the recognition state
+                    setTimeout(generateEquation, 2000); // Move to the next question after an error
+                };
+
+                // Start a timeout for user response (e.g., 15 seconds)
+                responseTimeout = setTimeout(() => {
+                    recognition.stop(); // Stop recognition after timeout
+                    recognitionActive = false; // Reset the recognition state
+                    feedbackText.text("Hết thời gian! Chuyển sang câu hỏi khác.");
+                    feedbackText.x((stage.width() - feedbackText.getClientRect().width) / 2);
+                    layer.draw();
+                    speakResult("Không trả lời. Hỏi câu tiếp.");
+                    setTimeout(generateEquation, 2000); // Generate a new question after 2 seconds
+                }, countdownDuration * 1000); // Set the timeout to duration (in seconds)
+            } else {
+                console.warn("Recognition is already active.");
+            }
+        } else {
+            // If recognition is not available, provide feedback
+            feedbackText.text("Nhận diện giọng nói không khả dụng.");
+            feedbackText.x((stage.width() - feedbackText.getClientRect().width) / 2);
+            layer.draw();
+        }
+
+    }
+
+    // ** Countdown Function **
+    function startCountdown(duration) {
+        var remainingTime = duration;
+        countdownText.text(`Thời gian còn lại: ${remainingTime} giây`);
+        countdownText.x((stage.width() - countdownText.getClientRect().width) / 2);
+        countdownText.visible(true);  // Ensure countdown is visible
         layer.draw();
+    
+        countdownInterval = setInterval(() => {
+            remainingTime--;
+            countdownText.text(`Thời gian còn lại: ${remainingTime} giây`);
+            countdownText.x((stage.width() - countdownText.getClientRect().width) / 2);
+            layer.draw();
+    
+            if (remainingTime <= 0) {
+                clearInterval(countdownInterval);  // Stop countdown when time is up
+                countdownText.visible(false);  // Hide countdown
+            }
+        }, 1000); // Update countdown every second
     }
-
-    // click vào answer button để nói.     
-    function clickAnswer() {
-        stopRecognition();
-        recognition.start();
-    }
-
-    // Hàm để dừng nhận diện
-    function stopRecognition() {
-        spokenText = "";
-        recognition.stop(); // Dừng recognition
-        console.log('Đã dừng nhận diện.');
-    }
+    
 
     // Khởi động chương trình
     generateEquation();
@@ -295,12 +311,10 @@ window.addEventListener('load', function () {
         stage.height(window.innerHeight);
         equationText.x((stage.width() - equationText.getClientRect().width) / 2);
         feedbackText.x((stage.width() - feedbackText.getClientRect().width) / 2);
+        countdownText.x((stage.width() - countdownText.getClientRect().width) / 2);
         layer.draw();
     });
-
 });
-
-
 
 function keepNumbersAndSigns(text) {
     const numbersMap = {
@@ -332,19 +346,14 @@ function keepNumbersAndSigns(text) {
     };
 
     if (text) {
+        // Convert text to lowercase and split by spaces
+        let words = text.toLowerCase().split(' ');
 
-        let firstWord = text.split(' ')[0];
+        // Convert each word using the numbersMap
+        let convertedText = words.map(word => numbersMap[word] !== undefined ? numbersMap[word] : word).join(' ');
 
-        // Loại bỏ khoảng trắng dư thừa
-        firstWord = firstWord.trim().toLowerCase();
-
-        // Tìm số tương ứng trong map
-        text = numbersMap[firstWord] || text; // Trả về null nếu không tìm thấy
-
-        if (text) {
-            return text.replace(/[^0-9+-]/g, '');
-        }
+        // Filter out non-numeric characters, keeping digits and signs
+        return convertedText.replace(/[^0-9+-]/g, '');
     }
-
-    return null;
+    return ''; // Return an empty string if the input is null or empty
 }
