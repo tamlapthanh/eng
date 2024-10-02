@@ -58,6 +58,10 @@ window.addEventListener('load', function () {
 
     // Hàm tạo phép tính
     function generateEquation() {
+
+        recognition.stop(); // Stop recognition after timeout
+        recognitionActive = false; // Reset the recognition state
+
         // Clear feedback text
         questionText = "";
         spokenText = "";
@@ -201,11 +205,11 @@ window.addEventListener('load', function () {
                     speakResult('Đúng rồi, bằng ' + correctAnswer);
                 } else {
                     feedbackText.text(`Sai! Bạn nói: ${spokenNumber}, đúng là: ${correctAnswer}`);
-                    speakResult('Sai, đúng là ' + correctAnswer);
+                    speakResult('Sai, đúng phải là ' + correctAnswer);
                 }
                 feedbackText.x((stage.width() - feedbackText.getClientRect().width) / 2);
                 layer.draw();
-                setTimeout(generateEquation, 1000);
+                setTimeout(generateEquation, 2000);
             } else {
                 generateEquation();
             }
@@ -267,10 +271,10 @@ function startSpeechRecognition() {
                 responseTimeout = setTimeout(() => {
                     recognition.stop(); // Stop recognition after timeout
                     recognitionActive = false; // Reset the recognition state
-                    feedbackText.text("Thua, sang câu khác.");
+                    feedbackText.text("Hết giờ, câu khác");
                     feedbackText.x((stage.width() - feedbackText.getClientRect().width) / 2);
                     layer.draw();
-                    speakResult("Thua, sang câu khác.");
+                    speakResult("Hết giờ, câu khác.");
                     setTimeout(generateEquation, 2000); // Generate a new question after 2 seconds
                 }, countdownDuration * 1000); // Set the timeout to duration (in seconds)
             } else {
