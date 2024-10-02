@@ -193,20 +193,25 @@ window.addEventListener('load', function () {
     };
 
     function processResult() {
-        if (spokenText.length > 0) {
-            var spokenNumber = keepNumbersAndSigns(spokenText);
-            if (spokenNumber && parseInt(spokenNumber) === correctAnswer) {
-                feedbackText.text('Đúng! Kết quả là: ' + spokenNumber);
-                speakResult('Đúng rồi, bằng ' + correctAnswer);
+        try {
+            if (spokenText.length > 0) {
+                var spokenNumber = keepNumbersAndSigns(spokenText);
+                if (spokenNumber && parseInt(spokenNumber) === correctAnswer) {
+                    feedbackText.text('Đúng! Kết quả là: ' + spokenNumber);
+                    speakResult('Đúng rồi, bằng ' + correctAnswer);
+                } else {
+                    feedbackText.text(`Sai! Bạn nói: ${spokenNumber}, đúng là: ${correctAnswer}`);
+                    speakResult('Sai, đúng là ' + correctAnswer);
+                }
+                feedbackText.x((stage.width() - feedbackText.getClientRect().width) / 2);
+                layer.draw();
+                setTimeout(generateEquation, 1000);
             } else {
-                feedbackText.text(`Sai! Bạn nói: ${spokenNumber}, đúng là: ${correctAnswer}`);
-                speakResult('Sai, đúng phải là ' + correctAnswer);
+                generateEquation();
             }
-            feedbackText.x((stage.width() - feedbackText.getClientRect().width) / 2);
-            layer.draw();
-            setTimeout(generateEquation, 2000);
-        } else {
-            generateEquation();
+        } catch (error) {
+            console.log("Có lỗi xảy ra:", error.message);
+            alert(error.message);
         }
     }
 
