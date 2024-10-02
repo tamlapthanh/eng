@@ -138,7 +138,7 @@ window.addEventListener('load', function () {
         var utteranceSpeak = new SpeechSynthesisUtterance(equation);
         utteranceSpeak.lang = 'vi-VN';
 
-        updateFeedbackText('Speak Equation');
+        updateFeedbackText('Speak Equation, chuẩn bị hỏi.');
 
         // Dùng setTimeout để chắc chắn sự kiện được kích hoạt
         setTimeout(() => { window.speechSynthesis.speak(utteranceSpeak);}, 2000);
@@ -184,8 +184,7 @@ window.addEventListener('load', function () {
         // Clear the timeout and countdown if user answers before the time limit
         clearTimeout(responseTimeout);
         clearInterval(countdownInterval);
-        countdownText.visible(false);  // Hide the countdown after answer
-        updateFeedbackText("onresult");
+        countdownText.visible(false);  // Hide the countdown after answer 
 
         if (event.results.length > 0) {
             //spokenText = event.results[0][0].transcript;
@@ -195,6 +194,8 @@ window.addEventListener('load', function () {
             updateFeedbackText("Không có kết quả.");
             console.log('Không có kết quả.');
         }
+
+        updateFeedbackText("onresult::" + spokenText);
     };
 
     recognition.onnomatch = () => {
@@ -266,11 +267,11 @@ function startSpeechRecognition() {
                 // Start a timeout for user response (e.g., 15 seconds)
                 responseTimeout = setTimeout(() => {
                     updateFeedbackText("responseTimeout, startSpeechRecognition");
-                    processResult();
+                    stopRecognition();
+                    setTimeout(() => { processResult();}, 1500);
                 }, countdownDuration * 1000); // countdownDuration * 1000 Set the timeout to duration (in seconds)
             } else {
                 console.warn("Recognition is already active.");
-                stopRecognition();
             }
         } else {
             // If recognition is not available, provide feedback
