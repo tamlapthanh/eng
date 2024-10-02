@@ -60,7 +60,7 @@ window.addEventListener('load', function () {
         x: stage.width() / 2,
         y: stage.height() / 2 + 120,
         text: '',
-        fontSize: 24,
+        fontSize: 54,
         fontFamily: 'Calibri',
         fill: 'green',
         align: 'center'
@@ -116,13 +116,20 @@ window.addEventListener('load', function () {
         speakEquation(resultRandom.text);
     }
 
+    // Tạo số ngẫu nhiên trong khoảng từ 0 đến max
+    function getRandomNumber(max) {
+        return Math.floor(Math.random() * (max + 1)); // Số ngẫu nhiên từ 0 đến max
+    }
+
     function generateRandomEquation() {
-        let num1 = 1;
-        let num2 = 2;
-        while (num1 < num2) {
-            num1 = Math.floor(Math.random() * 10); // Số thứ nhất
-            num2 = Math.floor(Math.random() * 10); // Số thứ hai
-        }
+
+        let num1 = getRandomNumber(10);        // Số thứ nhất ngẫu nhiên từ 0 đến 10
+        let num2 = getRandomNumber(10 - num1); // Số thứ hai ngẫu nhiên sao cho tổng không vượt quá 10
+
+        // while (num1 < num2) {
+        //     num1 = Math.floor(Math.random() * 10); // Số thứ nhất
+        //     num2 = Math.floor(Math.random() * 10); // Số thứ hai
+        // }
     
         // Chọn phép toán ngẫu nhiên
         const operation = Math.random() > 0.5 ? '+' : '-';
@@ -151,7 +158,7 @@ window.addEventListener('load', function () {
         var utteranceSpeak = new SpeechSynthesisUtterance(equation);
         utteranceSpeak.lang = 'vi-VN';
 
-        updateText('Chuẩn bị hỏi.', feedbackText);
+        updateText('Chuẩn bị ......', feedbackText);
 
         // Dùng setTimeout để chắc chắn sự kiện được kích hoạt
         setTimeout(() => { window.speechSynthesis.speak(utteranceSpeak);}, 2000);
@@ -195,17 +202,6 @@ window.addEventListener('load', function () {
 
     recognition.onresult = function (event) {
         console.log("onresult");
-        // Clear the timeout and countdown if user answers before the time limit
-       // clearTimeout(responseTimeout);
-        //clearInterval(countdownInterval);
-        //countdownText.visible(false);  // Hide the countdown after answer 
-
-        // if (event.results.length > 0) {
-        //     //spokenText = event.results[0][0].transcript;
-        //     spokenText = event.results[0][0].transcript; // Lấy kết quả cuối cùng
-        //     updateText("spokenText::" + spokenText, debugText);
-        // }
-
            // Biến lưu kết quả tạm thời hoặc kết quả cuối cùng
         let interimTranscript = '';
         let finalTranscript = '';
@@ -252,10 +248,10 @@ window.addEventListener('load', function () {
             if (spokenText.length > 0) {
                 var spokenNumber = keepNumbersAndSigns(spokenText);
                 if (spokenNumber && parseInt(spokenNumber) === correctAnswer) {
-                    text = `Giỏi lắm bạn ơi, là ${spokenNumber}`;
+                    text = `Con ai giỏi vậy ta, đúng là bằng ${parseInt(spokenNumber)}`;
                     updateText("", debugText);
                 } else {
-                    text = `Sai rồi, bạn nói ${spokenNumber}, nhưng đúng thì phải là ${correctAnswer}`;
+                    text = `Sai rồi, bạn nói ${spokenNumber}, nhưng đúng thì phải là ${parseInt(spokenNumber)}`;
                 }
             }  else {
                 text = `Không trả lời à, bằng ${correctAnswer} nhé`;
@@ -363,6 +359,7 @@ function keepNumbersAndSigns(text) {
         "tám": 8,
         "chín": 9,
         "chính": 9,
+        "chí": 9,
         "mười": 10,
         "mười một": 11,
         "mười hai": 12,
