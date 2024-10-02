@@ -64,11 +64,15 @@ window.addEventListener('load', function () {
 
     layer.draw();
 
-    // Hàm tạo phép tính
-    function generateEquation() {
-
+    function stopRecognition() {
         recognition.stop(); // Stop recognition after timeout
         recognitionActive = false; // Reset the recognition state
+    }
+
+    // Hàm tạo phép tính
+    function generateEquation() {
+        console.log("Generate Equation");
+        stopRecognition();
 
         // Clear feedback text
         questionText = "";
@@ -163,10 +167,11 @@ window.addEventListener('load', function () {
 
     // Ensure you are handling the recognition events correctly
     recognition.onend = function () {
-        console.log('Recognition đã dừng.');
+        console.log('onend, Recognition đã dừng.');
         clearInterval(countdownInterval);  // Clear the countdown interval
         countdownText.visible(false);  // Hide countdown after recognition ends
         layer.draw();
+        updateFeedbackText("onend, Recognition đã dừng.");
     };
 
     recognition.onresult = function (event) {
@@ -192,7 +197,7 @@ window.addEventListener('load', function () {
     };
 
     recognition.onnomatch = () => {
-        console.log('Không nhận diện được giọng nói.');
+        console.log('onnomatch, Không nhận diện được giọng nói.');
         updateFeedbackText('Không nhận diện được giọng nói.' + spokenText);
     };
 
@@ -201,7 +206,7 @@ window.addEventListener('load', function () {
     };
 
     recognition.onspeechend = function () {
-        console.log('Người dùng ngừng nói.');
+        console.log('onspeechend, Người dùng ngừng nói.');
         updateFeedbackText('onspeechend, đã ngừng nói:' + spokenText);
     };
 
@@ -212,6 +217,8 @@ window.addEventListener('load', function () {
     }
     function processResult() {
         try {
+
+            stopRecognition();
 
             if (spokenText.length > 0) {
                 let text = "";
@@ -234,13 +241,13 @@ window.addEventListener('load', function () {
     }
 
     recognition.onerror = function (event) {
-        updateFeedbackText('Không nhận diện giọng nói!');
+        updateFeedbackText('onerror, Không nhận diện giọng nói!');
         speakResult('Bỏ qua, câu tiếp theo.');
         generateEquation();
     };
 
     recognition.onstart = function () {
-        console.log('Recognition đã bắt đầu.');
+        console.log('onstart, Recognition đã bắt đầu.');
         // Start countdown only after recognition starts
         startCountdown(countdownDuration);
     };
@@ -257,8 +264,6 @@ function startSpeechRecognition() {
             
                 // Start a timeout for user response (e.g., 15 seconds)
                 responseTimeout = setTimeout(() => {
-                    recognition.stop(); // Stop recognition after timeout
-                    recognitionActive = false; // Reset the recognition state
                     updateFeedbackText("responseTimeout, startSpeechRecognition");
                     processResult();
                 }, countdownDuration * 1000); // countdownDuration * 1000 Set the timeout to duration (in seconds)
