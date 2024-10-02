@@ -163,8 +163,6 @@ window.addEventListener('load', function () {
         };
     }
 
-
-
     // Ensure you are handling the recognition events correctly
     recognition.onend = function () {
         console.log('onend, Recognition đã dừng.');
@@ -217,8 +215,6 @@ window.addEventListener('load', function () {
     }
     function processResult() {
         try {
-
-            stopRecognition();
 
             if (spokenText.length > 0) {
                 let text = "";
