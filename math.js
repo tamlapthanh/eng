@@ -1,14 +1,28 @@
 window.addEventListener('load', function () {
 
+    var correctAnswer;
+    var recognitionTimeout;
+    var spokenText;
+    var questionText;
+    var responseTimeout; // Timeout for user response
+    var countdownInterval; // Interval for countdown timer
+    var countdownDuration = 6; // Set the countdown duration (in seconds)
+    let recognitionActive = false; // Track the state of recognition
+
+    // Khởi tạo SpeechRecognition để nhận diện giọng nói
+    const recognition = new webkitSpeechRecognition() || new SpeechRecognition();
+
+    // Cấu hình recognition
+    recognition.continuous = true; // Không nhận diện liên tục
+    recognition.interimResults = false; // Không nhận kết quả tạm thời
+    recognition.lang = 'vi-VN';
+
     // Tạo Konva Stage và Layer
     var stage = new Konva.Stage({
         container: 'konva-canvas',
         width: window.innerWidth,
         height: window.innerHeight
     });
-
-    var layer = new Konva.Layer();
-    stage.add(layer);
 
     var equationText = new Konva.Text({
         x: stage.width() / 2,
@@ -41,20 +55,14 @@ window.addEventListener('load', function () {
         visible: false  // Hidden initially
     });
 
+    var layer = new Konva.Layer();
+    stage.add(layer);
+
     layer.add(equationText);
     layer.add(feedbackText);
     layer.add(countdownText);
 
     layer.draw();
-
-    var correctAnswer;
-    var recognitionTimeout;
-    var spokenText;
-    var questionText;
-    var responseTimeout; // Timeout for user response
-    var countdownInterval; // Interval for countdown timer
-    var countdownDuration = 6; // Set the countdown duration (in seconds)
-    let recognitionActive = false; // Track the state of recognition
 
     // Hàm tạo phép tính
     function generateEquation() {
@@ -151,13 +159,7 @@ window.addEventListener('load', function () {
         };
     }
 
-    // Khởi tạo SpeechRecognition để nhận diện giọng nói
-    const recognition = new webkitSpeechRecognition() || new SpeechRecognition();
 
-    // Cấu hình recognition
-    recognition.continuous = true; // Không nhận diện liên tục
-    recognition.interimResults = false; // Không nhận kết quả tạm thời
-    recognition.lang = 'vi-VN';
 
     // Ensure you are handling the recognition events correctly
     recognition.onend = function () {
