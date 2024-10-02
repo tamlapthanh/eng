@@ -266,9 +266,11 @@ function startSpeechRecognition() {
             
                 // Start a timeout for user response (e.g., 15 seconds)
                 responseTimeout = setTimeout(() => {
-                    updateFeedbackText("responseTimeout, startSpeechRecognition");
                     stopRecognition();
-                    setTimeout(() => { processResult();}, 1500);
+                    setTimeout(() => { 
+                        updateFeedbackText("responseTimeout, startSpeechRecognition");
+                        processResult();
+                    }, 2000);
                 }, countdownDuration * 1000); // countdownDuration * 1000 Set the timeout to duration (in seconds)
             } else {
                 console.warn("Recognition is already active.");
