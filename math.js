@@ -53,7 +53,7 @@ window.addEventListener('load', function () {
     var questionText;
     var responseTimeout; // Timeout for user response
     var countdownInterval; // Interval for countdown timer
-    var countdownDuration = 10; // Set the countdown duration (in seconds)
+    var countdownDuration = 6; // Set the countdown duration (in seconds)
     let recognitionActive = false; // Track the state of recognition
 
     // Hàm tạo phép tính
@@ -201,6 +201,9 @@ window.addEventListener('load', function () {
 
     recognition.onspeechend = function () {
         console.log('Người dùng ngừng nói.');
+        feedbackText.text('Người dùng ngừng nói:' + spokenText);
+        feedbackText.x((stage.width() - feedbackText.getClientRect().width) / 2);
+        layer.draw();  
     };
 
     function processResult() {
@@ -215,11 +218,10 @@ window.addEventListener('load', function () {
                     speakResult('Sai, đúng phải là ' + correctAnswer);
                 }
                 feedbackText.x((stage.width() - feedbackText.getClientRect().width) / 2);
-                layer.draw();
-                setTimeout(generateEquation, 2000);
-            } else {
-                generateEquation();
-            }
+                layer.draw();  
+            } 
+
+            setTimeout(generateEquation, 2000);
         } catch (error) {
             console.log("Có lỗi xảy ra:", error.message);
             alert(error.message);
@@ -238,7 +240,6 @@ window.addEventListener('load', function () {
         console.log('Recognition đã bắt đầu.');
         // Start countdown only after recognition starts
         startCountdown(countdownDuration);
-        layer.draw();
     };
 
 // ** Start speech recognition without user clicking **
@@ -257,13 +258,9 @@ function startSpeechRecognition() {
                 // Start a timeout for user response (e.g., 15 seconds)
                 responseTimeout = setTimeout(() => {
                     recognition.stop(); // Stop recognition after timeout
-                    // recognitionActive = false; // Reset the recognition state
-                    // feedbackText.text("Hết giờ, câu khác");
-                    // feedbackText.x((stage.width() - feedbackText.getClientRect().width) / 2);
-                    // layer.draw();
-                    // speakResult("Hết giờ, câu khác.");
-                    // setTimeout(generateEquation, 2000); // Generate a new question after 2 seconds
-                }, 2000); // countdownDuration * 1000 Set the timeout to duration (in seconds)
+                    recognitionActive = false; // Reset the recognition state
+                    processResult();
+                }, countdownDuration * 1000); // countdownDuration * 1000 Set the timeout to duration (in seconds)
             } else {
                 console.warn("Recognition is already active.");
             }
