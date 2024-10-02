@@ -155,6 +155,7 @@ window.addEventListener('load', function () {
             // Chờ khi giọng nói đã sẵn sàng
         const voices = window.speechSynthesis.getVoices();
         if (voices.length === 0) {
+            updateFeedbackText('Get Voices');
             window.speechSynthesis.onvoiceschanged = () => {
                 utterance.voice = window.speechSynthesis.getVoices()[0];
                 window.speechSynthesis.speak(utterance);
