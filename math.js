@@ -281,7 +281,7 @@ window.addEventListener('load', function () {
 // ** Start speech recognition without user clicking **
 function startSpeechRecognition() {
 
-    updateText("startSpeechRecognition", feedbackText);
+    //updateText("startSpeechRecognition", feedbackText);
            
         // Check if the recognition object is initialized
         if (recognition) {
