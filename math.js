@@ -72,7 +72,6 @@ window.addEventListener('load', function () {
     // Hàm tạo phép tính
     function generateEquation() {
         console.log("Generate Equation");
-        stopRecognition();
 
         // Clear feedback text
         questionText = "";
@@ -176,7 +175,7 @@ window.addEventListener('load', function () {
         clearInterval(countdownInterval);  // Clear the countdown interval
         countdownText.visible(false);  // Hide countdown after recognition ends
         layer.draw();
-        //updateFeedbackText("onend, Recognition đã dừng.");
+        processResult();
     };
 
     recognition.onresult = function (event) {
@@ -189,6 +188,7 @@ window.addEventListener('load', function () {
         if (event.results.length > 0) {
             //spokenText = event.results[0][0].transcript;
             spokenText = event.results[0][0].transcript; // Lấy kết quả cuối cùng
+            updateFeedbackText("spokenText::" + spokenText);
         } else {
             spokenText= "";
             updateFeedbackText("Không có kết quả.");
@@ -267,10 +267,6 @@ function startSpeechRecognition() {
                 // Start a timeout for user response (e.g., 15 seconds)
                 responseTimeout = setTimeout(() => {
                     stopRecognition();
-                    setTimeout(() => { 
-                        updateFeedbackText("responseTimeout, startSpeechRecognition");
-                        processResult();
-                    }, 2000);
                 }, countdownDuration * 1000); // countdownDuration * 1000 Set the timeout to duration (in seconds)
             } else {
                 console.warn("Recognition is already active.");
