@@ -237,7 +237,7 @@ function startSpeechRecognition() {
             if (!recognitionActive) {
                 recognitionActive = true; // Set recognition state to active
                 recognition.start(); // Start listening for speech
-
+/*
                 // Set up event handlers for recognition
                 recognition.onresult = function(event) {
                     // Handle the speech result
@@ -257,7 +257,7 @@ function startSpeechRecognition() {
                     recognitionActive = false; // Reset the recognition state
                     setTimeout(generateEquation, 2000); // Move to the next question after an error
                 };
-
+*/
                 // Start a timeout for user response (e.g., 15 seconds)
                 responseTimeout = setTimeout(() => {
                     recognition.stop(); // Stop recognition after timeout
@@ -265,7 +265,7 @@ function startSpeechRecognition() {
                     feedbackText.text("Thua, sang câu khác.");
                     feedbackText.x((stage.width() - feedbackText.getClientRect().width) / 2);
                     layer.draw();
-                    speakResult("Không trả lời. Hỏi câu tiếp.");
+                    speakResult("Thua, sang câu khác.");
                     setTimeout(generateEquation, 2000); // Generate a new question after 2 seconds
                 }, countdownDuration * 1000); // Set the timeout to duration (in seconds)
             } else {
