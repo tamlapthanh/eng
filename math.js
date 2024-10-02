@@ -141,7 +141,7 @@ window.addEventListener('load', function () {
         updateFeedbackText('Speak Equation');
 
         // Dùng setTimeout để chắc chắn sự kiện được kích hoạt
-        setTimeout(() => { window.speechSynthesis.speak(utterance);}, 100);
+        setTimeout(() => { window.speechSynthesis.speak(utterance);}, 2000);
 
         // Lắng nghe sự kiện "start" khi bắt đầu đọc
         utterance.onstart = function () {
