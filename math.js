@@ -262,7 +262,7 @@ function startSpeechRecognition() {
                 responseTimeout = setTimeout(() => {
                     recognition.stop(); // Stop recognition after timeout
                     recognitionActive = false; // Reset the recognition state
-                    feedbackText.text("Hết thời gian! Chuyển sang câu hỏi khác.");
+                    feedbackText.text("Thua, sang câu khác.");
                     feedbackText.x((stage.width() - feedbackText.getClientRect().width) / 2);
                     layer.draw();
                     speakResult("Không trả lời. Hỏi câu tiếp.");

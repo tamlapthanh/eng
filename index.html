@@ -147,12 +147,19 @@
       display: block; /* Hiển thị nút khi có class .show-button */
     }
 
+    .math {
+      position: absolute;
+      top: 5px;
+      left: 5px;
+      z-index: 10;
+    }
+
   </style>
 </head>
 
 <body>
 
-
+  
   <div id="canvas-container">
 
          <!-- Loading Spinner Overlay -->
@@ -228,12 +235,21 @@
               Student book
             </label>
           </div>
+
           <div class="form-check">
             <input class="form-check-input" type="radio" name="options" id="radio_work_book"  value="work">
             <label class="form-check-label" for="radio_work_book">
               Workbook
             </label>
           </div>
+
+          <div class="form-check">
+            <input class="form-check-input" type="radio" name="options" id="radio_work_book"  value="math_page">
+            <label class="form-check-label" for="radio_work_book">
+              Math Game
+            </label>
+          </div>
+
           <hr class="my-4 border border-primary">
           <div class="input-group flex-nowrap">
             <select id="json-dropdown" class="form-select"></select>

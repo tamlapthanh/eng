@@ -670,11 +670,20 @@ drawingLayer.batchDraw(); // Cập nhật canvas
     $('input[name="options"]').on('click', function() {
       
 
+        // var selectedValue = $(this).val();
+        // if (DATA_TYPE != selectedValue) {
+        //   DATA_TYPE = selectedValue;
+        //   loadPage();
+        //   $('#settingsModal').modal('hide');
+        // }
+
         var selectedValue = $(this).val();
-        if (DATA_TYPE != selectedValue) {
-          DATA_TYPE = selectedValue;
-          loadPage();
-          $('#settingsModal').modal('hide');
+        if (selectedValue === 'math_page') {
+            window.location.href = 'math.html'; // Redirect to newpage.html
+        } else if (DATA_TYPE !== selectedValue) {
+            DATA_TYPE = selectedValue;
+            loadPage();
+            $('#settingsModal').modal('hide');
         }
 
       

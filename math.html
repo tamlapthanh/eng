@@ -22,10 +22,22 @@ body {
     width: 100vw; /* Chiều rộng 100% của viewport */
     height: 100vh; /* Chiều cao 100% của viewport */
   }
+
+  .setting-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      z-index: 10;
+    }
+
   </style>
 </head>
 <body>
 
+  <a href="index.html" class="btn btn-success setting-btn btn-sm" >
+    <i class="bi bi-house-check"></i> 
+  </a>
+  
 <div id="konva-canvas"></div>
 
 <script src="math.js"></script>
