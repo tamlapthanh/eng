@@ -135,33 +135,33 @@ window.addEventListener('load', function () {
     }
 
     function speakEquation(equation) {
-        var utterance = new SpeechSynthesisUtterance(equation);
-        utterance.lang = 'vi-VN';
+        var utteranceSpeak = new SpeechSynthesisUtterance(equation);
+        utteranceSpeak.lang = 'vi-VN';
 
         updateFeedbackText('Speak Equation');
 
         // Dùng setTimeout để chắc chắn sự kiện được kích hoạt
-        setTimeout(() => { window.speechSynthesis.speak(utterance);}, 2000);
+        setTimeout(() => { window.speechSynthesis.speak(utteranceSpeak);}, 2000);
 
         // Lắng nghe sự kiện "start" khi bắt đầu đọc
-        utterance.onstart = function () {
+        utteranceSpeak.onstart = function () {
             updateFeedbackText('Đang đọc câu hỏi...');
         };
 
         // ** Automatically start speech recognition after question is spoken **
-        utterance.onend = function () {
+        utteranceSpeak.onend = function () {
             startSpeechRecognition();  // Bắt đầu nhận diện giọng nói khi đọc xong
         };
     }
 
     function speakResult(text) {
-        var utterance = new SpeechSynthesisUtterance();
-        utterance.text = text;
-        utterance.lang = 'vi-VN';
-        window.speechSynthesis.speak(utterance);
+        var utteranceResult = new SpeechSynthesisUtterance();
+        utteranceResult.text = text;
+        utteranceResult.lang = 'vi-VN';
+        window.speechSynthesis.speak(utteranceResult);
 
         // ** Automatically start speech recognition after question is spoken **
-        utterance.onend = function () {
+        utteranceResult.onend = function () {
             // Dùng setTimeout để chắc chắn sự kiện được kích hoạt
             setTimeout(() => {
                 console.log("setTimeout, speakResult")
