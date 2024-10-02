@@ -176,7 +176,7 @@ window.addEventListener('load', function () {
         clearInterval(countdownInterval);  // Clear the countdown interval
         countdownText.visible(false);  // Hide countdown after recognition ends
         layer.draw();
-        updateFeedbackText("onend, Recognition đã dừng.");
+        //updateFeedbackText("onend, Recognition đã dừng.");
     };
 
     recognition.onresult = function (event) {
@@ -191,6 +191,7 @@ window.addEventListener('load', function () {
             //spokenText = event.results[0][0].transcript;
             spokenText = event.results[0][0].transcript; // Lấy kết quả cuối cùng
         } else {
+            spokenText= "";
             updateFeedbackText("Không có kết quả.");
             console.log('Không có kết quả.');
         }
@@ -207,7 +208,7 @@ window.addEventListener('load', function () {
 
     recognition.onspeechend = function () {
         console.log('onspeechend, Người dùng ngừng nói.');
-        updateFeedbackText('onspeechend, đã ngừng nói:' + spokenText);
+       // updateFeedbackText('onspeechend, đã ngừng nói:' + spokenText);
     };
 
     function updateFeedbackText(text) {
@@ -222,12 +223,12 @@ window.addEventListener('load', function () {
             if (spokenText.length > 0) {
                 var spokenNumber = keepNumbersAndSigns(spokenText);
                 if (spokenNumber && parseInt(spokenNumber) === correctAnswer) {
-                    text = 'Đúng! Kết quả là: ' + spokenNumber;
+                    text = `Đúng, là ${spokenNumber}`;
                 } else {
-                    text = `Sai! Bạn nói: ${spokenNumber}, đúng là: ${correctAnswer}`
+                    text = `Sai, Bạn nói: ${spokenNumber}, đúng là: ${correctAnswer}`;
                 }
             }  else {
-                text = "Không trả lời à.";
+                text = `Không trả lời à, bằng ${correctAnswer} nhé`;
             }
             updateFeedbackText(text);
             speakResult(text);
