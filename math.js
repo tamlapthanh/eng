@@ -6,7 +6,7 @@ window.addEventListener('load', function () {
     var questionText;
     var responseTimeout; // Timeout for user response
     var countdownInterval; // Interval for countdown timer
-    var countdownDuration = 5; // Set the countdown duration (in seconds)
+    var countdownDuration = 4; // Set the countdown duration (in seconds)
     let recognitionActive = false; // Track the state of recognition
 
     // Khởi tạo SpeechRecognition để nhận diện giọng nói
@@ -116,21 +116,37 @@ window.addEventListener('load', function () {
         speakEquation(resultRandom.text);
     }
 
-    // Tạo số ngẫu nhiên trong khoảng từ 0 đến max
-    function getRandomNumber(max) {
-        return Math.floor(Math.random() * (max + 1)); // Số ngẫu nhiên từ 0 đến max
+
+    function createTwoNumbers() {
+        // Tạo hàng chục
+        let tens1 = Math.floor(Math.random() * 11); // Hàng chục của số thứ nhất từ 0 đến 10
+        let tens2 = Math.floor(Math.random() * (10 - tens1 + 1)); // Hàng chục của số thứ hai sao cho tens1 + tens2 <= 10
+    
+        // Tạo hàng đơn vị
+        let unit1 = Math.floor(Math.random() * 11); // Hàng đơn vị của số thứ nhất từ 0 đến 10
+        let unit2 = Math.floor(Math.random() * (10 - unit1 + 1)); // Hàng đơn vị của số thứ hai sao cho unit1 + unit2 <= 10
+    
+        // Tạo hai số đầy đủ
+        let num1 = tens1 * 10 + unit1; // Số thứ nhất
+        let num2 = tens2 * 10 + unit2; // Số thứ hai
+    
+        // Đảm bảo rằng tổng của hai số nhỏ hơn 100
+        if (num1 + num2 >= 100) {
+            // Điều chỉnh nếu cần thiết
+            num2 = 99 - num1; // Điều chỉnh số thứ hai sao cho tổng nhỏ hơn 100
+            // Đảm bảo hàng đơn vị và hàng chục vẫn thỏa mãn
+            if (num2 < 0) {
+                num2 = 0; // Đảm bảo số không âm
+            }
+        }
+    
+        return [num1, num2];
     }
 
     function generateRandomEquation() {
 
-        let num1 = getRandomNumber(10);        // Số thứ nhất ngẫu nhiên từ 0 đến 10
-        let num2 = getRandomNumber(10 - num1); // Số thứ hai ngẫu nhiên sao cho tổng không vượt quá 10
+        let [num1, num2] = createTwoNumbers();
 
-        while (num1 < num2) {
-            num1 = num1 = getRandomNumber(10); // Số thứ nhất
-            num2 = getRandomNumber(10 - num1); // Số thứ hai
-        }
-    
         // Chọn phép toán ngẫu nhiên
         const operation = Math.random() > 0.5 ? '+' : '-';
         let equation, text;
@@ -274,9 +290,24 @@ window.addEventListener('load', function () {
     recognition.onstart = function () {
         console.log('Recognition đã bắt đầu.');
         // Start countdown only after recognition starts
+        playBeep();
         startCountdown(countdownDuration);
         recognitionActive = true; // Set recognition state to active
     };
+
+    function playBeep() {
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)(); // Tạo ngữ cảnh âm thanh
+        const oscillator = audioContext.createOscillator(); // Tạo bộ dao động (oscillator)
+        oscillator.type = 'triangle'; // Đặt loại âm thanh là sine (có thể dùng 'square', 'sawtooth', 'triangle')
+        oscillator.frequency.setValueAtTime(400, audioContext.currentTime); // Đặt tần số âm thanh (440Hz là "A")
+        
+        // Kết nối với đầu ra (loa)
+        oscillator.connect(audioContext.destination);
+        
+        // Phát âm thanh bíp trong 0.5 giây
+        oscillator.start();
+        oscillator.stop(audioContext.currentTime + 0.4); // Âm thanh kéo dài 0.5 giây
+    }
 
 // ** Start speech recognition without user clicking **
 function startSpeechRecognition() {
