@@ -294,7 +294,7 @@ window.addEventListener('load', function () {
     recognition.onstart = function () {
         console.log('Recognition đã bắt đầu.');
         // Start countdown only after recognition starts
-        playBeep();
+        // playBeep();
         startCountdown(countdownDuration);
         recognitionActive = true; // Set recognition state to active
     };
