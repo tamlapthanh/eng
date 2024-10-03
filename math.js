@@ -139,6 +139,10 @@ window.addEventListener('load', function () {
                 num2 = 0; // Đảm bảo số không âm
             }
         }
+
+        if (num1 < num2) {
+            return [num2, num1];
+        }
     
         return [num1, num2];
     }
@@ -163,7 +167,7 @@ window.addEventListener('load', function () {
     }
 
     function getQuestionText(equation) {
-        return ('Câu hỏi: ' + equation + " = ?");
+        return (equation + " = ?");
     }
 
     function replaceAnswerText(answerVal) {
@@ -174,7 +178,7 @@ window.addEventListener('load', function () {
         var utteranceSpeak = new SpeechSynthesisUtterance(equation);
         utteranceSpeak.lang = 'vi-VN';
 
-        updateText('Chuẩn bị ......', feedbackText);
+        updateText('Đang chuẩn bị...', feedbackText);
 
         // Dùng setTimeout để chắc chắn sự kiện được kích hoạt
         setTimeout(() => { window.speechSynthesis.speak(utteranceSpeak);}, 2000);
