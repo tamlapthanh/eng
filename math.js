@@ -115,46 +115,48 @@ window.addEventListener('load', function () {
         // Đọc phép tính
         speakEquation(resultRandom.text);
     }
-
-
-    function createTwoNumbers() {
-        // Tạo hàng chục
-        let tens1 = Math.floor(Math.random() * 11); // Hàng chục của số thứ nhất từ 0 đến 10
-        let tens2 = Math.floor(Math.random() * (10 - tens1 + 1)); // Hàng chục của số thứ hai sao cho tens1 + tens2 <= 10
     
-        // Tạo hàng đơn vị
-        let unit1 = Math.floor(Math.random() * 11); // Hàng đơn vị của số thứ nhất từ 0 đến 10
-        let unit2 = Math.floor(Math.random() * (10 - unit1 + 1)); // Hàng đơn vị của số thứ hai sao cho unit1 + unit2 <= 10
-    
-        // Tạo hai số đầy đủ
-        let num1 = tens1 * 10 + unit1; // Số thứ nhất
-        let num2 = tens2 * 10 + unit2; // Số thứ hai
-    
-        // Đảm bảo rằng tổng của hai số nhỏ hơn 100
-        if (num1 + num2 >= 100) {
-            // Điều chỉnh nếu cần thiết
-            num2 = 99 - num1; // Điều chỉnh số thứ hai sao cho tổng nhỏ hơn 100
-            // Đảm bảo hàng đơn vị và hàng chục vẫn thỏa mãn
-            if (num2 < 0) {
-                num2 = 0; // Đảm bảo số không âm
+    function generateTwoNumbers(operation) {
+        while (true) {
+          // Tạo hai số ngẫu nhiên từ 0 đến 99
+          const num1 = Math.floor(Math.random() * 100);
+          const num2 = Math.floor(Math.random() * 100);
+          
+          // Tách hàng chục và hàng đơn vị của mỗi số
+          const num1Tens = Math.floor(num1 / 10);  // Hàng chục của số 1
+          const num1Ones = num1 % 10;              // Hàng đơn vị của số 1
+          const num2Tens = Math.floor(num2 / 10);  // Hàng chục của số 2
+          const num2Ones = num2 % 10;              // Hàng đơn vị của số 2
+          
+          // Kiểm tra điều kiện
+          if ("+" == operation) {
+            if (
+                (num1 + num2) < 100 && 
+                (num1Ones + num2Ones < 10) &&  // Tổng hàng đơn vị nhỏ hơn 10
+                (num1Tens + num2Tens < 10)     // Tổng hàng chục nhỏ hơn 10
+              ) {
+                return [num1, num2];  // Trả về hai số nếu thỏa mãn điều kiện
+              }
+          } else {
+            if (
+                (num1 + num2) < 100 && 
+                (num1Ones - num2Ones > 0 && num1Ones - num2Ones < 10 &&  // Hiệu hàng đơn vị nhỏ hơn 10
+                num1Tens - num2Tens > 0 && num1Tens - num2Tens < 10)     // Hiệu hàng chục nhỏ hơn 10
+              ) {
+                return [num1, num2];  // Trả về hai số nếu thỏa mãn điều kiện
+              }
             }
         }
+      }
 
-        if (num1 < num2) {
-            return [num2, num1];
-        }
-    
-        return [num1, num2];
-    }
-
-    function generateRandomEquation() {
-
-        let [num1, num2] = createTwoNumbers();
+    function generateRandomEquation() { 
 
         // Chọn phép toán ngẫu nhiên
         const operation = Math.random() > 0.5 ? '+' : '-';
         let equation, text;
-    
+
+        let [num1, num2] = generateTwoNumbers(operation);
+  
         if (operation === '+') {
             equation = `${num1} + ${num2}`;
             text = `${num1} cộng ${num2} bằng bao nhiêu ?`;
