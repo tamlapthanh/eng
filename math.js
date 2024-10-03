@@ -8,6 +8,9 @@ window.addEventListener('load', function () {
     var countdownInterval; // Interval for countdown timer
     var countdownDuration = 8; // Set the countdown duration (in seconds)
     let recognitionActive = false; // Track the state of recognition
+    let num1 = 0;
+    let num2 = 0;
+    let operationStr = "";
 
     // Khởi tạo SpeechRecognition để nhận diện giọng nói
     const recognition = new webkitSpeechRecognition() || new SpeechRecognition();
@@ -132,7 +135,7 @@ window.addEventListener('load', function () {
         x: stage.width() / 2,
         y: stage.height() / 2 + 20,
         text: '',
-        fontSize: 25,
+        fontSize: 20,
         fontFamily: 'Calibri',
         fill: 'blue',
         align: 'center'
@@ -226,7 +229,7 @@ window.addEventListener('load', function () {
           updateNumberText(num2Ones, num2OnesText, false);
 
           updateNumberText("?", resultOnesText,  false);
-          updateNumberText("?", resultTensText,  false);
+          updateNumberText("?", resultTensText,  true);
 
           layer.draw();
           
@@ -254,19 +257,21 @@ window.addEventListener('load', function () {
     function generateRandomEquation() { 
 
         // Chọn phép toán ngẫu nhiên
-        const operation = Math.random() > 0.5 ? '+' : '-';
+       let operation = Math.random() > 0.5 ? '+' : '-';
         let equation, text;
 
-        let [num1, num2] = generateTwoNumbers(operation);
+        [num1, num2] = generateTwoNumbers(operation);
   
         if (operation === '+') {
             equation = `${num1} + ${num2}`;
-            text = `${num1} cộng ${num2} bằng bao nhiêu ?`;
+            operationStr = "cộng";
         } else {
             equation = `${num1} - ${num2}`;
-            text = `${num1} trừ ${num2} bằng bao nhiêu ?`;
+            operationStr = "trừ";
+            
         }
     
+        text = `${num1} ${operationStr} ${num2} bằng bao nhiêu ?`;
         return { equation, text };
     }
 
@@ -384,9 +389,10 @@ window.addEventListener('load', function () {
         const resultTens = Math.floor(correctAnswer / 10);  // Hàng chục của số 1
         const resultOnes = correctAnswer % 10;              // Hàng đơn vị của số 1
 
-        resultOnesText.text(resultOnes);
-        resultTensText.text(resultTens);
+        updateNumberText(resultOnes, resultOnesText,  false);
+        updateNumberText(resultTens, resultTensText,  true);
     }
+
 
     function processResult() {
         try {
@@ -395,10 +401,10 @@ window.addEventListener('load', function () {
             if (spokenText.length > 0) {
                 var spokenNumber = keepNumbersAndSigns(spokenText);
                 if (spokenNumber && parseInt(spokenNumber) === correctAnswer) {
-                    text = `Con ai giỏi vậy ta, đúng là bằng ${parseInt(spokenNumber)}`;
+                    text = `Đúng là con nhà người ta, chính xác ${num1} ${operationStr} ${num2} bằng ${correctAnswer} `;
                     updateText("", debugText);
                 } else {
-                    text = `Sai rồi, bạn nói ${spokenText}, nhưng đúng thì phải là ${parseInt(correctAnswer)}`;
+                    text = `Sai, trả lời là ${spokenText}, nhưng ${num1} ${operationStr} ${num2} bằng ${correctAnswer} `;
                 }
             }  else {
                 text = `Sao không trả lời, bằng ${correctAnswer} nhé`;
@@ -426,20 +432,6 @@ window.addEventListener('load', function () {
         startCountdown(countdownDuration);
         recognitionActive = true; // Set recognition state to active
     };
-
-    function playBeep() {
-        const audioContext = new (window.AudioContext || window.webkitAudioContext)(); // Tạo ngữ cảnh âm thanh
-        const oscillator = audioContext.createOscillator(); // Tạo bộ dao động (oscillator)
-        oscillator.type = 'triangle'; // Đặt loại âm thanh là sine (có thể dùng 'square', 'sawtooth', 'triangle')
-        oscillator.frequency.setValueAtTime(400, audioContext.currentTime); // Đặt tần số âm thanh (440Hz là "A")
-        
-        // Kết nối với đầu ra (loa)
-        oscillator.connect(audioContext.destination);
-        
-        // Phát âm thanh bíp trong 0.5 giây
-        oscillator.start();
-        oscillator.stop(audioContext.currentTime + 0.4); // Âm thanh kéo dài 0.5 giây
-    }
 
 // ** Start speech recognition without user clicking **
 function startSpeechRecognition() {
