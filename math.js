@@ -6,7 +6,7 @@ window.addEventListener('load', function () {
     var questionText;
     var responseTimeout; // Timeout for user response
     var countdownInterval; // Interval for countdown timer
-    var countdownDuration = 4; // Set the countdown duration (in seconds)
+    var countdownDuration = 8; // Set the countdown duration (in seconds)
     let recognitionActive = false; // Track the state of recognition
 
     // Khởi tạo SpeechRecognition để nhận diện giọng nói
@@ -24,6 +24,100 @@ window.addEventListener('load', function () {
         height: window.innerHeight
     });
 
+    var layer = new Konva.Layer();
+    stage.add(layer);
+
+    var num1OnesText = new Konva.Text({
+        x: stage.width() / 2,
+        y: stage.height() / 2 - 180,
+        text: '0',
+        fontSize: 55,
+        fontFamily: 'Calibri',
+        fill: 'salmon',
+        align: 'center'
+    });
+    layer.add(num1OnesText);
+
+    var num1TensText = new Konva.Text({
+        x: stage.width() / 2  - 30,
+        y: stage.height() / 2 - 180,
+        text: '3',
+        fontSize: 55,
+        fontFamily: 'Calibri',
+        fill: 'salmon',
+        align: 'center'
+    });
+    layer.add(num1TensText);
+
+
+    var num2OnesText = new Konva.Text({
+        x: stage.width() / 2 ,
+        y: stage.height() / 2 - 125,
+        text: '6',
+        fontSize: 55,
+        fontFamily: 'Calibri',
+        fill: 'salmon',
+        align: 'center'
+    });
+    layer.add(num2OnesText);
+
+    var num2TensText = new Konva.Text({
+        x: stage.width() / 2  - 30,
+        y: stage.height() / 2 - 125,
+        text: '5',
+        fontSize: 55,
+        fontFamily: 'Calibri',
+        fill: 'salmon',
+        align: 'center'
+    });
+    layer.add(num2TensText);
+
+
+    var resultOnesText = new Konva.Text({
+        x: stage.width() / 2 ,
+        y: stage.height() / 2 - 60,
+        text: '?',
+        fontSize: 55,
+        fontFamily: 'Calibri',
+        fill: 'green',
+        align: 'center'
+    });
+    layer.add(resultOnesText);
+
+    var resultTensText = new Konva.Text({
+        x: stage.width() / 2  - 30,
+        y: stage.height() / 2 - 60,
+        text: '?',
+        fontSize: 55,
+        fontFamily: 'Calibri',
+        fill: 'green',
+        align: 'center'
+    });
+    layer.add(resultTensText);
+
+    var operationText = new Konva.Text({
+        x: stage.width() / 2  - 70,
+        y: stage.height() / 2 - 150,
+        text: '+',
+        fontSize: 55,
+        fontFamily: 'Calibri',
+        fill: 'salmon',
+        align: 'center'
+    });
+    layer.add(operationText);
+
+
+    var lineText = new Konva.Text({
+        x: stage.width() / 2  - 70,
+        y: stage.height() / 2 - 95,
+        text: '--------',
+        fontSize: 55,
+        fontFamily: 'Calibri',
+        fill: 'salmon',
+        align: 'center'
+    });
+    layer.add(lineText);
+
     var equationText = new Konva.Text({
         x: stage.width() / 2,
         y: stage.height() / 2 - 60,
@@ -38,7 +132,7 @@ window.addEventListener('load', function () {
         x: stage.width() / 2,
         y: stage.height() / 2 + 20,
         text: '',
-        fontSize: 30,
+        fontSize: 25,
         fontFamily: 'Calibri',
         fill: 'blue',
         align: 'center'
@@ -48,7 +142,7 @@ window.addEventListener('load', function () {
         x: stage.width() / 2,
         y: stage.height() / 2 + 80,
         text: '',
-        fontSize: 30,
+        fontSize: 50,
         fontFamily: 'Calibri',
         fill: 'red',
         align: 'center',
@@ -58,18 +152,15 @@ window.addEventListener('load', function () {
 
     var debugText = new Konva.Text({
         x: stage.width() / 2,
-        y: stage.height() / 2 + 120,
+        y: stage.height() / 2 + 140,
         text: '',
-        fontSize: 54,
+        fontSize: 20,
         fontFamily: 'Calibri',
         fill: 'green',
         align: 'center'
     });
 
-    var layer = new Konva.Layer();
-    stage.add(layer);
-
-    layer.add(equationText);
+    //layer.add(equationText);
     layer.add(feedbackText);
     layer.add(countdownText);
     layer.add(debugText);
@@ -127,6 +218,17 @@ window.addEventListener('load', function () {
           const num1Ones = num1 % 10;              // Hàng đơn vị của số 1
           const num2Tens = Math.floor(num2 / 10);  // Hàng chục của số 2
           const num2Ones = num2 % 10;              // Hàng đơn vị của số 2
+
+          updateNumberText(operation, operationText, false);
+          updateNumberText(num1Tens, num1TensText, true);
+          updateNumberText(num1Ones, num1OnesText, false);
+          updateNumberText(num2Tens, num2TensText, true);
+          updateNumberText(num2Ones, num2OnesText, false);
+
+          updateNumberText("?", resultOnesText,  false);
+          updateNumberText("?", resultTensText,  false);
+
+          layer.draw();
           
           // Kiểm tra điều kiện
           if ("+" == operation) {
@@ -263,6 +365,29 @@ window.addEventListener('load', function () {
         layer.draw();
     }
 
+    function updateNumberText(text, obj, isCheckZero) {
+        if (isCheckZero) {
+            if ("0" == text || 0 == text) {
+                obj.text(" ");
+            } else {
+                obj.text(text);
+            }
+        } else {
+            obj.text(text);
+        }
+
+        layer.draw();
+    }
+
+    function updateResultText(correctAnswer) {
+ 
+        const resultTens = Math.floor(correctAnswer / 10);  // Hàng chục của số 1
+        const resultOnes = correctAnswer % 10;              // Hàng đơn vị của số 1
+
+        resultOnesText.text(resultOnes);
+        resultTensText.text(resultTens);
+    }
+
     function processResult() {
         try {
             updateText("Spoken Text::" + spokenText, feedbackText);
@@ -278,6 +403,7 @@ window.addEventListener('load', function () {
             }  else {
                 text = `Sao không trả lời, bằng ${correctAnswer} nhé`;
             }
+            updateResultText(correctAnswer);
             updateText(text, feedbackText);
             speakResult(text);
         } catch (error) {
