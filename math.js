@@ -6,11 +6,12 @@ window.addEventListener('load', function () {
     var questionText;
     var responseTimeout; // Timeout for user response
     var countdownInterval; // Interval for countdown timer
-    var countdownDuration = 8; // Set the countdown duration (in seconds)
+    var countdownDuration = 5; // Set the countdown duration (in seconds)
     let recognitionActive = false; // Track the state of recognition
     let num1 = 0;
     let num2 = 0;
     let operationStr = "";
+    let maxNum = 10; // phạm vi 10
 
     // Khởi tạo SpeechRecognition để nhận diện giọng nói
     const recognition = new webkitSpeechRecognition() || new SpeechRecognition();
@@ -36,7 +37,7 @@ window.addEventListener('load', function () {
         text: '0',
         fontSize: 55,
         fontFamily: 'Calibri',
-        fill: 'salmon',
+        fill: 'red',
         align: 'center'
     });
     layer.add(num1OnesText);
@@ -47,7 +48,7 @@ window.addEventListener('load', function () {
         text: '3',
         fontSize: 55,
         fontFamily: 'Calibri',
-        fill: 'salmon',
+        fill: 'red',
         align: 'center'
     });
     layer.add(num1TensText);
@@ -59,7 +60,7 @@ window.addEventListener('load', function () {
         text: '6',
         fontSize: 55,
         fontFamily: 'Calibri',
-        fill: 'salmon',
+        fill: 'red',
         align: 'center'
     });
     layer.add(num2OnesText);
@@ -70,7 +71,7 @@ window.addEventListener('load', function () {
         text: '5',
         fontSize: 55,
         fontFamily: 'Calibri',
-        fill: 'salmon',
+        fill: 'red',
         align: 'center'
     });
     layer.add(num2TensText);
@@ -104,7 +105,7 @@ window.addEventListener('load', function () {
         text: '+',
         fontSize: 55,
         fontFamily: 'Calibri',
-        fill: 'salmon',
+        fill: 'red',
         align: 'center'
     });
     layer.add(operationText);
@@ -177,7 +178,13 @@ window.addEventListener('load', function () {
     // Hàm tạo phép tính
     function generateEquation() {
         console.log("Generate Equation");
-        recognitionActive = false;
+        if (recognitionActive) {
+            recognitionActive = false;
+            recognition.stop();
+            recognition.abort();
+        } else {
+            recognitionActive = false;
+        }
 
         // Clear feedback text
         questionText = "";
@@ -206,32 +213,53 @@ window.addEventListener('load', function () {
         debugText.x((stage.width() - debugText.getClientRect().width) / 2);
         layer.draw();
 
+   
         // Đọc phép tính
         speakEquation(resultRandom.text);
+    }
+
+    function updateAllNumberText(operation, num1Tens, num1Ones, num2Tens, num2Ones) {
+        updateNumberText(operation, operationText, false);
+        updateNumberText(num1Tens, num1TensText, true);
+        updateNumberText(num1Ones, num1OnesText, false);
+        updateNumberText(num2Tens, num2TensText, true);
+        updateNumberText(num2Ones, num2OnesText, false);
+
+        updateNumberText("?", resultOnesText,  false);
+        if (100 == maxNum) {
+            updateNumberText("?", resultTensText,  true);
+        } else {
+            updateNumberText(" ", resultTensText,  true);
+        }
+        
+        layer.draw();
     }
     
     function generateTwoNumbers(operation) {
         while (true) {
-          // Tạo hai số ngẫu nhiên từ 0 đến 99
-          const num1 = Math.floor(Math.random() * 100);
-          const num2 = Math.floor(Math.random() * 100);
+          // Tạo hai số ngẫu nhiên từ 0 đến maxNum (10 or 100)
+          let num1 = Math.floor(Math.random() * maxNum);
+          let num2 = Math.floor(Math.random() * maxNum);
           
+          let num1Tens, num1Ones, num2Tens, num2Ones;
           // Tách hàng chục và hàng đơn vị của mỗi số
-          const num1Tens = Math.floor(num1 / 10);  // Hàng chục của số 1
-          const num1Ones = num1 % 10;              // Hàng đơn vị của số 1
-          const num2Tens = Math.floor(num2 / 10);  // Hàng chục của số 2
-          const num2Ones = num2 % 10;              // Hàng đơn vị của số 2
+          if (10 == maxNum) {
+            if ("-" == operation && num1 < num2) {
+                const num = num1;
+                num1 = num2;
+                num2 = num;
+            } 
+            updateAllNumberText(operation, 0, num1, 0, num2);
+            return [num1, num2];
 
-          updateNumberText(operation, operationText, false);
-          updateNumberText(num1Tens, num1TensText, true);
-          updateNumberText(num1Ones, num1OnesText, false);
-          updateNumberText(num2Tens, num2TensText, true);
-          updateNumberText(num2Ones, num2OnesText, false);
+          } else {
+           num1Tens = Math.floor(num1 / 10);  // Hàng chục của số 1
+           num1Ones = num1 % 10;              // Hàng đơn vị của số 1
+           num2Tens = Math.floor(num2 / 10);  // Hàng chục của số 2
+           num2Ones = num2 % 10;              // Hàng đơn vị của số 2
+        }
 
-          updateNumberText("?", resultOnesText,  false);
-          updateNumberText("?", resultTensText,  true);
-
-          layer.draw();
+        updateAllNumberText(operation, num1Tens, num1Ones, num2Tens, num2Ones);
           
           // Kiểm tra điều kiện
           if ("+" == operation) {
@@ -492,57 +520,73 @@ function startSpeechRecognition() {
         layer.draw();
     });
 
-        // Zoom In button
+        // reboot
     $('#reboot-app').on('click', function () {
         generateEquation();
     });
-});
 
-function keepNumbersAndSigns(text) {
-    const numbersMap = {
-        "không": 0,
-        "một": 1,
-        "hai": 2,
-        "hài": 2,
-        "ba": 3,
-        "bà": 3,
-        "bốn": 4,
-        "bún": 4,
-        "nam": 4,
-        "nằm": 5,
-        "năm": 5,
-        "sáo": 6,
-        "sáu": 6,
-        "bảy": 7,
-        "tám": 8,
-        "chín": 9,
-        "chính": 9,
-        "chí": 9,
-        "mười": 10,
-        "mười một": 11,
-        "mười hai": 12,
-        "hai mươi": 20,
-        "ba mươi": 30,
-        "bốn mươi": 40,
-        "năm mươi": 50,
-        "sáu mươi": 60,
-        "bảy mươi": 70,
-        "tám mươi": 80,
-        "chín mươi": 90
-    };
+    // Event listener for radio button click/change
+    $('input[name="options"]').on('click', function() {
+        maxNum = $(this).val();
+    });
 
-    if (text) {
-        // Convert text to lowercase and split by spaces
-        console.log(text);
-        const words = text.toLowerCase().split(' ');
-        const word = words[words.length - 1];
+    $('#duration-dropdown').change(function () {
+        countdownDuration = $(this).val();
+    });    
 
-        // Convert each word using the numbersMap
-        let convertedText = numbersMap[word] !== undefined ? numbersMap[word] : word;
-        console.log(convertedText);
+    $('#id_close_modal').on('click', function () {
+        generateEquation();
+        $('#settingsModal').modal('hide');
+    });
 
-        // Filter out non-numeric characters, keeping digits and signs
-        return String(convertedText).replace(/[^0-9+-]/g, '');
+    function keepNumbersAndSigns(text) {
+        const numbersMap = {
+            "không": 0,
+            "một": 1,
+            "hai": 2,
+            "hài": 2,
+            "ba": 3,
+            "bà": 3,
+            "bốn": 4,
+            "bún": 4,
+            "nam": 4,
+            "nằm": 5,
+            "năm": 5,
+            "sáo": 6,
+            "sáu": 6,
+            "bảy": 7,
+            "tám": 8,
+            "chín": 9,
+            "chính": 9,
+            "chí": 9,
+            "mười": 10,
+            "mười một": 11,
+            "mười hai": 12,
+            "hai mươi": 20,
+            "ba mươi": 30,
+            "bốn mươi": 40,
+            "năm mươi": 50,
+            "sáu mươi": 60,
+            "bảy mươi": 70,
+            "tám mươi": 80,
+            "chín mươi": 90
+        };
+
+        if (text) {
+            // Convert text to lowercase and split by spaces
+            console.log(text);
+            const words = text.toLowerCase().split(' ');
+            const word = words[words.length - 1];
+
+            // Convert each word using the numbersMap
+            let convertedText = numbersMap[word] !== undefined ? numbersMap[word] : word;
+            console.log(convertedText);
+
+            // Filter out non-numeric characters, keeping digits and signs
+            return String(convertedText).replace(/[^0-9+-]/g, '');
+        }
+        return ''; // Return an empty string if the input is null or empty
     }
-    return ''; // Return an empty string if the input is null or empty
-}
+
+
+}); // emd of load
