@@ -112,17 +112,19 @@ window.addEventListener('load', function () {
     });
     layer.add(operationText);
 
-
+    //text: '--------',
     var lineText = new Konva.Text({
         x: stage.width() / 2  - 70,
         y: stage.height() / 2 - 95,
-        text: '--------',
-        fontSize: 55,
+        text: '  \u0336 \u0336 \u0336 \u0336 \u0336 \u0336 \u0336 \u0336 \u0336 \u0336 \u0336 \u0336 \u0336   ',
+        fontSize: 40,
         fontFamily: 'Calibri',
-        fill: 'salmon',
-        align: 'center'
+        fill: 'red',
+        align: 'center', 
+        visible: true
     });
     layer.add(lineText);
+    layer.draw();
 
     var equationText = new Konva.Text({
         x: stage.width() / 2,
