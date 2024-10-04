@@ -640,19 +640,51 @@ function startSpeechRecognition() {
         };
 
         if (text) {
+
             // Convert text to lowercase and split by spaces
             console.log(text);
-            const words = text.toLowerCase().split(' ');
-            const word = words[words.length - 1];
 
-            // Convert each word using the numbersMap
-            let convertedText = numbersMap[word] !== undefined ? numbersMap[word] : word;
-            console.log(convertedText);
+            text = text.trim();
 
-            // Filter out non-numeric characters, keeping digits and signs
-            return String(convertedText).replace(/[^0-9+-]/g, '');
+            if (numbersMap[text] !== undefined) {
+                return numbersMap[text];
+            }
+
+            return getLastNumberFromString(text);
         }
         return ''; // Return an empty string if the input is null or empty
+    }
+
+    function extractNumbersFromString(str) {
+        // Sử dụng regex để loại bỏ tất cả ký tự không phải số
+        const numbers = str.replace(/[^\d]/g, ''); 
+        return numbers; // Trả về chuỗi chỉ chứa số
+    }
+
+    function hasNumbers(str) {
+        // Kiểm tra xem chuỗi có chứa ký tự số không
+        const regex = /\d/; // \d đại diện cho bất kỳ chữ số nào từ 0 đến 9
+        return regex.test(str); // Trả về true nếu có số, false nếu không có
+    }
+
+    function getLastNumberFromString(numbersMap, str) {
+        // Tách chuỗi bằng khoảng trắng
+        const parts = str.trim().split(/\s+/);
+        // Duyệt từ cuối mảng về đầu
+        for (let i = parts.length - 1; i >= 0; i--) {
+            const part = parts[i].trim();
+            // Kiểm tra xem phần tử có phải là số không
+            if (!isNaN(part)) {
+                return Number(part); // Trả về số nếu tìm thấy
+            } else if (numbersMap[part] !== undefined) {
+               return numbersMap[part];
+            } else {
+                if (hasNumbers(part)) {
+                    return extractNumbersFromString(part);
+                }
+            }
+        }
+        return str; // Nếu không tìm thấy số nào, trả về null
     }
 
 
