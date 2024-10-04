@@ -12,6 +12,8 @@ window.addEventListener('load', function () {
     let num2 = 0;
     let operationStr = "";
     let maxNum = 10; // phạm vi 10
+    let mathType = 1; // 1: plus, 2: multi
+    let multiplication = 2; // phép tính nhân
 
     // Khởi tạo SpeechRecognition để nhận diện giọng nói
     const recognition = new webkitSpeechRecognition() || new SpeechRecognition();
@@ -235,7 +237,14 @@ window.addEventListener('load', function () {
         layer.draw();
     }
     
-    function generateTwoNumbers(operation) {
+    function generateMultiplication(operation) {
+        let num1 = multiplication;
+        let num2 = Math.floor(Math.random() * 9) + 1;
+        updateAllNumberText(operation, 0, num1, 0, num2);
+        return [num1, num2]; 
+    }
+
+    function generatePlusTwoNumbers(operation) {
         while (true) {
           // Tạo hai số ngẫu nhiên từ 0 đến maxNum (10 or 100)
           let num1 = Math.floor(Math.random() * maxNum);
@@ -285,18 +294,27 @@ window.addEventListener('load', function () {
     function generateRandomEquation() { 
 
         // Chọn phép toán ngẫu nhiên
-       let operation = Math.random() > 0.5 ? '+' : '-';
+        let operation = Math.random() > 0.5 ? '+' : '-';
         let equation, text;
 
-        [num1, num2] = generateTwoNumbers(operation);
-  
+        if (mathType == 1) {
+            // phep cong
+            [num1, num2] = generatePlusTwoNumbers(operation);
+        } else {
+            // phep nhan
+            operation = "x";
+            [num1, num2] = generateMultiplication(operation);
+        }
+        
         if (operation === '+') {
             equation = `${num1} + ${num2}`;
             operationStr = "cộng";
-        } else {
+        } else if (operation === '-1') {
             equation = `${num1} - ${num2}`;
             operationStr = "trừ";
-            
+        } else {
+            equation = `${num1} * ${num2}`;
+            operationStr = "nhân";
         }
     
         text = `${num1} ${operationStr} ${num2} bằng bao nhiêu ?`;
@@ -310,9 +328,11 @@ window.addEventListener('load', function () {
     function replaceAnswerText(answerVal) {
         return questionText.replace("?", answerVal);
     }
+ 
 
     function speakEquation(equation) {
-        var utteranceSpeak = new SpeechSynthesisUtterance(equation);
+        var utteranceSpeak = new SpeechSynthesisUtterance();
+        utteranceSpeak.text = equation
         utteranceSpeak.lang = 'vi-VN';
 
         updateText('Đang chuẩn bị...', feedbackText);
@@ -526,9 +546,17 @@ function startSpeechRecognition() {
     });
 
     // Event listener for radio button click/change
-    $('input[name="options"]').on('click', function() {
+    $('input[name="options_plus"]').on('click', function() {
         maxNum = $(this).val();
     });
+
+    $('input[name="options_math_type"]').on('click', function() {
+        mathType = $(this).val();
+    });
+
+    $('#multi-dropdown').change(function () {
+        multiplication = $(this).val();
+    });  
 
     $('#duration-dropdown').change(function () {
         countdownDuration = $(this).val();
