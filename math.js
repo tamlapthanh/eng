@@ -347,7 +347,7 @@ window.addEventListener('load', function () {
         if (operation === '+') {
             equation = `${num1} + ${num2}`;
             operationStr = "cộng";
-        } else if (operation === '-1') {
+        } else if (operation === '-') {
             equation = `${num1} - ${num2}`;
             operationStr = "trừ";
         } else {
