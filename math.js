@@ -497,6 +497,8 @@ window.addEventListener('load', function () {
                 updateResultText(correctAnswer);
                 updateText(text, feedbackText);
                 speakResult(text);
+            } else {
+                isCancel = false;
             }
         } catch (error) {
             console.log("Có lỗi xảy ra:", error.message);
