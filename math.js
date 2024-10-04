@@ -603,7 +603,7 @@ function startSpeechRecognition() {
 
     $('#id_close_modal').on('click', function () {
         generateEquation(true);
-        
+        $('#settingsModal').modal('hide');
     });
 
     function keepNumbersAndSigns(text) {
