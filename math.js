@@ -2,8 +2,9 @@ window.addEventListener('load', function () {
 
     var correctAnswer;
     var recognitionTimeout;
-    var spokenText;
-    var questionText;
+    // var spokenText;
+    // var questionText;
+
     var responseTimeout; // Timeout for user response
     var countdownInterval; // Interval for countdown timer
     var countdownDuration = 5; // Set the countdown duration (in seconds)
@@ -16,7 +17,9 @@ window.addEventListener('load', function () {
     let multiplication = 2; // phép tính nhân
     let rightAnswerNum = 0;
     let wrongAnswerNum = 0;
+    let isCancel = false;
 
+    
     // Khởi tạo SpeechRecognition để nhận diện giọng nói
     const recognition = new webkitSpeechRecognition() || new SpeechRecognition();
 
@@ -35,174 +38,168 @@ window.addEventListener('load', function () {
     var layer = new Konva.Layer();
     stage.add(layer);
 
-    function initLayer() {
-        layer.removeChildren(); 
-        rightAnswerNum = 0;
-        wrongAnswerNum = 0;
+    let rightAnswerText = new Konva.Text({
+        x: 10,
+        y: 80,
+        text: `Đúng: ${rightAnswerNum}`,
+        fontSize: 20,
+        fontFamily: 'Calibri',
+        fill: 'green',
+        align: 'center'
+    });
+    layer.add(rightAnswerText);
 
-        window.rightAnswerText = new Konva.Text({
-            x: 10,
-            y: 80,
-            text: `Đúng: ${rightAnswerNum}`,
-            fontSize: 20,
-            fontFamily: 'Calibri',
-            fill: 'green',
-            align: 'center'
-        });
-        layer.add(rightAnswerText);
-    
-        window.wrongAnswerText = new Konva.Text({
-            x: 10,
-            y: 50,
-            text: `Sai: ${wrongAnswerNum}`,
-            fontSize: 20,
-            fontFamily: 'Calibri',
-            fill: 'red',
-            align: 'center'
-        });
-        layer.add(wrongAnswerText);
-    
-        window.num1OnesText = new Konva.Text({
-            x: stage.width() / 2,
-            y: stage.height() / 2 - 180,
-            text: '0',
-            fontSize: 55,
-            fontFamily: 'Calibri',
-            fill: 'red',
-            align: 'center'
-        });
-        layer.add(num1OnesText);
-    
-        window.num1TensText = new Konva.Text({
-            x: stage.width() / 2  - 30,
-            y: stage.height() / 2 - 180,
-            text: '3',
-            fontSize: 55,
-            fontFamily: 'Calibri',
-            fill: 'red',
-            align: 'center'
-        });
-        layer.add(num1TensText);
-    
-    
-        window.num2OnesText = new Konva.Text({
-            x: stage.width() / 2 ,
-            y: stage.height() / 2 - 125,
-            text: '6',
-            fontSize: 55,
-            fontFamily: 'Calibri',
-            fill: 'red',
-            align: 'center'
-        });
-        layer.add(num2OnesText);
-    
-        window.num2TensText = new Konva.Text({
-            x: stage.width() / 2  - 30,
-            y: stage.height() / 2 - 125,
-            text: '5',
-            fontSize: 55,
-            fontFamily: 'Calibri',
-            fill: 'red',
-            align: 'center'
-        });
-        layer.add(num2TensText);
-    
-    
-        window.resultOnesText = new Konva.Text({
-            x: stage.width() / 2 ,
-            y: stage.height() / 2 - 60,
-            text: '?',
-            fontSize: 55,
-            fontFamily: 'Calibri',
-            fill: 'green',
-            align: 'center'
-        });
-        layer.add(resultOnesText);
-    
-        window.resultTensText = new Konva.Text({
-            x: stage.width() / 2  - 30,
-            y: stage.height() / 2 - 60,
-            text: '?',
-            fontSize: 55,
-            fontFamily: 'Calibri',
-            fill: 'green',
-            align: 'center'
-        });
-        layer.add(resultTensText);
-    
-        window.operationText = new Konva.Text({
-            x: stage.width() / 2  - 70,
-            y: stage.height() / 2 - 150,
-            text: '+',
-            fontSize: 55,
-            fontFamily: 'Calibri',
-            fill: 'red',
-            align: 'center'
-        });
-        layer.add(operationText);
-    
-        //text: '--------',
-        window.lineText = new Konva.Text({
-            x: stage.width() / 2  - 70,
-            y: stage.height() / 2 - 95,
-            text: '  \u0336 \u0336 \u0336 \u0336 \u0336 \u0336 \u0336 \u0336 \u0336 \u0336 \u0336 \u0336 \u0336   ',
-            fontSize: 40,
-            fontFamily: 'Calibri',
-            fill: 'red',
-            align: 'center', 
-            visible: true
-        });
-        layer.add(lineText);
-        layer.draw();
-    
-        window.equationText = new Konva.Text({
-            x: stage.width() / 2,
-            y: stage.height() / 2 - 60,
-            text: 'Đang tải...',
-            fontSize: 55,
-            fontFamily: 'Calibri',
-            fill: 'salmon',
-            align: 'center'
-        });
-    
-        window.feedbackText = new Konva.Text({
-            x: stage.width() / 2,
-            y: stage.height() / 2 + 20,
-            text: '',
-            fontSize: 20,
-            fontFamily: 'Calibri',
-            fill: 'blue',
-            align: 'center'
-        });
-    
-        window.countdownText = new Konva.Text({
-            x: stage.width() / 2,
-            y: stage.height() / 2 + 80,
-            text: '',
-            fontSize: 50,
-            fontFamily: 'Calibri',
-            fill: 'red',
-            align: 'center',
-            visible: false  // Hidden initially
-        });
-    
-    
-        window.debugText = new Konva.Text({
-            x: stage.width() / 2,
-            y: stage.height() / 2 + 140,
-            text: '',
-            fontSize: 20,
-            fontFamily: 'Calibri',
-            fill: 'green',
-            align: 'center'
-        });
-    
-        //layer.add(equationText);
-        layer.add(feedbackText);
-        layer.add(countdownText);
-        layer.add(debugText);
-        layer.draw();
-    }
+    let wrongAnswerText = new Konva.Text({
+        x: 10,
+        y: 50,
+        text: `Sai: ${wrongAnswerNum}`,
+        fontSize: 20,
+        fontFamily: 'Calibri',
+        fill: 'red',
+        align: 'center'
+    });
+    layer.add(wrongAnswerText);
+
+    let num1OnesText = new Konva.Text({
+        x: stage.width() / 2,
+        y: stage.height() / 2 - 180,
+        text: '0',
+        fontSize: 55,
+        fontFamily: 'Calibri',
+        fill: 'red',
+        align: 'center'
+    });
+    layer.add(num1OnesText);
+
+    let num1TensText = new Konva.Text({
+        x: stage.width() / 2  - 30,
+        y: stage.height() / 2 - 180,
+        text: '3',
+        fontSize: 55,
+        fontFamily: 'Calibri',
+        fill: 'red',
+        align: 'center'
+    });
+    layer.add(num1TensText);
+
+
+    let num2OnesText = new Konva.Text({
+        x: stage.width() / 2 ,
+        y: stage.height() / 2 - 125,
+        text: '6',
+        fontSize: 55,
+        fontFamily: 'Calibri',
+        fill: 'red',
+        align: 'center'
+    });
+    layer.add(num2OnesText);
+
+    let num2TensText = new Konva.Text({
+        x: stage.width() / 2  - 30,
+        y: stage.height() / 2 - 125,
+        text: '5',
+        fontSize: 55,
+        fontFamily: 'Calibri',
+        fill: 'red',
+        align: 'center'
+    });
+    layer.add(num2TensText);
+
+
+    let resultOnesText = new Konva.Text({
+        x: stage.width() / 2 ,
+        y: stage.height() / 2 - 60,
+        text: '?',
+        fontSize: 55,
+        fontFamily: 'Calibri',
+        fill: 'green',
+        align: 'center'
+    });
+    layer.add(resultOnesText);
+
+    let resultTensText = new Konva.Text({
+        x: stage.width() / 2  - 30,
+        y: stage.height() / 2 - 60,
+        text: '?',
+        fontSize: 55,
+        fontFamily: 'Calibri',
+        fill: 'green',
+        align: 'center'
+    });
+    layer.add(resultTensText);
+
+    let operationText = new Konva.Text({
+        x: stage.width() / 2  - 70,
+        y: stage.height() / 2 - 150,
+        text: '+',
+        fontSize: 55,
+        fontFamily: 'Calibri',
+        fill: 'red',
+        align: 'center'
+    });
+    layer.add(operationText);
+
+    //text: '--------',
+    let lineText = new Konva.Text({
+        x: stage.width() / 2  - 70,
+        y: stage.height() / 2 - 95,
+        text: '------------',
+        fontSize: 40,
+        fontFamily: 'Calibri',
+        fill: 'red',
+        align: 'center', 
+        visible: true
+    });
+    layer.add(lineText);
+    layer.draw();
+
+    let equationText = new Konva.Text({
+        x: stage.width() / 2,
+        y: stage.height() / 2 - 60,
+        text: 'Đang tải...',
+        fontSize: 55,
+        fontFamily: 'Calibri',
+        fill: 'salmon',
+        align: 'center'
+    });
+
+    let feedbackText = new Konva.Text({
+        x: stage.width() / 2,
+        y: stage.height() / 2 + 20,
+        text: '',
+        fontSize: 20,
+        fontFamily: 'Calibri',
+        fill: 'blue',
+        align: 'center'
+    });
+
+    let countdownText = new Konva.Text({
+        x: stage.width() / 2,
+        y: stage.height() / 2 + 80,
+        text: '',
+        fontSize: 50,
+        fontFamily: 'Calibri',
+        fill: 'red',
+        align: 'center',
+        visible: false  // Hidden initially
+    });
+
+
+    let debugText = new Konva.Text({
+        x: stage.width() / 2,
+        y: stage.height() / 2 + 140,
+        text: '',
+        fontSize: 20,
+        fontFamily: 'Calibri',
+        fill: 'green',
+        align: 'center'
+    });
+
+    //layer.add(equationText);
+    layer.add(feedbackText);
+    layer.add(countdownText);
+    layer.add(debugText);
+    layer.draw();
 
     
 
@@ -213,17 +210,16 @@ window.addEventListener('load', function () {
     // Hàm tạo phép tính
     function generateEquation(init) {
         console.log("Generate Equation");
-
-        if (init){
-            initLayer();
-        }
+        
 
         if (recognitionActive) {
             recognitionActive = false;
+            isCancel = true;
             recognition.stop();
             recognition.abort();
         } else {
             recognitionActive = false;
+            isCancel = false;
         }
 
         // Clear feedback text
@@ -482,24 +478,26 @@ window.addEventListener('load', function () {
 
     function processResult() {
         try {
-            updateText("Spoken Text::" + spokenText, feedbackText);
-            let text = "";
-            if (spokenText.length > 0) {
-                var spokenNumber = keepNumbersAndSigns(spokenText);
-                if (spokenNumber && parseInt(spokenNumber) === correctAnswer) {
-                    text = `Đúng là con nhà người ta, chính xác ${num1} ${operationStr} ${num2} bằng ${correctAnswer} `;
-                    updateText("", debugText);
-                    updateNumberText(`Đúng: ${rightAnswerNum++}`, rightAnswerText);
-                } else {
-                    text = `Sai, trả lời là ${spokenText}, nhưng ${num1} ${operationStr} ${num2} bằng ${correctAnswer} `;
-                    updateNumberText(`Sai: ${++wrongAnswerNum}`, wrongAnswerText);
+            if (isCancel == false) {
+                updateText("Spoken Text::" + spokenText, feedbackText);
+                let text = "";
+                if (spokenText.length > 0) {
+                    var spokenNumber = keepNumbersAndSigns(spokenText);
+                    if (spokenNumber && parseInt(spokenNumber) === correctAnswer) {
+                        text = `Giỏi quá, đúng rồi, ${num1} ${operationStr} ${num2} bằng ${correctAnswer} `;
+                        updateText("", debugText);
+                        updateNumberText(`Đúng: ${rightAnswerNum++}`, rightAnswerText);
+                    } else {
+                        text = `Sai, trả lời là ${spokenText}, nhưng ${num1} ${operationStr} ${num2} phải bằng ${correctAnswer} `;
+                        updateNumberText(`Sai: ${++wrongAnswerNum}`, wrongAnswerText);
+                    }
+                }  else {
+                    text = `Sao không trả lời, bằng ${correctAnswer} nhé`;
                 }
-            }  else {
-                text = `Sao không trả lời, bằng ${correctAnswer} nhé`;
+                updateResultText(correctAnswer);
+                updateText(text, feedbackText);
+                speakResult(text);
             }
-            updateResultText(correctAnswer);
-            updateText(text, feedbackText);
-            speakResult(text);
         } catch (error) {
             console.log("Có lỗi xảy ra:", error.message);
             alert(error.message);
@@ -568,19 +566,20 @@ function startSpeechRecognition() {
     // Khởi động chương trình
     generateEquation(true);
 
-    // Đảm bảo canvas tự động điều chỉnh kích thước khi thay đổi kích thước cửa sổ
-    window.addEventListener('resize', function () {
-        stage.width(window.innerWidth);
-        stage.height(window.innerHeight);
-        equationText.x((stage.width() - equationText.getClientRect().width) / 2);
-        feedbackText.x((stage.width() - feedbackText.getClientRect().width) / 2);
-        countdownText.x((stage.width() - countdownText.getClientRect().width) / 2);
-        layer.draw();
+    
+    // Lắng nghe sự kiện resize của window
+    window.addEventListener('resize', function() {
+        isCancel = true;
+        recognition.stop();
+        // Tải lại trang
+        location.reload();
     });
+
 
         // reboot
     $('#reboot-app').on('click', function () {
-
+        isCancel = true;
+        recognition.stop();
         generateEquation(false);
     });
 
@@ -602,6 +601,8 @@ function startSpeechRecognition() {
     });    
 
     $('#id_close_modal').on('click', function () {
+        isCancel = true;
+        recognition.stop();
         generateEquation(true);
         $('#settingsModal').modal('hide');
     });
