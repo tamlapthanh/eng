@@ -639,18 +639,18 @@ function startSpeechRecognition() {
             "chín mươi": 90
         };
 
-        if (text) {
+        if (text !== undefined) {
 
             // Convert text to lowercase and split by spaces
             console.log(text);
 
-            text = text.trim();
+            text = String(text).trim();
 
             if (numbersMap[text] !== undefined) {
                 return numbersMap[text];
             }
 
-            return getLastNumberFromString(text);
+            return getLastNumberFromString(numbersMap, text);
         }
         return ''; // Return an empty string if the input is null or empty
     }
@@ -672,7 +672,7 @@ function startSpeechRecognition() {
         const parts = str.trim().split(/\s+/);
         // Duyệt từ cuối mảng về đầu
         for (let i = parts.length - 1; i >= 0; i--) {
-            const part = parts[i].trim();
+            const part = String(parts[i]).trim();
             // Kiểm tra xem phần tử có phải là số không
             if (!isNaN(part)) {
                 return Number(part); // Trả về số nếu tìm thấy
