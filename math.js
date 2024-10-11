@@ -17,6 +17,7 @@ window.addEventListener('load', function () {
     let multiplication = 2; // phép tính nhân
     let rightAnswerNum = 0;
     let wrongAnswerNum = 0;
+    let ignoreAnswerNum = 0;
     let isCancel = false;
 
     
@@ -38,6 +39,17 @@ window.addEventListener('load', function () {
     var layer = new Konva.Layer();
     stage.add(layer);
 
+    let wrongAnswerText = new Konva.Text({
+        x: 10,
+        y: 50,
+        text: `Sai: ${wrongAnswerNum}`,
+        fontSize: 20,
+        fontFamily: 'Calibri',
+        fill: 'red',
+        align: 'center'
+    });
+    layer.add(wrongAnswerText);
+
     let rightAnswerText = new Konva.Text({
         x: 10,
         y: 80,
@@ -49,16 +61,16 @@ window.addEventListener('load', function () {
     });
     layer.add(rightAnswerText);
 
-    let wrongAnswerText = new Konva.Text({
+    let ignoreAnswerText = new Konva.Text({
         x: 10,
-        y: 50,
-        text: `Sai: ${wrongAnswerNum}`,
+        y: 110,
+        text: `Bỏ qua: ${ignoreAnswerNum}`,
         fontSize: 20,
         fontFamily: 'Calibri',
-        fill: 'red',
+        fill: 'brown',
         align: 'center'
     });
-    layer.add(wrongAnswerText);
+    layer.add(ignoreAnswerText);
 
     let num1OnesText = new Konva.Text({
         x: stage.width() / 2,
@@ -493,6 +505,7 @@ window.addEventListener('load', function () {
                     }
                 }  else {
                     text = `Sao không trả lời, bằng ${correctAnswer} nhé`;
+                    updateNumberText(`Bỏ qua: ${ignoreAnswerNum++}`, ignoreAnswerText);
                 }
                 updateResultText(correctAnswer);
                 updateText(text, feedbackText);
