@@ -3,62 +3,92 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Loading Icon Example</title>
-    <link href="https://stackpath.bootstrapcdn.com/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <style>
-        .overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(255, 255, 255, 0.8);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 9999; /* High z-index to cover all content */
-            display: none; /* Hidden by default */
-        }
-
-        .spinner-icon {
-            font-size: 3rem;
-            color: #007bff; /* Customize color */
-            animation: spin 1.5s linear infinite;
-        }
-
-        @keyframes spin {
-            0% {
-                transform: rotate(0deg);
-            }
-            100% {
-                transform: rotate(360deg);
-            }
-        }
-    </style>
+    <title>Vertical Addition Alignment</title>
+    <script src="https://cdn.jsdelivr.net/npm/konva@8.3.8/konva.min.js"></script>
 </head>
 <body>
-    <!-- Main content -->
-    <div class="container mt-5">
-        <h1>My Content</h1>
-        <button class="btn btn-primary" onclick="showSpinner()">Show Spinner</button>
-        <button class="btn btn-secondary" onclick="hideSpinner()">Hide Spinner</button>
-        <!-- More content here -->
-    </div>
-
-    <!-- Loading Spinner Overlay -->
-    <div class="overlay" id="spinnerOverlay">
-        <i class="fas fa-spinner spinner-icon"></i>
-    </div>
-
+    <div id="container"></div>
     <script>
-        function showSpinner() {
-            document.getElementById('spinnerOverlay').style.display = 'flex';
+        // Khởi tạo Konva Stage
+        const stage = new Konva.Stage({
+            container: 'container', // ID của phần tử chứa
+            width: 300,
+            height: 200,
+        });
+
+        // Tạo một layer
+        const layer = new Konva.Layer();
+        stage.add(layer);
+
+        // Hàm căn chỉnh các chữ số từ phải qua trái
+        function getAlignedText(text, maxLength) {
+            const textLength = text.length;
+            const paddingSpaces = ' '.repeat(Math.max(0, maxLength - textLength)); // Đảm bảo không có giá trị âm
+            return paddingSpaces + text;
         }
 
-        function hideSpinner() {
-            document.getElementById('spinnerOverlay').style.display = 'none';
-        }
+        // Số thứ nhất và số thứ hai
+        const num1 = 34;
+        const num2 = 56;
+
+        // Đo độ dài của số lớn nhất để căn hàng đơn vị và hàng chục
+        const maxLength = Math.max(num1.toString().length, num2.toString().length);
+
+        // Tách số thành hàng chục và hàng đơn vị để hiển thị
+        const num1Str = num1.toString().padStart(maxLength, ' ');
+        const num2Str = num2.toString().padStart(maxLength, ' ');
+
+        // Vị trí xuất phát cho việc căn chỉnh theo cột
+        const startX = stage.width() / 2;
+        const startY = 20;
+
+        // Tạo text cho số thứ nhất (hiển thị theo chiều dọc)
+        const num1Text = new Konva.Text({
+            x: startX - 20, // canh giữa theo trục ngang
+            y: startY,      // vị trí theo trục dọc
+            text: num1Str,  // Căn chỉnh hàng chục và hàng đơn vị
+            fontSize: 30,
+            fontFamily: 'Calibri',
+            fill: 'black',
+        });
+
+        // Tạo text cho số thứ hai (hiển thị theo chiều dọc)
+        const num2Text = new Konva.Text({
+            x: startX - 20,
+            y: startY + 50, // Cách số thứ nhất 50px
+            text: `+${num2Str}`, // Thêm dấu cộng trước số thứ hai
+            fontSize: 30,
+            fontFamily: 'Calibri',
+            fill: 'black',
+        });
+
+        // Đường gạch ngang phân cách kết quả
+        const line = new Konva.Line({
+            points: [startX - 40, startY + 100, startX + 40, startY + 100], // Tạo đường ngang
+            stroke: 'black',
+            strokeWidth: 2,
+        });
+
+        // Kết quả của phép cộng
+        const result = num1 + num2;
+        const resultStr = result.toString().padStart(maxLength, ' ');
+        const resultText = new Konva.Text({
+            x: startX - 20,
+            y: startY + 110,
+            text: resultStr, // Hiển thị kết quả căn theo hàng chục và đơn vị
+            fontSize: 30,
+            fontFamily: 'Calibri',
+            fill: 'black',
+        });
+
+        // Thêm các đối tượng vào layer
+        layer.add(num1Text);
+        layer.add(num2Text);
+        layer.add(line);
+        layer.add(resultText);
+
+        // Vẽ layer
+        layer.draw();
     </script>
 </body>
 </html>
