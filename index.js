@@ -321,14 +321,11 @@ $(document).ready(function () {
   }
   function playSound(soundFileName, icon) {
     resetIcons();
-    $('#playing-sound').removeClass("btn-danger");
 
     if (soundFileName && "x" != soundFileName.trim()) {
         const [fileName, start, end] = getSoundStartEnd(soundFileName);
         console.log(fileName, start, end);
         let url = global_const.PATH_SOUND + fileName.trim() + ".mp3";
-
-        $("#playing-sound").show();
 
         // Kiểm tra và dừng âm thanh nếu đang phát
         if (audio && !audio.paused) {
@@ -351,25 +348,24 @@ $(document).ready(function () {
                         audio.currentTime = 0;
                     }
                     changeImageUrl(iconPath_1, icon);
-                    $("#playing-sound").hide();
                 }
             });
         } else {
             audio.addEventListener("ended", (event) => {
                 console.log("addEventListener ended");
                 changeImageUrl(iconPath_1, icon);
-                $("#playing-sound").hide();
             });
         }
 
+
         // Phát âm thanh nếu không có lỗi
-        audio.play().then(() => {
-            changeImageUrl(iconPath_2, icon);
-        }).catch(error => {
-            console.error('Playback failed:', error);
-            // Ẩn nút phát nếu gặp lỗi
-            $("#playing-sound").hide();
-        });
+      changeImageUrl(iconPath_2, icon);
+      audio.play().then(() => {
+        console.log("Playing");
+      }).catch(error => {
+          console.error('Playback failed:', error);
+      });
+
     }
 }
 
@@ -593,7 +589,7 @@ $(document).ready(function () {
     if (audio) {
       audio.pause();
     }
-    $("#playing-sound").hide();
+
     // Xóa tất cả các play icons
     playIcons.forEach(function (icon) {
       icon.destroy();  // Xóa biểu tượng khỏi layer
@@ -650,19 +646,6 @@ $(document).ready(function () {
     }
 
   }
-
-
-  $('#playing-sound').on('click', function () {
-    if (audio) {
-      if (audio.paused) {
-        audio.play();
-        $('#playing-sound').removeClass("btn-danger");
-      } else {
-        audio.pause();
-        $('#playing-sound').addClass("btn-danger");
-      }
-    }
-  });
 
   previous_page.on('click', function () {
     CURRENT_PAGE_INDEX = CURRENT_PAGE_INDEX - 1;
@@ -735,35 +718,65 @@ $(document).ready(function () {
 
     // Function to play a sound
     function playNextSound() {
+
       if (playAllIndex >= iconCount) {
         return; // All sounds played
       }
 
       let icon = icons[playAllIndex]; // Get the current icon
-      let sound = icon.getAttr('sound'); // Get the sound associated with the icon
-      console.log("playNextSound::" + sound);
+      let soundFileName = icon.getAttr('sound'); // Get the sound associated with the icon
+      if (soundFileName && soundFileName.trim() !== 'x') {
 
-      if (sound && sound.trim() !== 'x') {
-        let url = global_const.PATH_SOUND + sound.trim() + ".mp3";
+        const [fileName, start, end] = getSoundStartEnd(soundFileName);
+        console.log(fileName, start, end);
 
-        // Play the sound
-        if (audio) {
-          audio.pause();
-        }
+        let url = global_const.PATH_SOUND + fileName.trim() + ".mp3";
+
+        // Kiểm tra và dừng âm thanh nếu đang phát
+        if (audio && !audio.paused) {
+          audio.pause();        // Tạm dừng âm thanh hiện tại
+          audio.currentTime = 0; // Đặt lại thời gian phát về đầu
+        } 
+
         audio = new Audio(url);
         changeImageUrl(iconPath_2, icon); // Change the icon to indicate it's playing
-        audio.play();
+        if (start) {
+          audio.currentTime = start;
+            // Theo dõi thời gian và dừng âm thanh khi đạt đến thời gian kết thúc
+            audio.addEventListener('timeupdate', () => {
+              if (audio.currentTime >= end) {
+                  console.log("addEventListener timeupdate");
+                  if (!audio.paused) {
+                      audio.pause();
+                      audio.currentTime = 0;
+                  }
+                  changeImageUrl(iconPath_1, icon);
+                                playAllIndex++; // Move to the next icon
+              playNextSound(); // Recursively play the next sound
+              }
+          });
 
-        // Listen for when the sound finishes playing
-        audio.addEventListener('ended', function () {
-          changeImageUrl(iconPath_1, icon); // Reset the icon after playing
-          playAllIndex++; // Move to the next icon
-          playNextSound(); // Recursively play the next sound
+        } else {
+            // Listen for when the sound finishes playing
+            audio.addEventListener('ended', function () {
+              console.log("addEventListener ended");
+              changeImageUrl(iconPath_1, icon); // Reset the icon after playing
+              playAllIndex++; // Move to the next icon
+              playNextSound(); // Recursively play the next sound
+            });
+        }
+
+        // Phát âm thanh nếu không có lỗi
+        audio.play().then(() => {
+          console.log("Playing");
+        }).catch(error => {
+            console.error('Playback failed:', error);
         });
+
+
       } else {
         // If no sound or "x" is found, skip to the next icon
-        index++;
-        playAllIndex();
+        playAllIndex++;
       }
     }
 

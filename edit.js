@@ -325,7 +325,7 @@ $(document).ready(function () {
                 sound: iconSoundUrlInput.val()
             });
             iconLayer.batchDraw();
-            $('#settingsModal').modal('hide');
+           // $('#settingsModal').modal('hide');
         }
     });
 
