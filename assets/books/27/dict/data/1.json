@@ -1,0 +1,14 @@
+{
+    "background": "1.webp",
+    "icons": [
+        {
+            "x": 0.5,
+            "y": 0.17598326668100248,
+            "sound": " ocpd_01_the_alphabet"
+        }
+    ],
+    "backgroundSize": {
+        "width": 554.8127177700349,
+        "height": 730
+    }
+}

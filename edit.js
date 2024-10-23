@@ -10,6 +10,11 @@ $(document).ready(function () {
     // let MAX_PAGE_NUM = 65;
     // let MIN_PAGE_NUM = 1;
 
+    // let PATH_ROOT = "assets/books/27/dict";
+    // let CURRENT_PAGE_INDEX = 1;
+    // let MAX_PAGE_NUM = 87;
+    // let MIN_PAGE_NUM = 1;
+
     let SERVER_URL = "http://localhost:8080/api/save-json";
     const SAVAE_FOLDER = "D:/Working/Study/KHoi/zizi/english27/" + PATH_ROOT + "/data/";
 
@@ -533,8 +538,8 @@ $(document).ready(function () {
     // populateDropdown(jsonDropdown, "/assets/page.json");
     // populateDropdown(imageDropdown, "/assets/img.json");
 
-    popDropdown($('#json-dropdown'), "Page", 4, MAX_PAGE_NUM);
-    popDropdown($('#image-dropdown'), "Image", 4, MAX_PAGE_NUM)
+    popDropdown($('#json-dropdown'), "Page", MIN_PAGE_NUM, MAX_PAGE_NUM);
+    popDropdown($('#image-dropdown'), "Image", MIN_PAGE_NUM, MAX_PAGE_NUM)
 
     loadPage();
 

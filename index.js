@@ -7,12 +7,11 @@ $(document).ready(function () {
     draggable: false,
   });
 
-  //let PATH_ROOT = "assets/books/27/student";
   let PATH_ROOT = "assets/books/27/";
   let DATA_TYPE = "student";
   let CURRENT_PAGE_INDEX = 4;
   let MAX_PAGE_NUM = 66;
-  let MIN_PAGE_NUM = 4;
+  let MIN_PAGE_NUM = 1;
 
   const global_const = {
     get PATH_ASSETS_IMG() {
@@ -690,26 +689,35 @@ $(document).ready(function () {
 
   // Event listener for radio button click/change
   $('input[name="options"]').on('click', function () {
-
-
-    // var selectedValue = $(this).val();
-    // if (DATA_TYPE != selectedValue) {
-    //   DATA_TYPE = selectedValue;
-    //   loadPage();
-    //   $('#settingsModal').modal('hide');
-    // }
-
     var selectedValue = $(this).val();
     if (selectedValue === 'math_page') {
       window.location.href = 'math.html'; // Redirect to newpage.html
     } else if (DATA_TYPE !== selectedValue) {
       DATA_TYPE = selectedValue;
+      setPageInfo(DATA_TYPE);
+      popDropdown($('#json-dropdown'), "Page", MIN_PAGE_NUM, MAX_PAGE_NUM, CURRENT_PAGE_INDEX);
       loadPage();
       $('#settingsModal').modal('hide');
     }
 
 
   });
+
+  function setPageInfo(dataType) {
+    if ("student" == dataType) {
+       CURRENT_PAGE_INDEX = 4;
+       MAX_PAGE_NUM = 66;
+       MIN_PAGE_NUM = 1;
+    } if ("work" == dataType) {
+      CURRENT_PAGE_INDEX = 1;
+      MAX_PAGE_NUM = 65;
+      MIN_PAGE_NUM = 1;
+    } if ("dict" == dataType) {
+      CURRENT_PAGE_INDEX = 2;
+      MAX_PAGE_NUM = 87;
+      MIN_PAGE_NUM = 1;
+    } 
+  }
 
   // Function to play sounds in sequence
   let playAllIndex = 0;
