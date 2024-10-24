@@ -13,6 +13,9 @@ $(document).ready(function () {
   let MAX_PAGE_NUM = 66;
   let MIN_PAGE_NUM = 1;
 
+  let SERVER_URL = "http://localhost:8080/api/save-json";
+  const SAVAE_FOLDER = "D:/Working/Study/KHoi/zizi/english27/" + PATH_ROOT + "/data/";
+
   const global_const = {
     get PATH_ASSETS_IMG() {
       //   PATH_ASSETS_IMG = "assets/img/";
@@ -795,6 +798,87 @@ $(document).ready(function () {
   $('#play-all-btn').on('click', function () {
     playAllIndex = 0;
     playAllSounds(playIcons); // Pass in the array of play icons
+  });
+
+  function getFileNameFromUrl(imageSrc) {
+      try {
+          const url = new URL(imageSrc);
+          const pathname = url.pathname;
+          const fileName = pathname.substring(pathname.lastIndexOf('/') + 1);
+          return fileName;
+      } catch (e) {
+          console.error('Invalid URL:', e);
+          return null;
+      }
+  }
+
+  function sendJsonToServer() {
+      const backgroundSize = {
+          width: backgroundImage.width(),
+          height: backgroundImage.height(),
+      };
+
+      const fileName = getFileNameFromUrl(backgroundImage.image().src);
+
+        // Lấy tất cả đường line đã vẽ và chuyển thành dạng JSON
+      const drawnLines = lines.map(line => ({
+        points: line.points().map((point, index) => 
+            index % 2 === 0 
+            ? (point - backgroundImage.x()) / backgroundSize.width // Tọa độ X
+            : (point - backgroundImage.y()) / backgroundSize.height // Tọa độ Y
+        ),
+        stroke: line.stroke(), // Màu của nét vẽ
+        strokeWidth: line.strokeWidth(), // Độ rộng của nét vẽ
+        lineCap: line.lineCap(), // Hình dạng đầu nét vẽ
+        lineJoin: line.lineJoin() // Hình dạng khi các đoạn thẳng nối nhau
+    }));
+
+
+      const jsonData = {
+          background: fileName,
+          icons: playIcons.map(icon => ({
+              x: (icon.x() - backgroundImage.x()) / backgroundSize.width,
+              y: (icon.y() - backgroundImage.y()) / backgroundSize.height,
+              sound: icon.getAttr('sound')
+          })),
+          lines: drawnLines,
+          backgroundSize: backgroundSize
+      };
+
+      console.log('Data to send:', JSON.stringify(jsonData, null, 2)); // Kiểm tra dữ liệu trước khi gửi
+
+
+      const saveFileName = $('#json-dropdown').val() + ".json";
+
+      // Tạo đối tượng dữ liệu JSON
+      const dataToSend = {
+          file_name: saveFileName,
+          save_folder: SAVAE_FOLDER,
+          json: JSON.stringify(jsonData) // Chuyển đổi đối tượng thành chuỗi JSON
+      };
+
+      fetch(SERVER_URL, {
+          method: 'POST',
+          headers: {
+              'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(dataToSend)
+      })
+          .then(response => response)
+          .then(data => {
+              console.log('Success:', data);
+              alert('JSON data sent successfully!');
+          })
+          .catch(error => {
+              console.log('Error:', error);
+              alert('Failed to send JSON data.');
+          });
+  }
+
+
+   // Event listener for the "Send JSON to Server" button
+  $('#send-json').click(function () {
+    sendJsonToServer();
   });
 
   popDropdown($('#json-dropdown'), "Page", MIN_PAGE_NUM, MAX_PAGE_NUM, CURRENT_PAGE_INDEX);

@@ -1,14 +1,1 @@
-{
-    "background": "19.webp",
-    "icons": [
-        {
-            "x": 0.5,
-            "y": 0.17598326668100248,
-            "sound": " ocpd_01_the_alphabet"
-        }
-    ],
-    "backgroundSize": {
-        "width": 554.8127177700349,
-        "height": 730
-    }
-}
+{"background":"19.webp","icons":[{"x":0.5252232142857142,"y":0.05852294922068501,"sound":"ocpd_10_the_kitchen"},{"x":0.27999751984126975,"y":0.8120447645563513,"sound":"ocpd_10_the_kitchen_activity"}],"backgroundSize":{"width":713.6283185840708,"height":945}}

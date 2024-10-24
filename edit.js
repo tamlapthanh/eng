@@ -1,19 +1,19 @@
 $(document).ready(function () {
 
-    let PATH_ROOT = "assets/books/27/student";
-    let CURRENT_PAGE_INDEX = 4;
-    let MAX_PAGE_NUM = 66;
-    let MIN_PAGE_NUM = 4;
+    // let PATH_ROOT = "assets/books/27/student";
+    // let CURRENT_PAGE_INDEX = 4;
+    // let MAX_PAGE_NUM = 66;
+    // let MIN_PAGE_NUM = 4;
 
     // let PATH_ROOT = "assets/books/27/work";
     // let CURRENT_PAGE_INDEX = 1;
     // let MAX_PAGE_NUM = 65;
     // let MIN_PAGE_NUM = 1;
 
-    // let PATH_ROOT = "assets/books/27/dict";
-    // let CURRENT_PAGE_INDEX = 1;
-    // let MAX_PAGE_NUM = 87;
-    // let MIN_PAGE_NUM = 1;
+    let PATH_ROOT = "assets/books/27/dict";
+    let CURRENT_PAGE_INDEX = 1;
+    let MAX_PAGE_NUM = 87;
+    let MIN_PAGE_NUM = 1;
 
     let SERVER_URL = "http://localhost:8080/api/save-json";
     const SAVAE_FOLDER = "D:/Working/Study/KHoi/zizi/english27/" + PATH_ROOT + "/data/";
@@ -342,9 +342,9 @@ $(document).ready(function () {
             width: backgroundImage.width(),
             height: backgroundImage.height(),
         };
-
+        const fileName = getFileNameFromUrl(backgroundImage.image().src);
         const data = {
-            background: backgroundImage.image().src.replace(global_const.PATH_ASSETS_IMG, ""),
+            background: fileName,
             icons: playIcons.map(icon => ({
                 x: (icon.x() - backgroundImage.x()) / backgroundSize.width,
                 y: (icon.y() - backgroundImage.y()) / backgroundSize.height,

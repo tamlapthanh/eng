@@ -1,14 +1,1 @@
-{
-    "background": "21.webp",
-    "icons": [
-        {
-            "x": 0.5,
-            "y": 0.17598326668100248,
-            "sound": " ocpd_01_the_alphabet"
-        }
-    ],
-    "backgroundSize": {
-        "width": 554.8127177700349,
-        "height": 730
-    }
-}
+{"background":"21.webp","icons":[{"x":0.5686631944444444,"y":0.05746474816248395,"sound":"ocpd_12_my_bedroom"},{"x":0.25757688492063485,"y":0.8149628677386939,"sound":"ocpd_12_my_bedroom_activity"}],"backgroundSize":{"width":713.6283185840708,"height":945}}

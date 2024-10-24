@@ -1,14 +1,1 @@
-{
-    "background": "14.webp",
-    "icons": [
-        {
-            "x": 0.5,
-            "y": 0.17598326668100248,
-            "sound": " ocpd_01_the_alphabet"
-        }
-    ],
-    "backgroundSize": {
-        "width": 554.8127177700349,
-        "height": 730
-    }
-}
+{"background":"14.webp","icons":[{"x":0.1650917658730158,"y":0.8712213619190977,"sound":"ocpd_06_clothes_activity"}],"backgroundSize":{"width":713.6283185840708,"height":945}}
