@@ -12,9 +12,12 @@ $(document).ready(function () {
   let CURRENT_PAGE_INDEX = 4;
   let MAX_PAGE_NUM = 66;
   let MIN_PAGE_NUM = 1;
+  let ICON_SIZE = 18;
 
-  let SERVER_URL = "http://localhost:8080/api/save-json";
-  const SAVAE_FOLDER = "D:/Working/Study/KHoi/zizi/english27/" + PATH_ROOT + "/data/";
+ let SERVER_URL = "http://localhost:8080/api/sheets/data";
+ // let SERVER_URL = "https://zizi-app.onrender.com/api/sheets/data";
+  const SAVAE_FOLDER = "D:/Working/Study/KHoi/zizi/english27/" + PATH_ROOT + DATA_TYPE + "/data/";
+
 
   const global_const = {
     get PATH_ASSETS_IMG() {
@@ -68,11 +71,12 @@ $(document).ready(function () {
 
     if (isDrawingMode) {
       // Thay đổi icon thành "cọ vẽ"
-      $('#draw-icon').removeClass('bi-hand-index').addClass('bi-brush');
+      $('#draw-icon').removeClass('bi-brush').addClass('bi-hand-index');
       $('#draw-mode-btn').removeClass('btn-warning').addClass('btn-danger');
-      $('button').not('#draw-mode-btn, #undo-btn').prop('disabled', true);
+      $('button').not('#draw-mode-btn, #undo-btn, #send-json').prop('disabled', true);
       $('#undo-btn').removeClass('d-none').addClass('d-block');
-
+      $('#send-json').removeClass('d-none').addClass('d-block');
+      
       // Khóa drag và vô hiệu hóa lắng nghe của các lớp khác
       stage.draggable(false);
 
@@ -86,10 +90,12 @@ $(document).ready(function () {
       backgroundLayer.listening(true);
       iconLayer.listening(true);
       drawingLayer.listening(false); // Vô hiệu hóa lắng nghe lớp vẽ
-      $('#draw-icon').removeClass('bi-brush').addClass('bi-hand-index');
+      $('#draw-icon').removeClass('bi-hand-index').addClass('bi-brush');
       $('#draw-mode-btn').removeClass('btn-danger').addClass('btn-warning'); // Đổi màu
       $('button').prop('disabled', false);
       $('#undo-btn').removeClass('d-block').addClass('d-none');
+      $('#send-json').removeClass('d-block').addClass('d-none');
+      
     }
 
     // Cập nhật stage
@@ -383,16 +389,16 @@ $(document).ready(function () {
   }
 
   function getIconSize() {
-    let icon_size = 21;
+    let icon_size = ICON_SIZE;
     const width = window.innerWidth;
     const userAgent = navigator.userAgent.toLowerCase();
 
     if (width < 768 || /mobile|android|iphone|ipod|blackberry|iemobile|opera mini/i.test(userAgent)) {
-      icon_size = 21;
+      icon_size = ICON_SIZE;
     } else if ((width >= 768 && width <= 1024) || /tablet|ipad|playbook|silk/i.test(userAgent)) {
-      icon_size = 21;
+      icon_size = ICON_SIZE;
     } else {
-      icon_size = 21;
+      icon_size = ICON_SIZE;
     }
     return icon_size;
   }
@@ -463,7 +469,7 @@ $(document).ready(function () {
 
       iconLayer.add(icon);
       icon.moveToTop();
-      iconLayer.batchDraw();
+      //iconLayer.batchDraw();
     });
   }
 
@@ -481,13 +487,20 @@ $(document).ready(function () {
         playIcons.forEach(icon => icon.destroy());
         playIcons = [];
 
+        // Xóa các line hiện có
+        lines.forEach(line => line.destroy());
+        lines = [];
+
         // Tính toán vị trí mới của các icon dựa trên kích thước hình nền mới
-        data.icons.forEach(iconData => {
-          const iconX = iconData.x * backgroundImage.width() + backgroundImage.x();
-          const iconY = iconData.y * backgroundImage.height() + backgroundImage.y();
-          addPlayIcon(iconX, iconY, iconData.sound);
-        });
-        hideSpinner();
+        if (data.icons) {
+          data.icons.forEach(iconData => {
+            const iconX = iconData.x * backgroundImage.width() + backgroundImage.x();
+            const iconY = iconData.y * backgroundImage.height() + backgroundImage.y();
+            addPlayIcon(iconX, iconY, iconData.sound);
+          });
+       }
+
+        loadLines();
       };
       imageObj.src = global_const.PATH_ASSETS_IMG + data.background;
 
@@ -515,7 +528,6 @@ $(document).ready(function () {
           backgroundLayer.clear();
           iconLayer.clear();
           loadJsonBackgroundAndIcons(data);
-
         })
         .catch(error => console.error('Error loading JSON:', error));
     } else {
@@ -523,6 +535,56 @@ $(document).ready(function () {
       loadPage();
     }
     fitStageIntoParentContainer();
+  }
+
+  function loadLines() {
+   
+    const dataToSend = {
+        sheet_name: DATA_TYPE.toString(),
+        page: CURRENT_PAGE_INDEX.toString()
+    };
+
+    fetch(SERVER_URL, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(dataToSend)
+    })
+    .then(response => response.json()) // This actually calls the json() function
+    .then(data => {
+        hideSpinner();
+        console.log(data);
+        if (data.lines) {
+          data.lines.forEach(savedLine => {
+            const points = savedLine.points.map((point, index) => 
+              index % 2 === 0 
+                  ? (point * backgroundImage.width()) + backgroundImage.x()  // Adjusted for X
+                  : (point * backgroundImage.height()) + backgroundImage.y() // Adjusted for Y
+          );
+        
+            // Tạo đối tượng Line từ Konva
+            const line = new Konva.Line({
+              points: points,
+              stroke: savedLine.stroke,
+              strokeWidth: savedLine.strokeWidth,
+              lineCap: savedLine.lineCap,
+              lineJoin: savedLine.lineJoin
+            });
+          
+            // Thêm line vào layer
+            drawingLayer.add(line);
+            lines.push(line);
+          });
+        }
+
+        drawingLayer.batchDraw();
+    })
+    .catch(error => {
+        hideSpinner();
+        drawingLayer.batchDraw();
+       // console.error('There was a problem with the fetch operation:', error);
+    });
   }
 
 
@@ -846,16 +908,13 @@ $(document).ready(function () {
       };
 
       console.log('Data to send:', JSON.stringify(jsonData, null, 2)); // Kiểm tra dữ liệu trước khi gửi
-
-
-      const saveFileName = $('#json-dropdown').val() + ".json";
-
       // Tạo đối tượng dữ liệu JSON
+      const page = $('#json-dropdown').val() ;
       const dataToSend = {
-          file_name: saveFileName,
-          save_folder: SAVAE_FOLDER,
-          json: JSON.stringify(jsonData) // Chuyển đổi đối tượng thành chuỗi JSON
-      };
+        sheet_name: DATA_TYPE,
+        page: page,
+        json: JSON.stringify(jsonData) // Chuyển đổi đối tượng thành chuỗi JSON
+    };
 
       fetch(SERVER_URL, {
           method: 'POST',
