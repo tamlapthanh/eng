@@ -14,8 +14,8 @@ $(document).ready(function () {
   let MIN_PAGE_NUM = 1;
   let ICON_SIZE = 18;
 
- let SERVER_URL = "http://localhost:8080/api/sheets/data";
- // let SERVER_URL = "https://zizi-app.onrender.com/api/sheets/data";
+ //let SERVER_URL = "http://localhost:8080/api/sheets/data";
+  let SERVER_URL = "https://zizi-app.onrender.com/api/sheets/data";
   const SAVAE_FOLDER = "D:/Working/Study/KHoi/zizi/english27/" + PATH_ROOT + DATA_TYPE + "/data/";
 
 
@@ -500,7 +500,31 @@ $(document).ready(function () {
           });
        }
 
-        loadLines();
+        if (data.lines) {
+          data.lines.forEach(savedLine => {
+            const points = savedLine.points.map((point, index) => 
+              index % 2 === 0 
+                  ? (point * backgroundImage.width()) + backgroundImage.x()  // Adjusted for X
+                  : (point * backgroundImage.height()) + backgroundImage.y() // Adjusted for Y
+          );
+        
+            // Tạo đối tượng Line từ Konva
+            const line = new Konva.Line({
+              points: points,
+              stroke: savedLine.stroke,
+              strokeWidth: savedLine.strokeWidth,
+              lineCap: savedLine.lineCap,
+              lineJoin: savedLine.lineJoin
+            });
+          
+            // Thêm line vào layer
+            drawingLayer.add(line);
+            lines.push(line);
+          });
+        }
+
+        hideSpinner();
+        drawingLayer.batchDraw();
       };
       imageObj.src = global_const.PATH_ASSETS_IMG + data.background;
 
@@ -521,19 +545,45 @@ $(document).ready(function () {
 
     showSpinner();
 
-    if (CURRENT_PAGE_INDEX) {
-      const urlJson = global_const.PATH_JSON.replace("X", CURRENT_PAGE_INDEX);
-      fetchWithCache(urlJson)
-        .then(data => {
-          backgroundLayer.clear();
-          iconLayer.clear();
-          loadJsonBackgroundAndIcons(data);
-        })
-        .catch(error => console.error('Error loading JSON:', error));
-    } else {
-      CURRENT_PAGE_INDEX = MAX_PAGE_NUM;
-      loadPage();
-    }
+    const dataToSend = {
+      sheet_name: DATA_TYPE.toString(),
+      page: CURRENT_PAGE_INDEX.toString()
+    };
+
+    console.log(dataToSend);
+    fetch(SERVER_URL, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(dataToSend)
+    })
+    .then(response => response.json()) // This actually calls the json() function
+    .then(data => {
+        backgroundLayer.clear();
+        iconLayer.clear();
+        loadJsonBackgroundAndIcons(data);
+    })
+    .catch(error => {
+        hideSpinner();
+        drawingLayer.batchDraw();
+      // console.error('There was a problem with the fetch operation:', error);
+    });
+
+    // if (CURRENT_PAGE_INDEX) {
+    //   const urlJson = global_const.PATH_JSON.replace("X", CURRENT_PAGE_INDEX);
+    //   fetchWithCache(urlJson)
+    //     .then(data => {
+    //       backgroundLayer.clear();
+    //       iconLayer.clear();
+    //       loadJsonBackgroundAndIcons(data);
+    //     })
+    //     .catch(error => console.error('Error loading JSON:', error));
+    // } else {
+    //   CURRENT_PAGE_INDEX = MAX_PAGE_NUM;
+    //   loadPage();
+    // }
+
     fitStageIntoParentContainer();
   }
 
@@ -585,6 +635,7 @@ $(document).ready(function () {
         drawingLayer.batchDraw();
        // console.error('There was a problem with the fetch operation:', error);
     });
+
   }
 
 
