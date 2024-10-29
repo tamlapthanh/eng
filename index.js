@@ -14,10 +14,11 @@ $(document).ready(function () {
   let MIN_PAGE_NUM = 1;
   let ICON_SIZE = 18;
 
- //let SERVER_URL = "http://localhost:8080/api/sheets/data";
-  let SERVER_URL = "https://zizi-app.onrender.com/api/sheets/data";
-  const SAVAE_FOLDER = "D:/Working/Study/KHoi/zizi/english27/" + PATH_ROOT + DATA_TYPE + "/data/";
+  // Create a new Map
+  let APP_DATA = new Map();
 
+  const RUN_URL_LOCAL = "http://localhost:8080/api/sheets/data";
+  const RUN_URL_SERVER = "https://zizi-app.onrender.com/api/sheets/data";
 
   const global_const = {
     get PATH_ASSETS_IMG() {
@@ -35,7 +36,16 @@ $(document).ready(function () {
     get PATH_JSON() {
       //  PATH_JSON = "assets/data/X.json";
       return PATH_ROOT + DATA_TYPE + "/data/X.json";
+    },
+    get SERVER_URL() {
+      const hostname = window.location.hostname;
+      if (hostname === 'localhost' || hostname === '127.0.0.1') {
+        return RUN_URL_LOCAL;
+      } else {
+        return RUN_URL_SERVER;
+      }
     }
+
   };
 
   const backgroundLayer = new Konva.Layer();
@@ -66,7 +76,7 @@ $(document).ready(function () {
   let lastLine;
   let lines = []; // Mảng lưu các đường vẽ
 
-  $('#draw-mode-btn').on('click', function () {
+  function drawProcess() {
     isDrawingMode = !isDrawingMode;
 
     if (isDrawingMode) {
@@ -100,7 +110,9 @@ $(document).ready(function () {
 
     // Cập nhật stage
     stage.batchDraw();
-  });
+  }
+
+
 
   // Hàm chuyển đổi tọa độ từ canvas sang tọa độ của stage (đã được zoom)
   function getRelativePointerPosition() {
@@ -147,6 +159,10 @@ $(document).ready(function () {
       isDrawing = false;  // Dừng vẽ
       lastLine = null;    // Xóa đường vẽ cuối cùng
     }
+  });
+
+  $('#draw-mode-btn').on('click', function () {
+    drawProcess();
   });
 
   $('#undo-btn').on('click', function () {
@@ -473,177 +489,117 @@ $(document).ready(function () {
     });
   }
 
-
-
-  function loadJsonBackgroundAndIcons(data) {
-    if (data.background) {
-      const imageObj = new Image();
-      imageObj.onload = function () {
-        //if (backgroundImage) backgroundImage.destroy();
-
-        adjustBackgroundImage(imageObj);
-
-        // Xóa các icon hiện có
-        playIcons.forEach(icon => icon.destroy());
-        playIcons = [];
-
-        // Xóa các line hiện có
-        lines.forEach(line => line.destroy());
-        lines = [];
-
-        // Tính toán vị trí mới của các icon dựa trên kích thước hình nền mới
-        if (data.icons) {
-          data.icons.forEach(iconData => {
-            const iconX = iconData.x * backgroundImage.width() + backgroundImage.x();
-            const iconY = iconData.y * backgroundImage.height() + backgroundImage.y();
-            addPlayIcon(iconX, iconY, iconData.sound);
-          });
-       }
-
-        if (data.lines) {
-          data.lines.forEach(savedLine => {
-            const points = savedLine.points.map((point, index) => 
-              index % 2 === 0 
-                  ? (point * backgroundImage.width()) + backgroundImage.x()  // Adjusted for X
-                  : (point * backgroundImage.height()) + backgroundImage.y() // Adjusted for Y
-          );
-        
-            // Tạo đối tượng Line từ Konva
-            const line = new Konva.Line({
-              points: points,
-              stroke: savedLine.stroke,
-              strokeWidth: savedLine.strokeWidth,
-              lineCap: savedLine.lineCap,
-              lineJoin: savedLine.lineJoin
-            });
-          
-            // Thêm line vào layer
-            drawingLayer.add(line);
-            lines.push(line);
-          });
-        }
-
-        hideSpinner();
-        drawingLayer.batchDraw();
-      };
-      imageObj.src = global_const.PATH_ASSETS_IMG + data.background;
-
+  function requestRenderServer() {
+    const data_key = DATA_TYPE + CURRENT_PAGE_INDEX;
+      if (APP_DATA.has(data_key)) {
+        console.log("Data from stored app map.%s,%s", DATA_TYPE, CURRENT_PAGE_INDEX);
+        loadIconAndLines(APP_DATA.get(data_key));
+      }
+      else {
+        showSpinner();
+        const dataToSend = {
+          sheet_name: DATA_TYPE.toString(),
+          page: CURRENT_PAGE_INDEX.toString()
+        };
+        fetch(global_const.SERVER_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(dataToSend)
+        })
+        .then(response => response.json()) // This actually calls the json() function
+        .then(data => {
+            hideSpinner();
+            checkAddAppData(data_key, data);
+            loadIconAndLines(data);
+        })
+        .catch(error => {
+            hideSpinner();
+        });
     }
   }
 
-
-  async function fetchWithCache(url) {
-    const networkResponse = await fetch(url);
-    const responseBody = await networkResponse.json();
-    return responseBody;
+  function checkAddAppData(data_key, data) {
+    if (APP_DATA.size > 10) {
+      const firstKey = APP_DATA.keys().next().value;
+      console.log("delete firstKey: %s", firstKey);
+      APP_DATA.delete(firstKey);
+    }
+    APP_DATA.set(data_key, data);
   }
 
+ function loadIconAndLines(data) {
+    // Xóa các icon hiện có
+    playIcons.forEach(icon => icon.destroy());
+    playIcons = [];
+
+    // Xóa các line hiện có
+    lines.forEach(line => line.destroy());
+    lines = [];
+
+    // Tính toán vị trí mới của các icon dựa trên kích thước hình nền mới
+    if (data.icons) {
+      data.icons.forEach(iconData => {
+        const iconX = iconData.x * backgroundImage.width() + backgroundImage.x();
+        const iconY = iconData.y * backgroundImage.height() + backgroundImage.y();
+        addPlayIcon(iconX, iconY, iconData.sound);
+      });
+  }
+
+    if (data.lines) {
+      data.lines.forEach(savedLine => {
+        const points = savedLine.points.map((point, index) => 
+          index % 2 === 0 
+              ? (point * backgroundImage.width()) + backgroundImage.x()  // Adjusted for X
+              : (point * backgroundImage.height()) + backgroundImage.y() // Adjusted for Y
+      );
+    
+        // Tạo đối tượng Line từ Konva
+        const line = new Konva.Line({
+          points: points,
+          stroke: savedLine.stroke,
+          strokeWidth: savedLine.strokeWidth,
+          lineCap: savedLine.lineCap,
+          lineJoin: savedLine.lineJoin
+        });
+      
+        // Thêm line vào layer
+        drawingLayer.add(line);
+        lines.push(line);
+      }); // end of forEach
+    }
+
+    drawingLayer.batchDraw();
+  }
+
+  // show page
   function loadPage() {
+
     clearCanvas();
     $('#settingsModal').modal('hide');
     CURRENT_PAGE_INDEX = parseInt($('#json-dropdown').val(), 10);
 
-    showSpinner();
-
-    const dataToSend = {
-      sheet_name: DATA_TYPE.toString(),
-      page: CURRENT_PAGE_INDEX.toString()
-    };
-
-    console.log(dataToSend);
-    fetch(SERVER_URL, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(dataToSend)
-    })
-    .then(response => response.json()) // This actually calls the json() function
-    .then(data => {
-        backgroundLayer.clear();
-        iconLayer.clear();
-        loadJsonBackgroundAndIcons(data);
-    })
-    .catch(error => {
-        hideSpinner();
-        drawingLayer.batchDraw();
-      // console.error('There was a problem with the fetch operation:', error);
-    });
-
-    // if (CURRENT_PAGE_INDEX) {
-    //   const urlJson = global_const.PATH_JSON.replace("X", CURRENT_PAGE_INDEX);
-    //   fetchWithCache(urlJson)
-    //     .then(data => {
-    //       backgroundLayer.clear();
-    //       iconLayer.clear();
-    //       loadJsonBackgroundAndIcons(data);
-    //     })
-    //     .catch(error => console.error('Error loading JSON:', error));
-    // } else {
-    //   CURRENT_PAGE_INDEX = MAX_PAGE_NUM;
-    //   loadPage();
-    // }
+    loadBackgroundImage(CURRENT_PAGE_INDEX);
+    requestRenderServer();
 
     fitStageIntoParentContainer();
   }
 
-  function loadLines() {
-   
-    const dataToSend = {
-        sheet_name: DATA_TYPE.toString(),
-        page: CURRENT_PAGE_INDEX.toString()
-    };
-
-    fetch(SERVER_URL, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(dataToSend)
-    })
-    .then(response => response.json()) // This actually calls the json() function
-    .then(data => {
-        hideSpinner();
-        console.log(data);
-        if (data.lines) {
-          data.lines.forEach(savedLine => {
-            const points = savedLine.points.map((point, index) => 
-              index % 2 === 0 
-                  ? (point * backgroundImage.width()) + backgroundImage.x()  // Adjusted for X
-                  : (point * backgroundImage.height()) + backgroundImage.y() // Adjusted for Y
-          );
-        
-            // Tạo đối tượng Line từ Konva
-            const line = new Konva.Line({
-              points: points,
-              stroke: savedLine.stroke,
-              strokeWidth: savedLine.strokeWidth,
-              lineCap: savedLine.lineCap,
-              lineJoin: savedLine.lineJoin
-            });
-          
-            // Thêm line vào layer
-            drawingLayer.add(line);
-            lines.push(line);
-          });
-        }
-
-        drawingLayer.batchDraw();
-    })
-    .catch(error => {
-        hideSpinner();
-        drawingLayer.batchDraw();
-       // console.error('There was a problem with the fetch operation:', error);
-    });
-
-  }
-
-
 
   $('#json-dropdown').change(function () {
     loadPage();
-
   });
+
+
+  function loadBackgroundImage(page) {
+    const imageObj = new Image();
+    imageObj.onload = function () {
+      adjustBackgroundImage(imageObj);
+    };
+    const imageUrl = global_const.PATH_IMG.replace("X", page);
+    imageObj.src = imageUrl;
+  }
 
 
   function adjustBackgroundImage(imageObj) {
@@ -722,7 +678,6 @@ $(document).ready(function () {
     // Thiết lập lại kích thước canvas nếu cần
     fitStageIntoParentContainer();  // Đảm bảo canvas phù hợp với kích thước mới
 
-    // Nếu cần reset thêm gì đó như là dữ liệu hay trạng thái thì thêm vào đây
   }
 
   // Thêm sự kiện cho nút Clear
@@ -731,16 +686,6 @@ $(document).ready(function () {
     element.on('touchend', handler);
   }
 
-  function loadBackgroundImage(imageUrl) {
-    clearCanvas();
-    const imageObj = new Image();
-    imageObj.onload = function () {
-      //if (backgroundImage) backgroundImage.destroy();
-      adjustBackgroundImage(imageObj);
-    };
-    imageUrl = global_const.PATH_IMG.replace("X", imageUrl);
-    imageObj.src = imageUrl;
-  }
 
 
   function popDropdown(dropdown, text, start, end, default_index) {
@@ -815,8 +760,6 @@ $(document).ready(function () {
       loadPage();
       $('#settingsModal').modal('hide');
     }
-
-
   });
 
   function setPageInfo(dataType) {
@@ -897,7 +840,6 @@ $(document).ready(function () {
             console.error('Playback failed:', error);
         });
 
-
       } else {
         // If no sound or "x" is found, skip to the next icon
         playAllIndex++;
@@ -967,7 +909,7 @@ $(document).ready(function () {
         json: JSON.stringify(jsonData) // Chuyển đổi đối tượng thành chuỗi JSON
     };
 
-      fetch(SERVER_URL, {
+      fetch(global_const.SERVER_URL, {
           method: 'POST',
           headers: {
               'Content-Type': 'application/json'
@@ -978,6 +920,7 @@ $(document).ready(function () {
           .then(data => {
               console.log('Success:', data);
               alert('JSON data sent successfully!');
+              drawProcess();
           })
           .catch(error => {
               console.log('Error:', error);
