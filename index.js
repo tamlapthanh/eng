@@ -919,12 +919,13 @@ $(document).ready(function () {
           .then(response => response)
           .then(data => {
               console.log('Success:', data);
-              alert('JSON data sent successfully!');
+              alert('Lưu bài làm thành công!');
+              APP_DATA.delete(DATA_TYPE + page);
               drawProcess();
           })
           .catch(error => {
               console.log('Error:', error);
-              alert('Failed to send JSON data.');
+              alert('Bị lỗi gì rồi không lưu được bạn ơi.');
           });
   }
 
