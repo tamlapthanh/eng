@@ -84,44 +84,6 @@ $(document).ready(function () {
   let lines = []; // Mảng lưu các đường vẽ
   let selectedLine = null;
 
-  function drawProcess() {
-    isDrawingMode = !isDrawingMode;
-
-    if (isDrawingMode) {
-      // Thay đổi icon thành "cọ vẽ"
-      $('#draw-icon').removeClass('bi-brush').addClass('bi-hand-index');
-      $('#draw-mode-btn').removeClass('btn-warning').addClass('btn-danger');
-      $('button').not('#draw-mode-btn, #undo-btn, #send-json').prop('disabled', true);
-      $('#undo-btn').removeClass('d-none').addClass('d-block');
-      $('#send-json').removeClass('d-none').addClass('d-block');
-      
-      // Khóa drag và vô hiệu hóa lắng nghe của các lớp khác
-      stage.draggable(false);
-
-      backgroundLayer.listening(false);
-      iconLayer.listening(false);
-      drawingLayer.listening(true);  // Chỉ lớp vẽ được phép lắng nghe
-    } else {
-      // Bật lại drag và lắng nghe các lớp khác
-      stage.draggable(true);
-
-      backgroundLayer.listening(true);
-      iconLayer.listening(true);
-      drawingLayer.listening(false); // Vô hiệu hóa lắng nghe lớp vẽ
-      $('#draw-icon').removeClass('bi-hand-index').addClass('bi-brush');
-      $('#draw-mode-btn').removeClass('btn-danger').addClass('btn-warning'); // Đổi màu
-      $('button').prop('disabled', false);
-      $('#undo-btn').removeClass('d-block').addClass('d-none');
-      $('#send-json').removeClass('d-block').addClass('d-none');
-      
-    }
-
-    // Cập nhật stage
-    stage.batchDraw();
-  }
-
-
-
   // Hàm chuyển đổi tọa độ từ canvas sang tọa độ của stage (đã được zoom)
   function getRelativePointerPosition() {
     const transform = stage.getAbsoluteTransform().copy();
@@ -169,9 +131,6 @@ $(document).ready(function () {
     }
   });
 
-  $('#draw-mode-btn').on('click', function () {
-    //drawProcess();
-  });
 
   $('#undo-btn').on('click', function () {
     if (lines.length > 0) {
@@ -206,35 +165,66 @@ $(document).ready(function () {
     }
   });
 
-  $('#lock').on('click', function () {
-    toggleIconClass();
+  $('#draw').on('click', function () {
+    toggleDrawIcon();
   });
 
-  function toggleIconClass() {
+  function toggleDrawIcon(isDraw=false) {
+    const drawControls = document.querySelector('.draw-controls');
+    if (isDraw) {
+      isDrawingMode = false;
+      stage.container().style.cursor = 'default';
+      drawControls.style.display  = 'none';
+    } else {
+      if ((drawControls.style.display === 'none' || drawControls.style.display === '')) {
+        drawControls.style.display  = 'flex';
+        stage.container().style.cursor = 'crosshair';
+        isDrawingMode = true;
+        toggleLockIcon(true); // khong cho move trong khi ve
+      } else {
+        isDrawingMode = false;
+        stage.container().style.cursor = 'default';
+        drawControls.style.display  = 'none';
+      }
+    }
+  }
+
+  $('#lock').on('click', function () {
+    toggleLockIcon();
+  });
+
+  function toggleLockIcon(isLock=false) {
       // Lấy phần tử button
       const button = document.getElementById("lock");
 
       // Tìm phần tử con bên trong (ở đây là phần tử <i>)
       const icon = button.querySelector("i");
 
-      // Kiểm tra và thay đổi class của phần tử <i>
-      if (icon.classList.contains("bi-lock-fill")) {
-          icon.classList.remove("bi-lock-fill");
-          icon.classList.add("bi-unlock-fill");
+      if (isLock) {
+        icon.classList.remove("bi-unlock-fill");
+        icon.classList.add("bi-lock-fill");
 
-          // Đổi background của nút sang màu khác khi ở trạng thái "unlock"
-          button.classList.remove("btn-info");
-          button.classList.add("btn-warning");
-          interact('#canvas').draggable(true);
+        // Đổi lại background của nút về màu ban đầu khi ở trạng thái "lock"
+        interact('#canvas').draggable(false);
       } else {
-          icon.classList.remove("bi-unlock-fill");
-          icon.classList.add("bi-lock-fill");
+            // Kiểm tra và thay đổi class của phần tử <i>
+            if (icon.classList.contains("bi-lock-fill")) {
+              icon.classList.remove("bi-lock-fill");
+              icon.classList.add("bi-unlock-fill");
 
-          // Đổi lại background của nút về màu ban đầu khi ở trạng thái "lock"
-          button.classList.remove("btn-warning");
-          button.classList.add("btn-info");
-          interact('#canvas').draggable(false);
+              // Đổi background của nút sang màu khác khi ở trạng thái "unlock"
+              interact('#canvas').draggable(true);
+              toggleDrawIcon(true); // Không cho vẽ
+          } else {
+              icon.classList.remove("bi-unlock-fill");
+              icon.classList.add("bi-lock-fill");
+
+              // Đổi lại background của nút về màu ban đầu khi ở trạng thái "lock"
+              interact('#canvas').draggable(false);
+          }
       }
+
+
   }
 
   // Pinch-to-zoom with gestures
@@ -253,7 +243,7 @@ $(document).ready(function () {
     },
     onend: function () {
       isPinching = false;
-      stage.draggable(true);  // Re-enable dragging after pinch-to-zoom
+      //stage.draggable(true);  // Re-enable dragging after pinch-to-zoom
     }
   });
 
@@ -848,27 +838,22 @@ document.addEventListener('keydown', (e) => {
 
 
   $('#setting').on('click', function () {
-    const zoomControls = document.querySelector('.zoom-controls');
-    zoomControls.style.display = (zoomControls.style.display === 'none' || zoomControls.style.display === '')
+    const controls = document.querySelector('.controls');
+    controls.style.display = (controls.style.display === 'none' || controls.style.display === '')
       ? 'flex'
       : 'none';
   });
 
-  $('#draw').on('click', function () {
-    const drawControls = document.querySelector('.draw-controls');
-    if ((drawControls.style.display === 'none' || drawControls.style.display === '')) {
-      drawControls.style.display  = 'flex';
-      stage.container().style.cursor = 'crosshair';
-      isDrawingMode = true;
-      $('#draw').addClass('btn-info').removeClass('btn-warning');
-      
+  $('#zoom').on('click', function () {
+    const controls = document.querySelector('.zoom-controls');
+    if ((controls.style.display === 'none' || controls.style.display === '')) {
+      controls.style.display  = 'flex';
     } else {
-      isDrawingMode = false;
-      stage.container().style.cursor = 'default';
-      drawControls.style.display  = 'none';
-      $('#draw').removeClass('btn-warning').addClass('btn-info'); 
+      controls.style.display  = 'none';
     }
   });
+
+
 
   // Event listener for radio button click/change
   $('input[name="options"]').on('click', function () {
