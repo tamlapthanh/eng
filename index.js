@@ -206,6 +206,37 @@ $(document).ready(function () {
     }
   });
 
+  $('#lock').on('click', function () {
+    toggleIconClass();
+  });
+
+  function toggleIconClass() {
+      // Lấy phần tử button
+      const button = document.getElementById("lock");
+
+      // Tìm phần tử con bên trong (ở đây là phần tử <i>)
+      const icon = button.querySelector("i");
+
+      // Kiểm tra và thay đổi class của phần tử <i>
+      if (icon.classList.contains("bi-lock-fill")) {
+          icon.classList.remove("bi-lock-fill");
+          icon.classList.add("bi-unlock-fill");
+
+          // Đổi background của nút sang màu khác khi ở trạng thái "unlock"
+          button.classList.remove("btn-info");
+          button.classList.add("btn-warning");
+          interact('#canvas').draggable(true);
+      } else {
+          icon.classList.remove("bi-unlock-fill");
+          icon.classList.add("bi-lock-fill");
+
+          // Đổi lại background của nút về màu ban đầu khi ở trạng thái "lock"
+          button.classList.remove("btn-warning");
+          button.classList.add("btn-info");
+          interact('#canvas').draggable(false);
+      }
+  }
+
   // Pinch-to-zoom with gestures
   interact('#canvas').gesturable({
     onstart: function () {
@@ -829,7 +860,7 @@ document.addEventListener('keydown', (e) => {
       drawControls.style.display  = 'flex';
       stage.container().style.cursor = 'crosshair';
       isDrawingMode = true;
-      $('#draw').addClass('btn-info').addClass('btn-warning');
+      $('#draw').addClass('btn-info').removeClass('btn-warning');
       
     } else {
       isDrawingMode = false;
