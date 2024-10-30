@@ -17,8 +17,11 @@ $(document).ready(function () {
   // Create a new Map
   let APP_DATA = new Map();
 
-  const RUN_URL_LOCAL = "http://localhost:8080/api/sheets/data";
-  const RUN_URL_SERVER = "https://zizi-app.onrender.com/api/sheets/data";
+  // const RUN_URL_LOCAL = "http://localhost:8080/api/sheets/data";
+  //const RUN_URL_SERVER = "https://zizi-app.onrender.com/api/sheets/data";
+  const RUN_URL_SERVER = "https://zizi-app.onrender.com/api/sheets/lines";
+  const RUN_URL_LOCAL = "http://localhost:8080/api/sheets/lines";
+  
 
   const global_const = {
     get PATH_ASSETS_IMG() {
@@ -492,7 +495,7 @@ $(document).ready(function () {
   function requestRenderServer() {
     const data_key = DATA_TYPE + CURRENT_PAGE_INDEX;
       if (APP_DATA.has(data_key)) {
-        console.log("Data from stored app map.%s,%s", DATA_TYPE, CURRENT_PAGE_INDEX);
+        console.log("Data from stored app map. {%s,%s}", DATA_TYPE, CURRENT_PAGE_INDEX);
         loadIconAndLines(APP_DATA.get(data_key));
       }
       else {
@@ -511,32 +514,42 @@ $(document).ready(function () {
         })
         .then(response => response.json()) // This actually calls the json() function
         .then(data => {
-           // hideSpinner();
-
-
-            checkAddAppData(data_key, data);
-            loadIconAndLines(data);
+          checkLoadAppData(data);
         })
         .catch(error => {
           // console.error('There was an error with the fetch operation:');
         })
         .finally(() => {
-          console.log('Fetch operation completed.');
           hideSpinner();
           const endTime = Date.now();
           const requestTimeInSeconds = (endTime - startTime) / 1000;
-          console.log(`Request time: ${requestTimeInSeconds} seconds`);
+          console.log(`Fetch operation completed. Processing time: ${requestTimeInSeconds} seconds`);
         });
     }
   }
 
-  function checkAddAppData(data_key, data) {
-    if (APP_DATA.size > 10) {
-      const firstKey = APP_DATA.keys().next().value;
-      console.log("delete firstKey: %s", firstKey);
-      APP_DATA.delete(firstKey);
-    }
-    APP_DATA.set(data_key, data);
+  function checkLoadAppData(retObjects) {
+
+     // Chuyển đổi chuỗi JSON thành đối tượng JavaScript
+    const jsonObjects = retObjects.map(item => JSON.parse(item));
+
+    // Truy cập các giá trị
+    jsonObjects.forEach(data => {
+      const pageNo = data.background.split('.')[0];
+      if (pageNo == CURRENT_PAGE_INDEX.toString()) {
+        loadIconAndLines(data);
+      }
+      const data_key = DATA_TYPE + pageNo;
+      APP_DATA.set(data_key, data);
+    });
+
+    // only keep previous 5 pages if any
+    let keepPage = CURRENT_PAGE_INDEX - 10;
+    while (keepPage >=0 ) {
+      const data_key = DATA_TYPE + keepPage;
+      APP_DATA.delete(data_key);
+      keepPage = keepPage - 1;
+    } 
   }
 
  function loadIconAndLines(data) {
