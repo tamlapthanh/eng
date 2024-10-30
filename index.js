@@ -496,7 +496,7 @@ $(document).ready(function () {
         loadIconAndLines(APP_DATA.get(data_key));
       }
       else {
-        showSpinner();
+        showSpinner('#28a745');
         const startTime = Date.now();
         const dataToSend = {
           sheet_name: DATA_TYPE.toString(),
@@ -613,9 +613,11 @@ $(document).ready(function () {
 
 
   function loadBackgroundImage(page) {
+    showSpinner('#007bff');
     const imageObj = new Image();
     imageObj.onload = function () {
       adjustBackgroundImage(imageObj);
+      hideSpinner();
     };
     const imageUrl = global_const.PATH_IMG.replace("X", page);
     imageObj.src = imageUrl;
@@ -752,7 +754,9 @@ $(document).ready(function () {
     clearCanvas();
   });
 
-  function showSpinner() {
+  function showSpinner(color = '#007bff') { // Default color if none is provided
+    const spinnerIcon = document.querySelector('.spinner-icon');
+    spinnerIcon.style.color = color;
     document.getElementById('spinnerOverlay').style.display = 'flex';
   }
 
