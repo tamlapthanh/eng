@@ -497,6 +497,7 @@ $(document).ready(function () {
       }
       else {
         showSpinner();
+        const startTime = Date.now();
         const dataToSend = {
           sheet_name: DATA_TYPE.toString(),
           page: CURRENT_PAGE_INDEX.toString()
@@ -510,12 +511,21 @@ $(document).ready(function () {
         })
         .then(response => response.json()) // This actually calls the json() function
         .then(data => {
-            hideSpinner();
+           // hideSpinner();
+
+
             checkAddAppData(data_key, data);
             loadIconAndLines(data);
         })
         .catch(error => {
-            hideSpinner();
+          // console.error('There was an error with the fetch operation:');
+        })
+        .finally(() => {
+          console.log('Fetch operation completed.');
+          hideSpinner();
+          const endTime = Date.now();
+          const requestTimeInSeconds = (endTime - startTime) / 1000;
+          console.log(`Request time: ${requestTimeInSeconds} seconds`);
         });
     }
   }
