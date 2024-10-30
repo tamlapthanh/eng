@@ -12,9 +12,16 @@ $(document).ready(function () {
   let CURRENT_PAGE_INDEX = 4;
   let MAX_PAGE_NUM = 66;
   let MIN_PAGE_NUM = 1;
-  let ICON_SIZE = 18;
+  
+
+  // let PATH_ROOT = "assets/books/27/";
+  // let DATA_TYPE = "work";
+  // let CURRENT_PAGE_INDEX = 4;
+  // let MAX_PAGE_NUM = 65;
+  // let MIN_PAGE_NUM = 1;
 
   // Create a new Map
+  let ICON_SIZE = 18;
   let APP_DATA = new Map();
   const RUN_URL_SERVER = "https://zizi-app.onrender.com/";
   const RUN_URL_LOCAL = "http://localhost:8080/";
@@ -75,6 +82,7 @@ $(document).ready(function () {
   let isDrawing = false;
   let lastLine;
   let lines = []; // Mảng lưu các đường vẽ
+  let selectedLine = null;
 
   function drawProcess() {
     isDrawingMode = !isDrawingMode;
@@ -162,7 +170,7 @@ $(document).ready(function () {
   });
 
   $('#draw-mode-btn').on('click', function () {
-    drawProcess();
+    //drawProcess();
   });
 
   $('#undo-btn').on('click', function () {
@@ -476,11 +484,15 @@ $(document).ready(function () {
 
       // Change cursor on hover
       icon.on('mouseover', function () {
-        document.body.style.cursor = 'pointer';
-
+       stage.container().style.cursor = 'pointer';
       });
       icon.on('mouseout', function () {
-        document.body.style.cursor = 'default';
+        const drawControls = document.querySelector('.draw-controls');
+        if ((drawControls.style.display === 'none' || drawControls.style.display === '')) {
+          stage.container().style.cursor = 'default';
+        } else {
+          stage.container().style.cursor = 'crosshair';
+        }
       });
 
       iconLayer.add(icon);
@@ -583,6 +595,15 @@ $(document).ready(function () {
           lineCap: savedLine.lineCap,
           lineJoin: savedLine.lineJoin
         });
+
+        // Add a click event to select the line
+        line.on('click', (e) => {
+          e.cancelBubble = true; // Prevent other events from firing
+          resetAllLineColors(); // Reset colors of all lines
+          selectedLine = line; // Set the selected line
+          line.stroke('black'); // Highlight the selected line
+          drawingLayer.draw();
+      });
       
         // Thêm line vào layer
         drawingLayer.add(line);
@@ -593,9 +614,39 @@ $(document).ready(function () {
     drawingLayer.batchDraw();
   }
 
+  function removeLine(arr, element) {
+    return arr.filter(item => item !== element);
+  }
+
+    // Function to reset all line colors to default
+  function resetAllLineColors() {
+    drawingLayer.getChildren().forEach((shape) => {
+        if (shape.className === 'Line') {
+            shape.stroke('red'); // Reset color to black or your default color
+        }
+    });
+  }
+
+  // Function to handle line deletion
+function deleteSelectedLine() {
+  if (selectedLine) {
+      lines =  removeLine(lines, selectedLine);
+      selectedLine.remove(); // Remove line from layer
+      selectedLine = null; // Reset selected line
+      drawingLayer.draw(); // Redraw the layer
+  }
+}
+
+// Event listener for the 'Delete' key to delete selected line
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Delete' || e.key === 'Backspace') {
+      deleteSelectedLine();
+  }
+});
+
   // show page
   function loadPage() {
-
+    interact('#canvas').draggable(false);
     clearCanvas();
     $('#settingsModal').modal('hide');
     CURRENT_PAGE_INDEX = parseInt($('#json-dropdown').val(), 10);
@@ -772,6 +823,22 @@ $(document).ready(function () {
       : 'none';
   });
 
+  $('#draw').on('click', function () {
+    const drawControls = document.querySelector('.draw-controls');
+    if ((drawControls.style.display === 'none' || drawControls.style.display === '')) {
+      drawControls.style.display  = 'flex';
+      stage.container().style.cursor = 'crosshair';
+      isDrawingMode = true;
+      $('#draw').addClass('btn-info').addClass('btn-warning');
+      
+    } else {
+      isDrawingMode = false;
+      stage.container().style.cursor = 'default';
+      drawControls.style.display  = 'none';
+      $('#draw').removeClass('btn-warning').addClass('btn-info'); 
+    }
+  });
+
   // Event listener for radio button click/change
   $('input[name="options"]').on('click', function () {
     var selectedValue = $(this).val();
@@ -933,6 +1000,8 @@ $(document).ready(function () {
         json: JSON.stringify(jsonData) // Chuyển đổi đối tượng thành chuỗi JSON
     };
 
+    console.log(dataToSend);
+
       fetch(global_const.SERVER_URL, {
           method: 'POST',
           headers: {
@@ -945,7 +1014,7 @@ $(document).ready(function () {
               console.log('Success:', data);
               alert('Lưu bài làm thành công!');
               APP_DATA.delete(DATA_TYPE + page);
-              drawProcess();
+              //drawProcess();
           })
           .catch(error => {
               console.log('Error:', error);
@@ -961,5 +1030,4 @@ $(document).ready(function () {
 
   popDropdown($('#json-dropdown'), "Page", MIN_PAGE_NUM, MAX_PAGE_NUM, CURRENT_PAGE_INDEX);
   loadPage();
-
 });

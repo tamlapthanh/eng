@@ -71,12 +71,32 @@
       right: 10px;
       z-index: 10;
     }
+    .draw-btn {
+      position: absolute;
+      top: 10px;
+      right: 45px;
+      z-index: 10;
+    }
+    
 
     .zoom-controls {
       position: absolute;
       top: 42px;
       /* Adjust this value to position it below the setting button */
       right: 10px;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      /* Arrange buttons in a column */
+      gap: 3px;
+      display: none; /* Initially hidden */
+    }
+
+    .draw-controls {
+      position: absolute;
+      top: 42px;
+      /* Adjust this value to position it below the setting button */
+      right: 45px;
       z-index: 10;
       display: flex;
       flex-direction: column;
@@ -138,10 +158,6 @@
     .form-check-input:checked + .form-check-label {
       background-color: #d1e7dd;  /* Thay đổi màu nền khi đã chọn */
     }
-
-    #undo-btn {
-      display: none; /* Ẩn nút theo mặc định */
-    }
     
     .show-button #undo-btn {
       display: block; /* Hiển thị nút khi có class .show-button */
@@ -170,6 +186,23 @@
     <div id="canvas"></div>
 
     <button id="setting" class="btn btn-primary setting-btn btn-sm" ><i class="bi bi-gear"></i></button>
+    <button id="draw" class="btn btn-info draw-btn btn-sm" ><i class="bi bi-brush-fill"></i></button>
+
+    <div class="draw-controls">
+      <!--
+      <button id="draw-mode-btn" class="btn btn-warning btn-sm">
+        <i id="draw-icon" class="bi bi-brush"></i>
+      </button>
+-->
+
+      <button id="undo-btn" class="btn btn-success btn-sm">
+        <i class="bi bi-arrow-counterclockwise"></i>
+      </button>
+
+      <button id="send-json" class="btn btn-danger btn-sm">
+        <i class="bi bi-cloud-arrow-up-fill"></i>
+      </button>
+    </div>
 
     <!-- Zoom Controls -->
     <div class="zoom-controls">
@@ -188,18 +221,6 @@
 
       <button id="reset-zoom" class="btn btn-info btn-sm">
         <i class="bi bi-fullscreen"></i>
-      </button>
-
-      <button id="draw-mode-btn"class="btn btn-warning btn-sm">
-        <i id="draw-icon" class="bi bi-brush"></i>
-      </button>
-
-      <button id="undo-btn" class="btn btn-warning btn-sm">
-        <i class="bi bi-arrow-counterclockwise"></i>
-      </button>
-
-      <button id="send-json" class="btn btn-warning btn-sm d-none">
-        <i class="bi bi-cloud-arrow-up-fill"></i>
       </button>
 
       <button id="play-all-btn" class="btn btn-primary btn-sm d-none">
