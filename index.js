@@ -16,12 +16,9 @@ $(document).ready(function () {
 
   // Create a new Map
   let APP_DATA = new Map();
-
-  // const RUN_URL_LOCAL = "http://localhost:8080/api/sheets/data";
-  //const RUN_URL_SERVER = "https://zizi-app.onrender.com/api/sheets/data";
-  const RUN_URL_SERVER = "https://zizi-app.onrender.com/api/sheets/lines";
-  const RUN_URL_LOCAL = "http://localhost:8080/api/sheets/lines";
-  
+  const RUN_URL_SERVER = "https://zizi-app.onrender.com/";
+  const RUN_URL_LOCAL = "http://localhost:8080/";
+  const API_METHOD = "api/sheets/lines"
 
   const global_const = {
     get PATH_ASSETS_IMG() {
@@ -43,9 +40,9 @@ $(document).ready(function () {
     get SERVER_URL() {
       const hostname = window.location.hostname;
       if (hostname === 'localhost' || hostname === '127.0.0.1') {
-        return RUN_URL_LOCAL;
+        return RUN_URL_LOCAL + API_METHOD;
       } else {
-        return RUN_URL_SERVER;
+        return RUN_URL_SERVER + API_METHOD;
       }
     }
 
