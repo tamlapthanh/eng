@@ -55,6 +55,12 @@ $(document).ready(function () {
 
   };
 
+  let dragState = {
+    startX: 0,
+    startTime: 0,
+    isDragging: false
+  };
+
   const backgroundLayer = new Konva.Layer();
   const iconLayer = new Konva.Layer();
   const drawingLayer = new Konva.Layer(); // Layer để vẽ
@@ -94,7 +100,15 @@ $(document).ready(function () {
 
   // Xử lý bắt đầu vẽ
   stage.on('mousedown touchstart', function (e) {
-    if (!isDrawingMode) return;  // Chỉ cho phép vẽ khi ở chế độ vẽ
+    if (!isDrawingMode) {
+
+      // Cho xử lý di chuyển page bằng flick
+      dragState.startX = stage.getPointerPosition().x;
+      dragState.startTime = Date.now();
+      dragState.isDragging = true;
+
+      return;  // Chỉ cho phép vẽ khi ở chế độ vẽ
+    }
 
     isDrawing = true;  // Bắt đầu vẽ
 
@@ -128,6 +142,22 @@ $(document).ready(function () {
     if (isDrawing) {
       isDrawing = false;  // Dừng vẽ
       lastLine = null;    // Xóa đường vẽ cuối cùng
+    } else {
+      dragState.isDragging = false;
+      const endX = stage.getPointerPosition().x;
+      const endTime = Date.now();
+    
+      const distance = endX - dragState.startX;
+      const timeElapsed = endTime - dragState.startTime;
+      const speed = Math.abs(distance / timeElapsed);
+      const speedThreshold = 0.5; // Ngưỡng tốc độ để kích hoạt lật trang
+      if (distance < 0 && (speed > speedThreshold || Math.abs(distance) > stage.width() / 2)) {
+        // Vuốt từ phải sang trái -> Next page
+        processNextPrePage(true);
+      } else if (distance > 0 && (speed > speedThreshold || Math.abs(distance) > stage.width() / 2)) {
+        // Vuốt từ trái sang phải -> Previous page
+        processNextPrePage(false);
+      }
     }
   });
 
@@ -811,20 +841,27 @@ document.addEventListener('keydown', (e) => {
   }
 
   previous_page.on('click', function () {
-    CURRENT_PAGE_INDEX = CURRENT_PAGE_INDEX - 1;
-    if (CURRENT_PAGE_INDEX < MIN_PAGE_NUM) {
-      CURRENT_PAGE_INDEX = MAX_PAGE_NUM;
-    }
-    $('#json-dropdown').val(CURRENT_PAGE_INDEX).change();
+    processNextPrePage(false);
   });
 
   next_page.on('click', function () {
-    CURRENT_PAGE_INDEX = CURRENT_PAGE_INDEX + 1;
-    if (CURRENT_PAGE_INDEX > MAX_PAGE_NUM) {
-      CURRENT_PAGE_INDEX = MIN_PAGE_NUM;
+    processNextPrePage(true);
+  });
+
+  function processNextPrePage(isNext=true) {
+    if (isNext) {
+      CURRENT_PAGE_INDEX = CURRENT_PAGE_INDEX + 1;
+      if (CURRENT_PAGE_INDEX > MAX_PAGE_NUM) {
+        CURRENT_PAGE_INDEX = MIN_PAGE_NUM;
+      }
+    } else {
+      CURRENT_PAGE_INDEX = CURRENT_PAGE_INDEX - 1;
+      if (CURRENT_PAGE_INDEX < MIN_PAGE_NUM) {
+        CURRENT_PAGE_INDEX = MAX_PAGE_NUM;
+      }
     }
     $('#json-dropdown').val(CURRENT_PAGE_INDEX).change();
-  });
+  }
 
   $('#jump-to-index-jso').on('change', function () {
     var inputValue = $(this).val();
