@@ -172,6 +172,26 @@ $(document).ready(function () {
 
   // end of xu ly ve tren canva
 
+  $('#setting').on('click', function () {
+    const controls = document.querySelector('.controls');
+    if (controls.style.display === 'none' || controls.style.display === '') {
+      controls.style.display  = 'flex';
+    } else {
+      controls.style.display  = 'none';
+      toggleDrawIcon(true);
+    }
+
+  });
+
+  $('#zoom').on('click', function () {
+    const controls = document.querySelector('.zoom-controls');
+    if ((controls.style.display === 'none' || controls.style.display === '')) {
+      controls.style.display  = 'flex';
+    } else {
+      controls.style.display  = 'none';
+    }
+  });
+
   // Zoom In button
   $('#zoom-in').on('click', function () {
     if (zoomLevel < maxZoom) {
@@ -883,21 +903,7 @@ document.addEventListener('keydown', (e) => {
   }
 
 
-  $('#setting').on('click', function () {
-    const controls = document.querySelector('.controls');
-    controls.style.display = (controls.style.display === 'none' || controls.style.display === '')
-      ? 'flex'
-      : 'none';
-  });
 
-  $('#zoom').on('click', function () {
-    const controls = document.querySelector('.zoom-controls');
-    if ((controls.style.display === 'none' || controls.style.display === '')) {
-      controls.style.display  = 'flex';
-    } else {
-      controls.style.display  = 'none';
-    }
-  });
 
 
 
