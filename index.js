@@ -1,3 +1,6 @@
+let line_color = " #ff6347"; // Tomato
+const selected_color = 'black';
+
 $(document).ready(function () {
 
   const stage = new Konva.Stage({
@@ -90,6 +93,7 @@ $(document).ready(function () {
   let lines = []; // Mảng lưu các đường vẽ
   let selectedLine = null;
 
+
   // Hàm chuyển đổi tọa độ từ canvas sang tọa độ của stage (đã được zoom)
   function getRelativePointerPosition() {
     const transform = stage.getAbsoluteTransform().copy();
@@ -115,13 +119,15 @@ $(document).ready(function () {
     const pos = getRelativePointerPosition();  // Lấy tọa độ đã điều chỉnh
 
     lastLine = new Konva.Line({
-      stroke: 'red',
+      stroke: line_color, 
       strokeWidth: 3,
       globalCompositeOperation: 'source-over',
       points: [pos.x, pos.y],  // Sử dụng tọa độ đã điều chỉnh
       lineCap: 'round',
       lineJoin: 'round',
+      saved_stroke: line_color
     });
+
     drawingLayer.add(lastLine);
     lines.push(lastLine); // Lưu đường vẽ vào mảng
   });
@@ -160,7 +166,11 @@ $(document).ready(function () {
       }
     }
   });
-
+  // end of xu ly ve tren canva
+  $('#delete-line-btn').on('click', function () {
+    deleteSelectedLine();
+    $('#delete-line-btn').prop('disabled', true);
+  });
 
   $('#undo-btn').on('click', function () {
     if (lines.length > 0) {
@@ -169,8 +179,6 @@ $(document).ready(function () {
       drawingLayer.batchDraw(); // Cập nhật canvas
     }
   });
-
-  // end of xu ly ve tren canva
 
   $('#setting').on('click', function () {
     const controls = document.querySelector('.controls');
@@ -633,7 +641,7 @@ $(document).ready(function () {
   }
 
  function loadIconAndLines(data) {
-  
+  $('#delete-line-btn').prop('disabled', true);
     // Xóa các icon hiện có
     playIcons.forEach(icon => icon.destroy());
     playIcons = [];
@@ -665,7 +673,8 @@ $(document).ready(function () {
           stroke: savedLine.stroke,
           strokeWidth: savedLine.strokeWidth,
           lineCap: savedLine.lineCap,
-          lineJoin: savedLine.lineJoin
+          lineJoin: savedLine.lineJoin,
+          saved_stroke: savedLine.stroke
         });
 
         // Add a click event to select the line
@@ -673,10 +682,25 @@ $(document).ready(function () {
           e.cancelBubble = true; // Prevent other events from firing
           resetAllLineColors(); // Reset colors of all lines
           selectedLine = line; // Set the selected line
+          $('#delete-line-btn').prop('disabled', false);
           line.stroke('black'); // Highlight the selected line
           drawingLayer.draw();
-      });
+        });
+
       
+        // Đảm bảo con trỏ chuột thay đổi thành pointer khi hover qua line
+        line.on('mouseover', function () {
+            stage.container().style.cursor = 'pointer';
+        });
+
+        line.on('mouseout', function () {
+          if (isDrawingMode) {
+            stage.container().style.cursor = 'crosshair';
+          } else {
+            stage.container().style.cursor = 'default';
+          }
+        });
+
         // Thêm line vào layer
         drawingLayer.add(line);
         lines.push(line);
@@ -694,7 +718,8 @@ $(document).ready(function () {
   function resetAllLineColors() {
     drawingLayer.getChildren().forEach((shape) => {
         if (shape.className === 'Line') {
-            shape.stroke('red'); // Reset color to black or your default color
+            const saved_stroke = shape.getAttr('saved_stroke');
+            shape.stroke(saved_stroke); // Reset color to black or your default color
         }
     });
   }
@@ -1098,4 +1123,5 @@ document.addEventListener('keydown', (e) => {
 
   popDropdown($('#json-dropdown'), "Page", MIN_PAGE_NUM, MAX_PAGE_NUM, CURRENT_PAGE_INDEX);
   loadPage();
+
 });
