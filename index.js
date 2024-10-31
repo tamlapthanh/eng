@@ -583,6 +583,7 @@ $(document).ready(function () {
   }
 
  function loadIconAndLines(data) {
+  
     // Xóa các icon hiện có
     playIcons.forEach(icon => icon.destroy());
     playIcons = [];
@@ -667,13 +668,14 @@ document.addEventListener('keydown', (e) => {
 
   // show page
   function loadPage() {
+
     interact('#canvas').draggable(false);
     clearCanvas();
     $('#settingsModal').modal('hide');
     CURRENT_PAGE_INDEX = parseInt($('#json-dropdown').val(), 10);
 
     loadBackgroundImage(CURRENT_PAGE_INDEX);
-    requestRenderServer();
+    
 
     fitStageIntoParentContainer();
   }
@@ -689,6 +691,7 @@ document.addEventListener('keydown', (e) => {
     const imageObj = new Image();
     imageObj.onload = function () {
       adjustBackgroundImage(imageObj);
+      requestRenderServer();
       hideSpinner();
     };
     const imageUrl = global_const.PATH_IMG.replace("X", page);
@@ -726,6 +729,7 @@ document.addEventListener('keydown', (e) => {
       image: imageObj,
       width: newWidth,
       height: newHeight,
+      id: 'backgroundImage' // Đặt ID cho hình ảnh
     });
 
     backgroundLayer.add(backgroundImage);
@@ -746,8 +750,13 @@ document.addEventListener('keydown', (e) => {
   }
 
 
-  window.addEventListener('resize', loadPage);
+  window.addEventListener('resize', resizeEvent);
 
+  function resizeEvent() {
+   //fitStageIntoParentContainer();
+  loadPage();
+  // window.location.reload();
+  }
 
   // Hàm để xóa tất cả các play icon và làm lại từ đầu, bao gồm cả hình nền
   function clearCanvas() {
