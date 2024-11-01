@@ -15,7 +15,6 @@ $(document).ready(function () {
   let CURRENT_PAGE_INDEX = 4;
   let MAX_PAGE_NUM = 66;
   let MIN_PAGE_NUM = 1;
-  
 
   // let PATH_ROOT = "assets/books/27/";
   // let DATA_TYPE = "work";
@@ -793,12 +792,10 @@ document.addEventListener('keydown', (e) => {
 
 
   function loadBackgroundImage(page) {
-    showSpinner('#007bff');
     const imageObj = new Image();
     imageObj.onload = function () {
       adjustBackgroundImage(imageObj);
       requestRenderServer();
-      hideSpinner();
     };
     const imageUrl = global_const.PATH_IMG.replace("X", page);
     imageObj.src = imageUrl;
