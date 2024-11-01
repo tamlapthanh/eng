@@ -141,6 +141,7 @@ $(document).ready(function () {
     let newPoints = lastLine.points().concat([pos.x, pos.y]);
     lastLine.points(newPoints);
     drawingLayer.batchDraw();
+    lineAddEvents();
   });
 
   // Xử lý khi kết thúc vẽ
@@ -605,7 +606,7 @@ $(document).ready(function () {
           checkLoadAppData(data);
         })
         .catch(error => {
-          // console.error('There was an error with the fetch operation:');
+          console.error('There was an error with the fetch operation:');
         })
         .finally(() => {
           hideSpinner();
@@ -677,6 +678,46 @@ $(document).ready(function () {
           saved_stroke: savedLine.stroke
         });
 
+        // // Add a click event to select the line
+        // line.on('click', (e) => {
+        //   e.cancelBubble = true; // Prevent other events from firing
+        //   resetAllLineColors(); // Reset colors of all lines
+        //   selectedLine = line; // Set the selected line
+        //   $('#delete-line-btn').prop('disabled', false);
+        //   line.stroke(selected_color); // Highlight the selected line
+        //   drawingLayer.draw();
+        // });
+
+      
+        // // Đảm bảo con trỏ chuột thay đổi thành pointer khi hover qua line
+        // line.on('mouseover', function () {
+        //     stage.container().style.cursor = 'pointer';
+        // });
+
+        // line.on('mouseout', function () {
+        //   if (isDrawingMode) {
+        //     stage.container().style.cursor = 'crosshair';
+        //   } else {
+        //     stage.container().style.cursor = 'default';
+        //   }
+        // });
+
+        // Thêm line vào layer
+        drawingLayer.add(line);
+        lines.push(line);
+      }); // end of forEach
+    }
+    drawingLayer.batchDraw();
+    lineAddEvents();
+  }
+
+  function removeLine(arr, element) {
+    return arr.filter(item => item !== element);
+  }
+
+  function lineAddEvents() {
+     drawingLayer.getChildren().forEach((line) => {
+        if (line.className === 'Line') {
         // Add a click event to select the line
         line.on('click', (e) => {
           e.cancelBubble = true; // Prevent other events from firing
@@ -700,18 +741,8 @@ $(document).ready(function () {
             stage.container().style.cursor = 'default';
           }
         });
-
-        // Thêm line vào layer
-        drawingLayer.add(line);
-        lines.push(line);
-      }); // end of forEach
-    }
-
-    drawingLayer.batchDraw();
-  }
-
-  function removeLine(arr, element) {
-    return arr.filter(item => item !== element);
+        }
+    });
   }
 
     // Function to reset all line colors to default
@@ -928,10 +959,6 @@ document.addEventListener('keydown', (e) => {
   }
 
 
-
-
-
-
   // Event listener for radio button click/change
   $('input[name="options"]').on('click', function () {
     var selectedValue = $(this).val();
@@ -1084,7 +1111,7 @@ document.addEventListener('keydown', (e) => {
           backgroundSize: backgroundSize
       };
 
-      console.log('Data to send:', JSON.stringify(jsonData, null, 2)); // Kiểm tra dữ liệu trước khi gửi
+      //console.log('Data to send:', JSON.stringify(jsonData, null, 2)); // Kiểm tra dữ liệu trước khi gửi
       // Tạo đối tượng dữ liệu JSON
       const page = $('#json-dropdown').val() ;
       const dataToSend = {
