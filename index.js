@@ -641,7 +641,8 @@ $(document).ready(function () {
   }
 
  function loadIconAndLines(data) {
-  $('#delete-line-btn').prop('disabled', true);
+    $('#delete-line-btn').prop('disabled', true);
+    
     // Xóa các icon hiện có
     playIcons.forEach(icon => icon.destroy());
     playIcons = [];
@@ -676,30 +677,6 @@ $(document).ready(function () {
           lineJoin: savedLine.lineJoin,
           saved_stroke: savedLine.stroke
         });
-
-        // // Add a click event to select the line
-        // line.on('click', (e) => {
-        //   e.cancelBubble = true; // Prevent other events from firing
-        //   resetAllLineColors(); // Reset colors of all lines
-        //   selectedLine = line; // Set the selected line
-        //   $('#delete-line-btn').prop('disabled', false);
-        //   line.stroke(selected_color); // Highlight the selected line
-        //   drawingLayer.draw();
-        // });
-
-      
-        // // Đảm bảo con trỏ chuột thay đổi thành pointer khi hover qua line
-        // line.on('mouseover', function () {
-        //     stage.container().style.cursor = 'pointer';
-        // });
-
-        // line.on('mouseout', function () {
-        //   if (isDrawingMode) {
-        //     stage.container().style.cursor = 'crosshair';
-        //   } else {
-        //     stage.container().style.cursor = 'default';
-        //   }
-        // });
 
         // Thêm line vào layer
         drawingLayer.add(line);
@@ -793,7 +770,9 @@ document.addEventListener('keydown', (e) => {
 
   function loadBackgroundImage(page) {
     const imageObj = new Image();
+    showSpinner('#ff5733');
     imageObj.onload = function () {
+      hideSpinner();
       adjustBackgroundImage(imageObj);
       requestRenderServer();
     };
