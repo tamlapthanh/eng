@@ -221,6 +221,7 @@ $(document).ready(function () {
   }
 
   $('#lock').on('click', function () {
+
     toggleLockIcon();
   });
 
@@ -255,6 +256,15 @@ $(document).ready(function () {
           }
       }
 
+
+      // Toggle draggable
+      if (stage.draggable()) {
+        stage.draggable(false);
+        console.log('Stage is now NOT draggable');
+      } else {
+        stage.draggable(true);
+        console.log('Stage is now draggable');
+      }
 
   }
 
@@ -306,51 +316,67 @@ $(document).ready(function () {
 
 
   // Zoom with mouse wheel
-  stage.on('wheel', function (event) {
+  // stage.on('wheel', function (event) {
+  //   event.evt.preventDefault();
+  //   const oldScale = stage.scaleX();
+  //   const pointer = stage.getPointerPosition();
+
+  //   const scaleBy = 1.1;
+  //   let newScale = oldScale;
+
+  //   if (event.evt.deltaY > 0) {
+  //     newScale = oldScale / scaleBy;
+  //   } else {
+  //     newScale = oldScale * scaleBy;
+  //   }
+
+  //   // Limit the zoom level
+  //   newScale = Math.max(minZoom, Math.min(maxZoom, newScale));
+
+  //   const mousePointTo = {
+  //     x: (pointer.x - stage.x()) / oldScale,
+  //     y: (pointer.y - stage.y()) / oldScale,
+  //   };
+
+  //   const newPos = {
+  //     x: pointer.x - mousePointTo.x * newScale,
+  //     y: pointer.y - mousePointTo.y * newScale,
+  //   };
+
+  //   zoomLevel = newScale;
+  //   stage.scale({ x: newScale, y: newScale });
+  //   stage.position(newPos);
+  //   stage.batchDraw();
+  // });
+
+    stage.on('wheel', function (event) {
     event.evt.preventDefault();
+
     const oldScale = stage.scaleX();
-    const pointer = stage.getPointerPosition();
-
     const scaleBy = 1.1;
-    let newScale = oldScale;
+    let newScale = event.evt.deltaY > 0 ? oldScale / scaleBy : oldScale * scaleBy;
 
-    if (event.evt.deltaY > 0) {
-      newScale = oldScale / scaleBy;
-    } else {
-      newScale = oldScale * scaleBy;
-    }
-
-    // Limit the zoom level
     newScale = Math.max(minZoom, Math.min(maxZoom, newScale));
-
-    const mousePointTo = {
-      x: (pointer.x - stage.x()) / oldScale,
-      y: (pointer.y - stage.y()) / oldScale,
-    };
-
-    const newPos = {
-      x: pointer.x - mousePointTo.x * newScale,
-      y: pointer.y - mousePointTo.y * newScale,
-    };
-
     zoomLevel = newScale;
+
+    // Chỉ scale mà không di chuyển
     stage.scale({ x: newScale, y: newScale });
-    stage.position(newPos);
     stage.batchDraw();
   });
 
-  interact('#canvas').draggable({
-    listeners: {
-      move(event) {
-        if (!isPinching && !isDrawingMode) {  // Only allow dragging if not pinching
-          const { dx, dy } = event;
-          stage.x(stage.x() + dx);
-          stage.y(stage.y() + dy);
-          stage.batchDraw();
-        }
-      }
-    }
-  });
+  // interact('#canvas').draggable({
+  //   listeners: {
+  //     move(event) {
+  //       if (!isPinching && !isDrawingMode) {  // Only allow dragging if not pinching
+  //         const { dx, dy } = event;
+  //         stage.x(stage.x() + dx);
+  //         stage.y(stage.y() + dy);
+  //         stage.batchDraw();
+  //       }
+  //     }
+  //   }
+  // });
+  interact('#canvas').draggable(false);
 
   // end zoom
 
@@ -514,7 +540,9 @@ $(document).ready(function () {
         height: icon_size,
       });
 
-      icon.setAttr('sound', sound.trim() || '');
+      // icon.setAttr('sound', sound.trim() || '');
+      icon.setAttr('sound', (sound || '').trim());
+      //icon.setAttr('sound', sound?.trim() ?? '');
 
       function handleInteraction() {
         currentIcon = icon;
@@ -552,6 +580,10 @@ $(document).ready(function () {
       //iconLayer.batchDraw();
     });
   }
+
+    $('.add-icon').on('click', function () {
+      addPlayIcon();
+  });
 
   function requestRenderServer() {
     const data_key = DATA_TYPE + CURRENT_PAGE_INDEX;

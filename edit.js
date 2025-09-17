@@ -10,9 +10,9 @@ $(document).ready(function () {
     // let MAX_PAGE_NUM = 65;
     // let MIN_PAGE_NUM = 1;
 
-    let PATH_ROOT = "assets/books/27/dict";
+    let PATH_ROOT = "assets/books/27/student37";
     let CURRENT_PAGE_INDEX = 1;
-    let MAX_PAGE_NUM = 87;
+    let MAX_PAGE_NUM = 137;
     let MIN_PAGE_NUM = 1;
 
     let SERVER_URL = "http://localhost:8080/api/save-json";
@@ -77,33 +77,29 @@ $(document).ready(function () {
     function getSoundStartEnd(fileName) {
         var arr = fileName.split("/");
         if (arr.length > 1) {
-          return [ arr[0], arr[1], arr[2] ];
+            return [arr[0], arr[1], arr[2]];
         }
-    
-        return arr ;
-      }
-      function playSound(soundFileName, icon) {
-        
-        
-    
+
+        return arr;
+    }
+    function playSound(soundFileName, icon) {
         if (soundFileName && "x" != soundFileName.trim()) {
             const [fileName, start, end] = getSoundStartEnd(soundFileName);
             console.log(fileName, start, end);
             let url = global_const.PATH_SOUND + fileName.trim() + ".mp3";
 
-    
             // Kiểm tra và dừng âm thanh nếu đang phát
             if (audio && !audio.paused) {
                 audio.pause();        // Tạm dừng âm thanh hiện tại
                 audio.currentTime = 0; // Đặt lại thời gian phát về đầu
-            } 
-    
+            }
+
             // Tạo đối tượng âm thanh mới
             audio = new Audio(url);
-    
+
             if (start) {
                 audio.currentTime = start;
-    
+
                 // Theo dõi thời gian và dừng âm thanh khi đạt đến thời gian kết thúc
                 audio.addEventListener('timeupdate', () => {
                     if (audio.currentTime >= end) {
@@ -117,14 +113,14 @@ $(document).ready(function () {
             } else {
                 audio.addEventListener("ended", (event) => {
                     console.log("addEventListener ended");
-                    
+
 
                 });
             }
-    
+
             // Phát âm thanh nếu không có lỗi
             audio.play().then(() => {
-                
+
             }).catch(error => {
                 console.error('Playback failed:', error);
             });

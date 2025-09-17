@@ -1,0 +1,12 @@
+{
+  "background" : "40.webp",
+  "icons" : [ {
+    "x" : 0.33709273182957394,
+    "y" : 0.6077292984270343,
+    "sound" : " 15"
+  } ],
+  "backgroundSize" : {
+    "width" : 718.2,
+    "height" : 945
+  }
+}
