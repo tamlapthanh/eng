@@ -11,9 +11,9 @@ $(document).ready(function () {
   });
 
   let PATH_ROOT = "assets/books/27/";
-  let DATA_TYPE = "student";
-  let CURRENT_PAGE_INDEX = 4;
-  let MAX_PAGE_NUM = 66;
+  let DATA_TYPE = "student37";
+  let CURRENT_PAGE_INDEX = 5;
+  let MAX_PAGE_NUM = 107;
   let MIN_PAGE_NUM = 1;
 
   // let PATH_ROOT = "assets/books/27/";
@@ -36,7 +36,7 @@ $(document).ready(function () {
     },
     get PATH_IMG() {
       //  PATH_IMG = "assets/img/X.webp";
-      return PATH_ROOT + DATA_TYPE + "/img/X.webp";
+      return PATH_ROOT + DATA_TYPE + "/img/";
     },
     get PATH_SOUND() {
       //  PATH_SOUND = "assets/sound/student/";
@@ -99,7 +99,7 @@ $(document).ready(function () {
   stage.on('mousedown touchstart', function (e) {
     if (!isDrawingMode) {
 
-     return;  // Chỉ cho phép vẽ khi ở chế độ vẽ
+      return;  // Chỉ cho phép vẽ khi ở chế độ vẽ
     }
 
     isDrawing = true;  // Bắt đầu vẽ
@@ -107,7 +107,7 @@ $(document).ready(function () {
     const pos = getRelativePointerPosition();  // Lấy tọa độ đã điều chỉnh
 
     lastLine = new Konva.Line({
-      stroke: line_color, 
+      stroke: line_color,
       strokeWidth: 3,
       globalCompositeOperation: 'source-over',
       points: [pos.x, pos.y],  // Sử dụng tọa độ đã điều chỉnh
@@ -137,7 +137,7 @@ $(document).ready(function () {
     if (isDrawing) {
       isDrawing = false;  // Dừng vẽ
       lastLine = null;    // Xóa đường vẽ cuối cùng
-    } 
+    }
   });
   // end of xu ly ve tren canva
   $('#delete-line-btn').on('click', function () {
@@ -156,9 +156,9 @@ $(document).ready(function () {
   $('#setting').on('click', function () {
     const controls = document.querySelector('.controls');
     if (controls.style.display === 'none' || controls.style.display === '') {
-      controls.style.display  = 'flex';
+      controls.style.display = 'flex';
     } else {
-      controls.style.display  = 'none';
+      controls.style.display = 'none';
       toggleDrawIcon(true);
     }
 
@@ -167,9 +167,9 @@ $(document).ready(function () {
   $('#zoom').on('click', function () {
     const controls = document.querySelector('.zoom-controls');
     if ((controls.style.display === 'none' || controls.style.display === '')) {
-      controls.style.display  = 'flex';
+      controls.style.display = 'flex';
     } else {
-      controls.style.display  = 'none';
+      controls.style.display = 'none';
     }
   });
 
@@ -200,22 +200,22 @@ $(document).ready(function () {
     toggleDrawIcon();
   });
 
-  function toggleDrawIcon(isDraw=false) {
+  function toggleDrawIcon(isDraw = false) {
     const drawControls = document.querySelector('.draw-controls');
     if (isDraw) {
       isDrawingMode = false;
       stage.container().style.cursor = 'default';
-      drawControls.style.display  = 'none';
+      drawControls.style.display = 'none';
     } else {
       if ((drawControls.style.display === 'none' || drawControls.style.display === '')) {
-        drawControls.style.display  = 'flex';
+        drawControls.style.display = 'flex';
         stage.container().style.cursor = 'crosshair';
         isDrawingMode = true;
         toggleLockIcon(true); // khong cho move trong khi ve
       } else {
         isDrawingMode = false;
         stage.container().style.cursor = 'default';
-        drawControls.style.display  = 'none';
+        drawControls.style.display = 'none';
       }
     }
   }
@@ -225,46 +225,46 @@ $(document).ready(function () {
     toggleLockIcon();
   });
 
-  function toggleLockIcon(isLock=false) {
-      // Lấy phần tử button
-      const button = document.getElementById("lock");
+  function toggleLockIcon(isLock = false) {
+    // Lấy phần tử button
+    const button = document.getElementById("lock");
 
-      // Tìm phần tử con bên trong (ở đây là phần tử <i>)
-      const icon = button.querySelector("i");
+    // Tìm phần tử con bên trong (ở đây là phần tử <i>)
+    const icon = button.querySelector("i");
 
-      if (isLock) {
+    if (isLock) {
+      icon.classList.remove("bi-unlock-fill");
+      icon.classList.add("bi-lock-fill");
+
+      // Đổi lại background của nút về màu ban đầu khi ở trạng thái "lock"
+      interact('#canvas').draggable(false);
+    } else {
+      // Kiểm tra và thay đổi class của phần tử <i>
+      if (icon.classList.contains("bi-lock-fill")) {
+        icon.classList.remove("bi-lock-fill");
+        icon.classList.add("bi-unlock-fill");
+
+        // Đổi background của nút sang màu khác khi ở trạng thái "unlock"
+        interact('#canvas').draggable(true);
+        toggleDrawIcon(true); // Không cho vẽ
+      } else {
         icon.classList.remove("bi-unlock-fill");
         icon.classList.add("bi-lock-fill");
 
         // Đổi lại background của nút về màu ban đầu khi ở trạng thái "lock"
         interact('#canvas').draggable(false);
-      } else {
-            // Kiểm tra và thay đổi class của phần tử <i>
-            if (icon.classList.contains("bi-lock-fill")) {
-              icon.classList.remove("bi-lock-fill");
-              icon.classList.add("bi-unlock-fill");
-
-              // Đổi background của nút sang màu khác khi ở trạng thái "unlock"
-              interact('#canvas').draggable(true);
-              toggleDrawIcon(true); // Không cho vẽ
-          } else {
-              icon.classList.remove("bi-unlock-fill");
-              icon.classList.add("bi-lock-fill");
-
-              // Đổi lại background của nút về màu ban đầu khi ở trạng thái "lock"
-              interact('#canvas').draggable(false);
-          }
       }
+    }
 
 
-      // Toggle draggable
-      if (stage.draggable()) {
-        stage.draggable(false);
-        console.log('Stage is now NOT draggable');
-      } else {
-        stage.draggable(true);
-        console.log('Stage is now draggable');
-      }
+    // Toggle draggable
+    if (stage.draggable()) {
+      stage.draggable(false);
+      console.log('Stage is now NOT draggable');
+    } else {
+      stage.draggable(true);
+      console.log('Stage is now draggable');
+    }
 
   }
 
@@ -349,7 +349,7 @@ $(document).ready(function () {
   //   stage.batchDraw();
   // });
 
-    stage.on('wheel', function (event) {
+  stage.on('wheel', function (event) {
     event.evt.preventDefault();
 
     const oldScale = stage.scaleX();
@@ -424,60 +424,61 @@ $(document).ready(function () {
   function getSoundStartEnd(fileName) {
     var arr = fileName.split("/");
     if (arr.length > 1) {
-      return [ arr[0], arr[1], arr[2] ];
+      return [arr[0], arr[1], arr[2]];
     }
 
-    return arr ;
+    return arr;
   }
   function playSound(soundFileName, icon) {
     resetIcons();
 
     if (soundFileName && "x" != soundFileName.trim()) {
-        const [fileName, start, end] = getSoundStartEnd(soundFileName);
-        console.log(fileName, start, end);
-        let url = global_const.PATH_SOUND + fileName.trim() + ".mp3";
+      const [fileName, start, end] = getSoundStartEnd(soundFileName);
+      console.log(fileName, start, end);
+      // let url = global_const.PATH_SOUND + fileName.trim() + ".mp3";
+      let url = global_const.PATH_SOUND + fileName.trim() + (fileName.trim().endsWith('.mp3') ? '' : '.mp3');
 
-        // Kiểm tra và dừng âm thanh nếu đang phát
-        if (audio && !audio.paused) {
-            audio.pause();        // Tạm dừng âm thanh hiện tại
-            audio.currentTime = 0; // Đặt lại thời gian phát về đầu
-        } 
+      // Kiểm tra và dừng âm thanh nếu đang phát
+      if (audio && !audio.paused) {
+        audio.pause();        // Tạm dừng âm thanh hiện tại
+        audio.currentTime = 0; // Đặt lại thời gian phát về đầu
+      }
 
-        // Tạo đối tượng âm thanh mới
-        audio = new Audio(url);
+      // Tạo đối tượng âm thanh mới
+      audio = new Audio(url);
 
-        if (start) {
-            audio.currentTime = start;
+      if (start) {
+        audio.currentTime = start;
 
-            // Theo dõi thời gian và dừng âm thanh khi đạt đến thời gian kết thúc
-            audio.addEventListener('timeupdate', () => {
-                if (audio.currentTime >= end) {
-                    console.log("addEventListener timeupdate");
-                    if (!audio.paused) {
-                        audio.pause();
-                        audio.currentTime = 0;
-                    }
-                    changeImageUrl(iconPath_1, icon);
-                }
-            });
-        } else {
-            audio.addEventListener("ended", (event) => {
-                console.log("addEventListener ended");
-                changeImageUrl(iconPath_1, icon);
-            });
-        }
+        // Theo dõi thời gian và dừng âm thanh khi đạt đến thời gian kết thúc
+        audio.addEventListener('timeupdate', () => {
+          if (audio.currentTime >= end) {
+            console.log("addEventListener timeupdate");
+            if (!audio.paused) {
+              audio.pause();
+              audio.currentTime = 0;
+            }
+            changeImageUrl(iconPath_1, icon);
+          }
+        });
+      } else {
+        audio.addEventListener("ended", (event) => {
+          console.log("addEventListener ended");
+          changeImageUrl(iconPath_1, icon);
+        });
+      }
 
 
-        // Phát âm thanh nếu không có lỗi
+      // Phát âm thanh nếu không có lỗi
       changeImageUrl(iconPath_2, icon);
       audio.play().then(() => {
         console.log("Playing");
       }).catch(error => {
-          console.error('Playback failed:', error);
+        console.error('Playback failed:', error);
       });
 
     }
-}
+  }
 
   function isNotMobile() {
     const width = window.innerWidth;
@@ -564,7 +565,7 @@ $(document).ready(function () {
 
       // Change cursor on hover
       icon.on('mouseover', function () {
-       stage.container().style.cursor = 'pointer';
+        stage.container().style.cursor = 'pointer';
       });
       icon.on('mouseout', function () {
         const drawControls = document.querySelector('.draw-controls');
@@ -581,30 +582,30 @@ $(document).ready(function () {
     });
   }
 
-    $('.add-icon').on('click', function () {
-      addPlayIcon();
+  $('.add-icon').on('click', function () {
+    addPlayIcon();
   });
 
   function requestRenderServer() {
     const data_key = DATA_TYPE + CURRENT_PAGE_INDEX;
-      if (APP_DATA.has(data_key)) {
-        console.log("Data from stored app map. {%s,%s}", DATA_TYPE, CURRENT_PAGE_INDEX);
-        loadIconAndLines(APP_DATA.get(data_key));
-      }
-      else {
-        showSpinner('#28a745');
-        const startTime = Date.now();
-        const dataToSend = {
-          sheet_name: DATA_TYPE.toString(),
-          page: CURRENT_PAGE_INDEX.toString()
-        };
-        fetch(global_const.SERVER_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(dataToSend)
-        })
+    if (APP_DATA.has(data_key)) {
+      console.log("Data from stored app map. {%s,%s}", DATA_TYPE, CURRENT_PAGE_INDEX);
+      loadLinesByDraw(APP_DATA.get(data_key));
+    }
+    else {
+      showSpinner('#28a745');
+      const startTime = Date.now();
+      const dataToSend = {
+        sheet_name: DATA_TYPE.toString(),
+        page: CURRENT_PAGE_INDEX.toString()
+      };
+      fetch(global_const.SERVER_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(dataToSend)
+      })
         .then(response => response.json()) // This actually calls the json() function
         .then(data => {
           checkLoadAppData(data);
@@ -623,14 +624,14 @@ $(document).ready(function () {
 
   function checkLoadAppData(retObjects) {
 
-     // Chuyển đổi chuỗi JSON thành đối tượng JavaScript
+    // Chuyển đổi chuỗi JSON thành đối tượng JavaScript
     const jsonObjects = retObjects.map(item => JSON.parse(item));
 
     // Truy cập các giá trị
     jsonObjects.forEach(data => {
       const pageNo = data.background.split('.')[0];
       if (pageNo == CURRENT_PAGE_INDEX.toString()) {
-        loadIconAndLines(data);
+        loadLinesByDraw(data);
       }
       const data_key = DATA_TYPE + pageNo;
       APP_DATA.set(data_key, data);
@@ -638,16 +639,16 @@ $(document).ready(function () {
 
     // only keep previous 5 pages if any
     let keepPage = CURRENT_PAGE_INDEX - 10;
-    while (keepPage >=0 ) {
+    while (keepPage >= 0) {
       const data_key = DATA_TYPE + keepPage;
       APP_DATA.delete(data_key);
       keepPage = keepPage - 1;
-    } 
+    }
   }
 
- function loadIconAndLines(data) {
+  function loadLinesByDraw(data) {
     $('#delete-line-btn').prop('disabled', true);
-    
+
     // Xóa các icon hiện có
     playIcons.forEach(icon => icon.destroy());
     playIcons = [];
@@ -663,16 +664,16 @@ $(document).ready(function () {
         const iconY = iconData.y * backgroundImage.height() + backgroundImage.y();
         addPlayIcon(iconX, iconY, iconData.sound);
       });
-  }
+    }
 
     if (data.lines) {
       data.lines.forEach(savedLine => {
-        const points = savedLine.points.map((point, index) => 
-          index % 2 === 0 
-              ? (point * backgroundImage.width()) + backgroundImage.x()  // Adjusted for X
-              : (point * backgroundImage.height()) + backgroundImage.y() // Adjusted for Y
-      );
-    
+        const points = savedLine.points.map((point, index) =>
+          index % 2 === 0
+            ? (point * backgroundImage.width()) + backgroundImage.x()  // Adjusted for X
+            : (point * backgroundImage.height()) + backgroundImage.y() // Adjusted for Y
+        );
+
         // Tạo đối tượng Line từ Konva
         const line = new Konva.Line({
           points: points,
@@ -697,8 +698,8 @@ $(document).ready(function () {
   }
 
   function lineAddEvents() {
-     drawingLayer.getChildren().forEach((line) => {
-        if (line.className === 'Line') {
+    drawingLayer.getChildren().forEach((line) => {
+      if (line.className === 'Line') {
         // Add a click event to select the line
         line.on('click', (e) => {
           e.cancelBubble = true; // Prevent other events from firing
@@ -709,10 +710,10 @@ $(document).ready(function () {
           drawingLayer.draw();
         });
 
-      
+
         // Đảm bảo con trỏ chuột thay đổi thành pointer khi hover qua line
         line.on('mouseover', function () {
-            stage.container().style.cursor = 'pointer';
+          stage.container().style.cursor = 'pointer';
         });
 
         line.on('mouseout', function () {
@@ -722,36 +723,36 @@ $(document).ready(function () {
             stage.container().style.cursor = 'default';
           }
         });
-        }
+      }
     });
   }
 
-    // Function to reset all line colors to default
+  // Function to reset all line colors to default
   function resetAllLineColors() {
     drawingLayer.getChildren().forEach((shape) => {
-        if (shape.className === 'Line') {
-            const saved_stroke = shape.getAttr('saved_stroke');
-            shape.stroke(saved_stroke); // Reset color to black or your default color
-        }
+      if (shape.className === 'Line') {
+        const saved_stroke = shape.getAttr('saved_stroke');
+        shape.stroke(saved_stroke); // Reset color to black or your default color
+      }
     });
   }
 
   // Function to handle line deletion
-function deleteSelectedLine() {
-  if (selectedLine) {
-      lines =  removeLine(lines, selectedLine);
+  function deleteSelectedLine() {
+    if (selectedLine) {
+      lines = removeLine(lines, selectedLine);
       selectedLine.remove(); // Remove line from layer
       selectedLine = null; // Reset selected line
       drawingLayer.draw(); // Redraw the layer
+    }
   }
-}
 
-// Event listener for the 'Delete' key to delete selected line
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'Delete' || e.key === 'Backspace') {
+  // Event listener for the 'Delete' key to delete selected line
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Delete' || e.key === 'Backspace') {
       deleteSelectedLine();
-  }
-});
+    }
+  });
 
   // show page
   function loadPage() {
@@ -761,9 +762,8 @@ document.addEventListener('keydown', (e) => {
     $('#settingsModal').modal('hide');
     CURRENT_PAGE_INDEX = parseInt($('#json-dropdown').val(), 10);
 
-    loadBackgroundImage(CURRENT_PAGE_INDEX);
-    
-
+    // loadBackgroundImage(CURRENT_PAGE_INDEX);
+    loadAssetJson(CURRENT_PAGE_INDEX);
     fitStageIntoParentContainer();
   }
 
@@ -772,18 +772,53 @@ document.addEventListener('keydown', (e) => {
     loadPage();
   });
 
-
-  function loadBackgroundImage(page) {
-    const imageObj = new Image();
-    showSpinner('#ff5733');
-    imageObj.onload = function () {
-      hideSpinner();
-      adjustBackgroundImage(imageObj);
-      requestRenderServer();
-    };
-    const imageUrl = global_const.PATH_IMG.replace("X", page);
-    imageObj.src = imageUrl;
+  // Chi can load line, con lai thi trong json het roi
+  function loadAssetJson(page) {
+    const urlJson = global_const.PATH_JSON.replace("X", page);
+    fetch(urlJson)
+      .then(response => response.json())
+      .then(data => {
+        backgroundLayer.clear();
+        iconLayer.clear();
+        loadJsonBackgroundAndIcons(data);
+      })
+      .catch(error => console.error('Error loading JSON:', error));
   }
+
+    function loadJsonBackgroundAndIcons(data) {
+        if (data.background) {
+            const imageObj = new Image();
+            imageObj.onload = function () {
+                if (backgroundImage) backgroundImage.destroy();
+
+                adjustBackgroundImage(imageObj);
+
+                // Xóa các icon hiện có
+                playIcons.forEach(icon => icon.destroy());
+                playIcons = [];
+
+                // Tính toán vị trí mới của các icon dựa trên kích thước hình nền mới
+                data.icons.forEach(iconData => {
+                    const iconX = iconData.x * backgroundImage.width() + backgroundImage.x();
+                    const iconY = iconData.y * backgroundImage.height() + backgroundImage.y();
+                    addPlayIcon(iconX, iconY, iconData.sound);
+                });
+            };
+            imageObj.src = global_const.PATH_ASSETS_IMG + data.background;
+        }
+    }
+
+  // function loadJsonBackgroundAndIcons(data) {
+  //   const imageObj = new Image();
+  //   showSpinner('#ff5733');
+  //   imageObj.onload = function () {
+  //     hideSpinner();
+  //     adjustBackgroundImage(imageObj);
+  //     // requestRenderServer();
+  //   };
+  //    const imageUrl = global_const.PATH_IMG + data.background;
+  //   imageObj.src = imageUrl;
+  // }
 
 
   function adjustBackgroundImage(imageObj) {
@@ -840,9 +875,9 @@ document.addEventListener('keydown', (e) => {
   window.addEventListener('resize', resizeEvent);
 
   function resizeEvent() {
-   //fitStageIntoParentContainer();
-  loadPage();
-  // window.location.reload();
+    //fitStageIntoParentContainer();
+    loadPage();
+    // window.location.reload();
   }
 
   // Hàm để xóa tất cả các play icon và làm lại từ đầu, bao gồm cả hình nền
@@ -905,7 +940,7 @@ document.addEventListener('keydown', (e) => {
     processNextPrePage(true);
   });
 
-  function processNextPrePage(isNext=true) {
+  function processNextPrePage(isNext = true) {
     if (isNext) {
       CURRENT_PAGE_INDEX = CURRENT_PAGE_INDEX + 1;
       if (CURRENT_PAGE_INDEX > MAX_PAGE_NUM) {
@@ -956,9 +991,9 @@ document.addEventListener('keydown', (e) => {
 
   function setPageInfo(dataType) {
     if ("student" == dataType) {
-       CURRENT_PAGE_INDEX = 4;
-       MAX_PAGE_NUM = 66;
-       MIN_PAGE_NUM = 1;
+      CURRENT_PAGE_INDEX = 4;
+      MAX_PAGE_NUM = 66;
+      MIN_PAGE_NUM = 1;
     } if ("work" == dataType) {
       CURRENT_PAGE_INDEX = 1;
       MAX_PAGE_NUM = 65;
@@ -967,6 +1002,7 @@ document.addEventListener('keydown', (e) => {
       CURRENT_PAGE_INDEX = 2;
       MAX_PAGE_NUM = 87;
       MIN_PAGE_NUM = 1;
+    } if ("dict" == dataType) {
     } 
   }
 
@@ -989,47 +1025,48 @@ document.addEventListener('keydown', (e) => {
         const [fileName, start, end] = getSoundStartEnd(soundFileName);
         console.log(fileName, start, end);
 
-        let url = global_const.PATH_SOUND + fileName.trim() + ".mp3";
+        // let url = global_const.PATH_SOUND + fileName.trim() + ".mp3";
+        let url = global_const.PATH_SOUND + fileName.trim() + (fileName.trim().endsWith('.mp3') ? '' : '.mp3');
 
         // Kiểm tra và dừng âm thanh nếu đang phát
         if (audio && !audio.paused) {
           audio.pause();        // Tạm dừng âm thanh hiện tại
           audio.currentTime = 0; // Đặt lại thời gian phát về đầu
-        } 
+        }
 
         audio = new Audio(url);
         changeImageUrl(iconPath_2, icon); // Change the icon to indicate it's playing
         if (start) {
           audio.currentTime = start;
-            // Theo dõi thời gian và dừng âm thanh khi đạt đến thời gian kết thúc
-            audio.addEventListener('timeupdate', () => {
-              if (audio.currentTime >= end) {
-                  console.log("addEventListener timeupdate");
-                  if (!audio.paused) {
-                      audio.pause();
-                      audio.currentTime = 0;
-                  }
-                  changeImageUrl(iconPath_1, icon);
-                                playAllIndex++; // Move to the next icon
-              playNextSound(); // Recursively play the next sound
+          // Theo dõi thời gian và dừng âm thanh khi đạt đến thời gian kết thúc
+          audio.addEventListener('timeupdate', () => {
+            if (audio.currentTime >= end) {
+              console.log("addEventListener timeupdate");
+              if (!audio.paused) {
+                audio.pause();
+                audio.currentTime = 0;
               }
+              changeImageUrl(iconPath_1, icon);
+              playAllIndex++; // Move to the next icon
+              playNextSound(); // Recursively play the next sound
+            }
           });
 
         } else {
-            // Listen for when the sound finishes playing
-            audio.addEventListener('ended', function () {
-              console.log("addEventListener ended");
-              changeImageUrl(iconPath_1, icon); // Reset the icon after playing
-              playAllIndex++; // Move to the next icon
-              playNextSound(); // Recursively play the next sound
-            });
+          // Listen for when the sound finishes playing
+          audio.addEventListener('ended', function () {
+            console.log("addEventListener ended");
+            changeImageUrl(iconPath_1, icon); // Reset the icon after playing
+            playAllIndex++; // Move to the next icon
+            playNextSound(); // Recursively play the next sound
+          });
         }
 
         // Phát âm thanh nếu không có lỗi
         audio.play().then(() => {
           console.log("Playing");
         }).catch(error => {
-            console.error('Playback failed:', error);
+          console.error('Playback failed:', error);
         });
 
       } else {
@@ -1048,83 +1085,83 @@ document.addEventListener('keydown', (e) => {
   });
 
   function getFileNameFromUrl(imageSrc) {
-      try {
-          const url = new URL(imageSrc);
-          const pathname = url.pathname;
-          const fileName = pathname.substring(pathname.lastIndexOf('/') + 1);
-          return fileName;
-      } catch (e) {
-          console.error('Invalid URL:', e);
-          return null;
-      }
+    try {
+      const url = new URL(imageSrc);
+      const pathname = url.pathname;
+      const fileName = pathname.substring(pathname.lastIndexOf('/') + 1);
+      return fileName;
+    } catch (e) {
+      console.error('Invalid URL:', e);
+      return null;
+    }
   }
 
   function sendJsonToServer() {
-      const backgroundSize = {
-          width: backgroundImage.width(),
-          height: backgroundImage.height(),
-      };
+    const backgroundSize = {
+      width: backgroundImage.width(),
+      height: backgroundImage.height(),
+    };
 
-      const fileName = getFileNameFromUrl(backgroundImage.image().src);
+    const fileName = getFileNameFromUrl(backgroundImage.image().src);
 
-        // Lấy tất cả đường line đã vẽ và chuyển thành dạng JSON
-      const drawnLines = lines.map(line => ({
-        points: line.points().map((point, index) => 
-            index % 2 === 0 
-            ? (point - backgroundImage.x()) / backgroundSize.width // Tọa độ X
-            : (point - backgroundImage.y()) / backgroundSize.height // Tọa độ Y
-        ),
-        stroke: line.stroke(), // Màu của nét vẽ
-        strokeWidth: line.strokeWidth(), // Độ rộng của nét vẽ
-        lineCap: line.lineCap(), // Hình dạng đầu nét vẽ
-        lineJoin: line.lineJoin() // Hình dạng khi các đoạn thẳng nối nhau
+    // Lấy tất cả đường line đã vẽ và chuyển thành dạng JSON
+    const drawnLines = lines.map(line => ({
+      points: line.points().map((point, index) =>
+        index % 2 === 0
+          ? (point - backgroundImage.x()) / backgroundSize.width // Tọa độ X
+          : (point - backgroundImage.y()) / backgroundSize.height // Tọa độ Y
+      ),
+      stroke: line.stroke(), // Màu của nét vẽ
+      strokeWidth: line.strokeWidth(), // Độ rộng của nét vẽ
+      lineCap: line.lineCap(), // Hình dạng đầu nét vẽ
+      lineJoin: line.lineJoin() // Hình dạng khi các đoạn thẳng nối nhau
     }));
 
 
-      const jsonData = {
-          background: fileName,
-          icons: playIcons.map(icon => ({
-              x: (icon.x() - backgroundImage.x()) / backgroundSize.width,
-              y: (icon.y() - backgroundImage.y()) / backgroundSize.height,
-              sound: icon.getAttr('sound')
-          })),
-          lines: drawnLines,
-          backgroundSize: backgroundSize
-      };
+    const jsonData = {
+      background: fileName,
+      icons: playIcons.map(icon => ({
+        x: (icon.x() - backgroundImage.x()) / backgroundSize.width,
+        y: (icon.y() - backgroundImage.y()) / backgroundSize.height,
+        sound: icon.getAttr('sound')
+      })),
+      lines: drawnLines,
+      backgroundSize: backgroundSize
+    };
 
-      //console.log('Data to send:', JSON.stringify(jsonData, null, 2)); // Kiểm tra dữ liệu trước khi gửi
-      // Tạo đối tượng dữ liệu JSON
-      const page = $('#json-dropdown').val() ;
-      const dataToSend = {
-        sheet_name: DATA_TYPE,
-        page: page,
-        json: JSON.stringify(jsonData) // Chuyển đổi đối tượng thành chuỗi JSON
+    //console.log('Data to send:', JSON.stringify(jsonData, null, 2)); // Kiểm tra dữ liệu trước khi gửi
+    // Tạo đối tượng dữ liệu JSON
+    const page = $('#json-dropdown').val();
+    const dataToSend = {
+      sheet_name: DATA_TYPE,
+      page: page,
+      json: JSON.stringify(jsonData) // Chuyển đổi đối tượng thành chuỗi JSON
     };
 
     console.log(dataToSend);
 
-      fetch(global_const.SERVER_URL, {
-          method: 'POST',
-          headers: {
-              'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(dataToSend)
+    fetch(global_const.SERVER_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(dataToSend)
+    })
+      .then(response => response)
+      .then(data => {
+        console.log('Success:', data);
+        alert('Lưu bài làm thành công!');
+        APP_DATA.delete(DATA_TYPE + page);
+        //drawProcess();
       })
-          .then(response => response)
-          .then(data => {
-              console.log('Success:', data);
-              alert('Lưu bài làm thành công!');
-              APP_DATA.delete(DATA_TYPE + page);
-              //drawProcess();
-          })
-          .catch(error => {
-              console.log('Error:', error);
-              alert('Bị lỗi gì rồi không lưu được bạn ơi.');
-          });
+      .catch(error => {
+        console.log('Error:', error);
+        alert('Bị lỗi gì rồi không lưu được bạn ơi.');
+      });
   }
 
 
-   // Event listener for the "Send JSON to Server" button
+  // Event listener for the "Send JSON to Server" button
   $('#send-json').click(function () {
     sendJsonToServer();
   });

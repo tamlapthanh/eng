@@ -1,39 +1,43 @@
 $(document).ready(function () {
 
-    // let PATH_ROOT = "assets/books/27/student";
+    let PATH_ROOT = "assets/books/27/";
+        
+    // let DATA_TYPE = "student"
     // let CURRENT_PAGE_INDEX = 4;
     // let MAX_PAGE_NUM = 66;
     // let MIN_PAGE_NUM = 4;
 
     // let PATH_ROOT = "assets/books/27/work";
+    // let DATA_TYPE = "work"
     // let CURRENT_PAGE_INDEX = 1;
     // let MAX_PAGE_NUM = 65;
     // let MIN_PAGE_NUM = 1;
 
-    let PATH_ROOT = "assets/books/27/student37";
-    let CURRENT_PAGE_INDEX = 1;
-    let MAX_PAGE_NUM = 137;
-    let MIN_PAGE_NUM = 1;
+    let DATA_TYPE = "student37"
+    let CURRENT_PAGE_INDEX = 5;
+    let MAX_PAGE_NUM = 107;
+    let MIN_PAGE_NUM = 5;
 
-    let SERVER_URL = "http://localhost:8080/api/save-json";
-    const SAVAE_FOLDER = "D:/Working/Study/KHoi/zizi/english27/" + PATH_ROOT + "/data/";
+    let SERVER_URL = "http://localhost:8080/api/file/save-json";
+    // const SAVAE_FOLDER = "D:/Working/Study/KHoi/zizi/english27/" + PATH_ROOT + "/data/";
+    const SAVAE_FOLDER = DATA_TYPE + "/data/";
 
     const global_const = {
         get PATH_ASSETS_IMG() {
             //   PATH_ASSETS_IMG = "assets/img/";
-            return PATH_ROOT + "/img/";
+            return PATH_ROOT + DATA_TYPE +  "/img/";
         },
         get PATH_IMG() {
             //  PATH_IMG = "assets/img/X.webp";
-            return PATH_ROOT + "/img/X.webp";
+            return PATH_ROOT + DATA_TYPE + "/img/X.webp";
         },
         get PATH_SOUND() {
             //  PATH_SOUND = "assets/sound/student/";
-            return PATH_ROOT + "/sound/";
+            return PATH_ROOT + DATA_TYPE + "/sound/";
         },
         get PATH_JSON() {
             //  PATH_JSON = "assets/data/X.json";
-            return PATH_ROOT + "/data/X.json";
+            return PATH_ROOT + DATA_TYPE + "/data/X.json";
         }
     };
 
@@ -45,7 +49,7 @@ $(document).ready(function () {
         width: window.innerWidth,
         height: window.innerHeight,
     });
-    
+
 
     const backgroundLayer = new Konva.Layer();
     const iconLayer = new Konva.Layer();
@@ -79,48 +83,54 @@ $(document).ready(function () {
         if (arr.length > 1) {
             return [arr[0], arr[1], arr[2]];
         }
-
-        return arr;
+        return [arr[0]]; // Chỉ trả về tên file
     }
+
     function playSound(soundFileName, icon) {
         if (soundFileName && "x" != soundFileName.trim()) {
             const [fileName, start, end] = getSoundStartEnd(soundFileName);
             console.log(fileName, start, end);
-            let url = global_const.PATH_SOUND + fileName.trim() + ".mp3";
+
+            let url = global_const.PATH_SOUND + fileName.trim() + (fileName.trim().endsWith('.mp3') ? '' : '.mp3');
 
             // Kiểm tra và dừng âm thanh nếu đang phát
             if (audio && !audio.paused) {
-                audio.pause();        // Tạm dừng âm thanh hiện tại
-                audio.currentTime = 0; // Đặt lại thời gian phát về đầu
+                audio.pause();
+                audio.currentTime = 0;
             }
 
             // Tạo đối tượng âm thanh mới
             audio = new Audio(url);
 
-            if (start) {
-                audio.currentTime = start;
+            // Chỉ set currentTime và timeupdate listener nếu có start time
+            if (start !== undefined && start !== null && start !== '') {
+                audio.addEventListener('loadedmetadata', () => {
+                    audio.currentTime = parseFloat(start);
 
-                // Theo dõi thời gian và dừng âm thanh khi đạt đến thời gian kết thúc
-                audio.addEventListener('timeupdate', () => {
-                    if (audio.currentTime >= end) {
-                        console.log("addEventListener timeupdate");
-                        if (!audio.paused) {
-                            audio.pause();
-                            audio.currentTime = 0;
-                        }
+                    // Chỉ theo dõi timeupdate nếu có end time
+                    if (end !== undefined && end !== null && end !== '') {
+                        const endTime = parseFloat(end);
+                        audio.addEventListener('timeupdate', () => {
+                            if (audio.currentTime >= endTime) {
+                                console.log("addEventListener timeupdate - reached end time");
+                                if (!audio.paused) {
+                                    audio.pause();
+                                    audio.currentTime = 0;
+                                }
+                            }
+                        });
                     }
                 });
             } else {
+                // Nếu chỉ có tên file, phát toàn bộ
                 audio.addEventListener("ended", (event) => {
-                    console.log("addEventListener ended");
-
-
+                    console.log("addEventListener ended - full audio completed");
                 });
             }
 
-            // Phát âm thanh nếu không có lỗi
+            // Phát âm thanh
             audio.play().then(() => {
-
+                console.log("Audio playback started");
             }).catch(error => {
                 console.error('Playback failed:', error);
             });
@@ -176,6 +186,56 @@ $(document).ready(function () {
         }
     });
 
+    function checkSoundPath() {
+        // Kiểm tra tất cả icon trong playIcons và thay đổi hình ảnh nếu sound rỗng
+        playIcons.forEach((icon, index) => {
+            const sound = icon.getAttr('sound') || '';
+            const imageUrl = (!sound || sound.trim() === '') ? 'assets/music_icon.svg' : 'assets/play_icon.png';
+
+            // Nếu cần thay đổi icon
+            if (imageUrl !== icon.image().src) {
+                Konva.Image.fromURL(imageUrl, function (newImage) {
+                    newImage.setAttrs({
+                        x: icon.x(),
+                        y: icon.y(),
+                        width: icon.width(),
+                        height: icon.height(),
+                        sound: sound,
+                        draggable: true
+                    });
+
+                    // Gắn lại các sự kiện cho icon mới
+                    newImage.on('click', function () {
+                        currentIcon = newImage;
+                        iconSoundUrlInput.val(newImage.getAttr('sound') || '');
+                        iconXInput.val(newImage.x());
+                        iconYInput.val(newImage.y());
+                        $('#settingsModal').modal('show');
+                    });
+                    newImage.on('touchend', function () {
+                        currentIcon = newImage;
+                        iconSoundUrlInput.val(newImage.getAttr('sound') || '');
+                        iconXInput.val(newImage.x());
+                        iconYInput.val(newImage.y());
+                        $('#settingsModal').modal('show');
+                    });
+                    newImage.on('mouseover', function () {
+                        document.body.style.cursor = 'pointer';
+                    });
+                    newImage.on('mouseout', function () {
+                        document.body.style.cursor = 'default';
+                    });
+
+                    // Thay thế icon cũ bằng icon mới trong playIcons và layer
+                    playIcons[index] = newImage;
+                    icon.destroy();
+                    iconLayer.add(newImage);
+                    iconLayer.batchDraw();
+                });
+            }
+        });
+    }
+
     function loadJsonBackgroundAndIcons(data) {
         if (data.background) {
             const imageObj = new Image();
@@ -220,7 +280,6 @@ $(document).ready(function () {
     function loadPage() {
         clearCanvas();
         CURRENT_PAGE_INDEX = parseInt($('#json-dropdown').val(), 10);
-
         if (CURRENT_PAGE_INDEX) {
             const urlJson = global_const.PATH_JSON.replace("X", CURRENT_PAGE_INDEX);
             fetch(urlJson)
@@ -288,11 +347,19 @@ $(document).ready(function () {
     }
 
     function fitStageIntoParentContainer() {
-        stage.width(window.innerWidth);
+        stage.width(window.innerWidth); 
         stage.height(window.innerHeight);
         stage.batchDraw();
     }
 
+
+    // Thêm sự kiện beforeunload để hiển thị confirm khi reload hoặc rời khỏi trang
+    window.addEventListener('beforeunload', function (event) {
+        // Hiển thị thông báo xác nhận
+        event.preventDefault(); // Ngăn hành động mặc định (tùy thuộc vào trình duyệt)
+        event.returnValue = ''; // Yêu cầu trình duyệt hiển thị hộp thoại xác nhận
+        return 'Bạn có chắc chắn muốn rời khỏi trang? Các thay đổi chưa lưu sẽ bị mất.';
+    });
 
     window.addEventListener('resize', loadPage);
 
@@ -315,10 +382,7 @@ $(document).ready(function () {
     });
 
     playIconButton.on('click', function () {
-        playSound(iconSoundUrlInput.val());
-    });
 
-    saveIconButton.on('click', function () {
         if (currentIcon) {
             currentIcon.setAttrs({
                 x: parseFloat(iconXInput.val()) || currentIcon.x(),
@@ -326,38 +390,96 @@ $(document).ready(function () {
                 sound: iconSoundUrlInput.val()
             });
             iconLayer.batchDraw();
-           // $('#settingsModal').modal('hide');
         }
+
+        playSound(iconSoundUrlInput.val());
     });
 
+    saveIconButton.off('click').on('click', function (e) {
+       // Lưu màu ban đầu của nút
+        const originalBackgroundColor = saveIconButton.css('background-color');
+        
+        // Thay đổi màu nút trước khi thực thi (ví dụ: màu xám)
+        saveIconButton.css('background-color', '#cccccc'); // Màu xám, bạn có thể thay đổi màu khác
+        
+        if (currentIcon) {
+            currentIcon.setAttrs({
+                x: parseFloat(iconXInput.val()) || currentIcon.x(),
+                y: parseFloat(iconYInput.val()) || currentIcon.y(),
+                sound: iconSoundUrlInput.val()
+            });
+            iconLayer.batchDraw();
+        }
 
-    saveJsonButton.on('click', function () {
-        if (!backgroundImage) return;
+        // Hoàn lại màu ban đầu sau khi lưu
+        saveIconButton.css('background-color', originalBackgroundColor);
+
+        $('#settingsModal').modal('hide');
+        // alert('Lưu thành công: ' + iconSoundUrlInput.val());
+
+        checkSoundPath();
+    });
+
+    saveJsonButton.off('click').on('click', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (!backgroundImage) return false;
 
         const backgroundSize = {
-            width: backgroundImage.width(),
-            height: backgroundImage.height(),
+            width: typeof backgroundImage.width === 'function' ? backgroundImage.width() : backgroundImage.width,
+            height: typeof backgroundImage.height === 'function' ? backgroundImage.height() : backgroundImage.height,
         };
-        const fileName = getFileNameFromUrl(backgroundImage.image().src);
-        const data = {
+
+        const fileName = (backgroundImage && backgroundImage.image && typeof backgroundImage.image === 'function' && backgroundImage.image())
+            ? getFileNameFromUrl(backgroundImage.image().src)
+            : 'background';
+
+        const jsonData = {
             background: fileName,
-            icons: playIcons.map(icon => ({
-                x: (icon.x() - backgroundImage.x()) / backgroundSize.width,
-                y: (icon.y() - backgroundImage.y()) / backgroundSize.height,
-                sound: icon.getAttr('sound')
+            icons: (Array.isArray(playIcons) ? playIcons : []).map(icon => ({
+                x: ((typeof icon.x === 'function' ? icon.x() : icon.x) - (typeof backgroundImage.x === 'function' ? backgroundImage.x() : backgroundImage.x)) / (backgroundSize.width || 1),
+                y: ((typeof icon.y === 'function' ? icon.y() : icon.y) - (typeof backgroundImage.y === 'function' ? backgroundImage.y() : backgroundImage.y)) / (backgroundSize.height || 1),
+                sound: (typeof icon.getAttr === 'function' ? (icon.getAttr('sound') || '') : (icon.sound || ''))
             })),
-            backgroundSize: backgroundSize // Lưu kích thước hình nền hiện tại
+            backgroundSize
         };
 
-        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        var saveFileName = $('#json-dropdown').val() + ".json";
-        $('<a></a>')
-            .attr('href', url)
-            .attr('download', saveFileName)
-            .appendTo('body')[0].click();
-    });
+        const saveFileName = ($('#json-dropdown').val() || 'config') + '.json';
 
+        const payload = {
+            file_name: saveFileName,
+            folder_name: SAVAE_FOLDER,
+            json: JSON.stringify(jsonData)
+        };
+
+        fetch(SERVER_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        })
+            .then(resp => {
+                if (!resp.ok) throw new Error('Server error ' + resp.status);
+                return resp.json();
+            })
+            .then(j => {
+                console.log('Server response', j);
+                if (j.ok) {
+                    alert('Lưu thành công: ' + j.path);
+                } else {
+                    alert('Lưu thất bại: ' + j.message);
+                }
+                $('#settingsModal').modal('hide');
+                return false;
+            })
+            .catch(err => {
+                console.error('Save failed', err);
+                alert('Lỗi khi lưu: ' + err.message);
+            });
+
+         
+        return false;
+    });
 
     // Hàm để xóa tất cả các play icon và làm lại từ đầu, bao gồm cả hình nền
     function clearCanvas() {
@@ -499,7 +621,7 @@ $(document).ready(function () {
         // Tạo đối tượng dữ liệu JSON
         const dataToSend = {
             file_name: saveFileName,
-            save_folder: SAVAE_FOLDER,
+            folder_name: SAVAE_FOLDER,
             json: JSON.stringify(jsonData) // Chuyển đổi đối tượng thành chuỗi JSON
         };
 
@@ -514,6 +636,7 @@ $(document).ready(function () {
             .then(data => {
                 console.log('Success:', data);
                 alert('JSON data sent successfully!');
+                 $('#settingsModal').modal('hide');
             })
             .catch(error => {
                 console.log('Error:', error);
