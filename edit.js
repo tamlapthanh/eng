@@ -65,6 +65,7 @@ $(document).ready(function () {
     const iconYInput = $('#icon-y');
     const playIconButton = $('#play-icon');
     const saveIconButton = $('#save-icon');
+    const saveSendIconButton = $('#save-icon-send');    
     const saveJsonButton = $('#save-json');
 
     const previous_page = $('#previous_page');
@@ -363,6 +364,17 @@ $(document).ready(function () {
 
     window.addEventListener('resize', loadPage);
 
+    $('#setting').on('click', function () {
+        const controls = document.querySelector('.controls');
+        if (controls.style.display === 'none' || controls.style.display === '') {
+        controls.style.display = 'flex';
+        } else {
+        controls.style.display = 'none';
+        toggleDrawIcon(true);
+        }
+
+    });    
+
     $('#delete-icon').on('click', function () {
         if (currentIcon) {
             // Xóa biểu tượng khỏi danh sách và từ layer
@@ -382,21 +394,19 @@ $(document).ready(function () {
     });
 
     playIconButton.on('click', function () {
-
-        if (currentIcon) {
-            currentIcon.setAttrs({
-                x: parseFloat(iconXInput.val()) || currentIcon.x(),
-                y: parseFloat(iconYInput.val()) || currentIcon.y(),
-                sound: iconSoundUrlInput.val()
-            });
-            iconLayer.batchDraw();
-        }
-
+        saveIcon();
         playSound(iconSoundUrlInput.val());
     });
 
-    saveIconButton.off('click').on('click', function (e) {
-       // Lưu màu ban đầu của nút
+    saveSendIconButton.off('click').on('click', function (e) {
+        saveIcon();
+        sendJsonToServer();
+        checkSoundPath();
+        $('#settingsModal').modal('hide');
+    });
+
+    function saveIcon() {
+        // Lưu màu ban đầu của nút
         const originalBackgroundColor = saveIconButton.css('background-color');
         
         // Thay đổi màu nút trước khi thực thi (ví dụ: màu xám)
@@ -413,11 +423,14 @@ $(document).ready(function () {
 
         // Hoàn lại màu ban đầu sau khi lưu
         saveIconButton.css('background-color', originalBackgroundColor);
+    }
 
-        $('#settingsModal').modal('hide');
+    saveIconButton.off('click').on('click', function (e) {
+        //$('#settingsModal').modal('hide');
         // alert('Lưu thành công: ' + iconSoundUrlInput.val());
-
+        saveIcon();
         checkSoundPath();
+        $('#settingsModal').modal('hide');
     });
 
     saveJsonButton.off('click').on('click', function (e) {

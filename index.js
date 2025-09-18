@@ -1002,7 +1002,10 @@ $(document).ready(function () {
       CURRENT_PAGE_INDEX = 2;
       MAX_PAGE_NUM = 87;
       MIN_PAGE_NUM = 1;
-    } if ("dict" == dataType) {
+    } if ("student37" == dataType) {
+      CURRENT_PAGE_INDEX = 5;
+      MAX_PAGE_NUM = 107;
+      MIN_PAGE_NUM = 1;      
     } 
   }
 
