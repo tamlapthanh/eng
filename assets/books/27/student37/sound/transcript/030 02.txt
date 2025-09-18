@@ -1,0 +1,11 @@
+030 02.mp3/1.000000/2.092000/listening 30.
+030 02.mp3/2.000000/4.149000/Listen and read.
+030 02.mp3/6.000000/8.133000/This is Cheese.
+030 02.mp3/9.000000/11.194000/That is her bag.
+030 02.mp3/13.000000/15.372000/That is her pencil case.
+030 02.mp3/17.000000/18.987000/It's green.
+030 02.mp3/20.000000/22.536000/That is her pencil.
+030 02.mp3/24.000000/26.989000/That is her blue pen.
+030 02.mp3/29.000000/31.351000/That is her pink pen.
+030 02.mp3/33.000000/33.563000/Look.
+030 02.mp3/34.000000/36.422000/That is her eraser.
