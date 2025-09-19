@@ -935,6 +935,11 @@ $(document).ready(function () {
       MAX_PAGE_NUM = 107;
       MIN_PAGE_NUM = 1;
     }
+    if ("work37" == dataType) {
+      CURRENT_PAGE_INDEX = 1;
+      MAX_PAGE_NUM = 97;
+      MIN_PAGE_NUM = 1;
+    }
   }
 
   // Function to play sounds in sequence
