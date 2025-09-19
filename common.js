@@ -93,6 +93,17 @@
         }
     }
 
+    function isUnLockStage() {
+        if ($('#lock-icon').hasClass('bi-unlock-fill')) {
+            console.log('The lock button is in the unlocked state (bi-unlock-fill).');
+            return false;
+        } else {
+            console.log('The lock button is in the locked state (bi-lock-fill).');
+            return true;
+        }
+
+        
+    }
 
     function getIconSize(ICON_SIZE) {
         let icon_size = ICON_SIZE;

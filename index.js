@@ -78,8 +78,11 @@ $(document).ready(function () {
   let isPinching = false;
 
   function setZoom(scale) {
-    stage.scale({ x: scale, y: scale });
-    stage.batchDraw();
+
+    if ($('#lock-icon').hasClass('bi-unlock-fill')) {
+      stage.scale({ x: scale, y: scale });
+      stage.batchDraw();
+    }
   }
 
   // xu ly ve tren canva
@@ -102,12 +105,15 @@ $(document).ready(function () {
 
   // Xử lý bắt đầu vẽ
   stage.on('mousedown touchstart', function (e) {
-    if (!isDrawingMode) {
+    if (isDrawingMode == false) {
 
+      console.log("Chỉ cho phép vẽ khi ở chế độ vẽ"); 
       return;  // Chỉ cho phép vẽ khi ở chế độ vẽ
     }
 
+    // cho phep ve nhưng khong cho drag able khi dang lock
     isDrawing = true;  // Bắt đầu vẽ
+    stage.draggable(false);  
 
     const pos = getRelativePointerPosition();  // Lấy tọa độ đã điều chỉnh
 
@@ -142,6 +148,7 @@ $(document).ready(function () {
     if (isDrawing) {
       isDrawing = false;  // Dừng vẽ
       lastLine = null;    // Xóa đường vẽ cuối cùng
+      stage.draggable(true);  
     }
   });
   // end of xu ly ve tren canva
@@ -242,7 +249,8 @@ $(document).ready(function () {
       icon.classList.add("bi-lock-fill");
 
       // Đổi lại background của nút về màu ban đầu khi ở trạng thái "lock"
-      interact('#canvas').draggable(false);
+      // interact('#canvas').draggable(false);
+      stage.draggable(false);  
     } else {
       // Kiểm tra và thay đổi class của phần tử <i>
       if (icon.classList.contains("bi-lock-fill")) {
@@ -250,14 +258,16 @@ $(document).ready(function () {
         icon.classList.add("bi-unlock-fill");
 
         // Đổi background của nút sang màu khác khi ở trạng thái "unlock"
-        interact('#canvas').draggable(true);
+        // interact('#canvas').draggable(true);
+        stage.draggable(true);  
         toggleDrawIcon(true); // Không cho vẽ
       } else {
         icon.classList.remove("bi-unlock-fill");
         icon.classList.add("bi-lock-fill");
 
         // Đổi lại background của nút về màu ban đầu khi ở trạng thái "lock"
-        interact('#canvas').draggable(false);
+        // interact('#canvas').draggable(false);
+        stage.draggable(false);  
       }
     }
 
@@ -300,7 +310,7 @@ $(document).ready(function () {
 
     if (touchInterval < 300) { // 300ms is the threshold for double-tap detection
       // Handle double-tap event here
-      console.log('Double-tap detected!');
+      //console.log('Double-tap detected!');
       if (zoomLevel < maxZoom) {
         zoomLevel += zoomStep;
         setZoom(zoomLevel);
@@ -310,14 +320,18 @@ $(document).ready(function () {
     lastTouchTime = now;
   });
 
+
+
   // Mouse double-click event
   stage.on('dblclick', (e) => {
-    console.log('Double-click detected!');
-    if (zoomLevel < maxZoom) {
-      zoomLevel += zoomStep;
-      setZoom(zoomLevel);
-    }
+
+      console.log('Double-click detected! 111');
+      if (zoomLevel < maxZoom) {
+        zoomLevel += zoomStep;
+        setZoom(zoomLevel);
+      }
   });
+
 
 
   // Zoom with mouse wheel
@@ -355,18 +369,21 @@ $(document).ready(function () {
   // });
 
   stage.on('wheel', function (event) {
-    event.evt.preventDefault();
 
-    const oldScale = stage.scaleX();
-    const scaleBy = 1.1;
-    let newScale = event.evt.deltaY > 0 ? oldScale / scaleBy : oldScale * scaleBy;
+    if ($('#lock-icon').hasClass('bi-unlock-fill')) {
+        event.evt.preventDefault();
 
-    newScale = Math.max(minZoom, Math.min(maxZoom, newScale));
-    zoomLevel = newScale;
+        const oldScale = stage.scaleX();
+        const scaleBy = 1.1;
+        let newScale = event.evt.deltaY > 0 ? oldScale / scaleBy : oldScale * scaleBy;
 
-    // Chỉ scale mà không di chuyển
-    stage.scale({ x: newScale, y: newScale });
-    stage.batchDraw();
+        newScale = Math.max(minZoom, Math.min(maxZoom, newScale));
+        zoomLevel = newScale;
+
+        // Chỉ scale mà không di chuyển
+        stage.scale({ x: newScale, y: newScale });
+        stage.batchDraw();
+    }
   });
 
   // interact('#canvas').draggable({
@@ -694,7 +711,8 @@ $(document).ready(function () {
   // show page
   function loadPage() {
 
-    interact('#canvas').draggable(false);
+    // interact('#canvas').draggable(false);
+    stage.draggable(false);
     clearCanvas();
     $('#settingsModal').modal('hide');
     CURRENT_PAGE_INDEX = parseInt($('#json-dropdown').val(), 10);
@@ -1055,17 +1073,9 @@ $(document).ready(function () {
 
 
     const jsonData = {
-      // background: fileName,
-      // icons: playIcons.map(icon => ({
-      //   x: (icon.x() - backgroundImage.x()) / backgroundSize.width,
-      //   y: (icon.y() - backgroundImage.y()) / backgroundSize.height,
-      //   sound: icon.getAttr('sound')
-      // })),
       lines: drawnLines
-      // backgroundSize: backgroundSize
     };
 
-    //console.log('Data to send:', JSON.stringify(jsonData, null, 2)); // Kiểm tra dữ liệu trước khi gửi
     // Tạo đối tượng dữ liệu JSON
     const page = $('#json-dropdown').val();
     const dataToSend = {
@@ -1128,7 +1138,7 @@ $(document).ready(function () {
   function listDrawingPagesDetailed(page = null, isRefresh = false) {
 
     if (isRefresh || APP_DATA == null) {
-      showSpinner('#28a745');
+      // showSpinner('#28a745');
       const dataToSend = { sheet_name: String(DATA_TYPE) };
       // Tạo promise và gắn xử lý lỗi — nhưng KHÔNG await/return
       fetch(global_const.SERVER_API_ALL_METHOD, {
@@ -1149,7 +1159,7 @@ $(document).ready(function () {
           console.error('Fetch error (fire-and-forget):', err);
         })
         .finally(() => {
-          hideSpinner();
+          // hideSpinner();
         });
     } else {
       loadLinesByDraw(page);
@@ -1164,6 +1174,6 @@ $(document).ready(function () {
 
   popDropdown($('#json-dropdown'), "Page", MIN_PAGE_NUM, MAX_PAGE_NUM, CURRENT_PAGE_INDEX);
   loadPage();
-  
+  toggleLockIcon();
 
 });
