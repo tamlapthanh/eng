@@ -16,18 +16,15 @@ $(document).ready(function () {
   let MAX_PAGE_NUM = 107;
   let MIN_PAGE_NUM = 1;
 
-  // let PATH_ROOT = "assets/books/27/";
-  // let DATA_TYPE = "work";
-  // let CURRENT_PAGE_INDEX = 4;
-  // let MAX_PAGE_NUM = 65;
-  // let MIN_PAGE_NUM = 1;
-
   // Create a new Map
   let ICON_SIZE = 18;
-  let APP_DATA = new Map();
+  let APP_DATA = null;
   const RUN_URL_SERVER = "https://zizi-app.onrender.com/";
   const RUN_URL_LOCAL = "http://localhost:8080/";
-  const API_METHOD = "api/sheets/lines"
+  // const API_METHOD = "api/sheets/lines"
+
+  const API_METHOD = "api/sheets/line_by_key"
+  const API_ALL_METHOD = "api/sheets/line_all"
 
   const global_const = {
     get PATH_ASSETS_IMG() {
@@ -45,6 +42,14 @@ $(document).ready(function () {
     get PATH_JSON() {
       //  PATH_JSON = "assets/data/X.json";
       return PATH_ROOT + DATA_TYPE + "/data/X.json";
+    },
+    get SERVER_API_ALL_METHOD() {
+      const hostname = window.location.hostname;
+      if (hostname === 'localhost' || hostname === '127.0.0.1') {
+        return RUN_URL_LOCAL + API_ALL_METHOD;
+      } else {
+        return RUN_URL_SERVER + API_ALL_METHOD;
+      }
     },
     get SERVER_URL() {
       const hostname = window.location.hostname;
@@ -480,31 +485,6 @@ $(document).ready(function () {
     }
   }
 
-  function isNotMobile() {
-    const width = window.innerWidth;
-    const userAgent = navigator.userAgent.toLowerCase();
-
-    if (width < 768 || /mobile|android|iphone|ipod|blackberry|iemobile|opera mini/i.test(userAgent)) {
-      return false;
-    } else {
-      return true;
-    }
-  }
-
-  function getIconSize() {
-    let icon_size = ICON_SIZE;
-    const width = window.innerWidth;
-    const userAgent = navigator.userAgent.toLowerCase();
-
-    if (width < 768 || /mobile|android|iphone|ipod|blackberry|iemobile|opera mini/i.test(userAgent)) {
-      icon_size = ICON_SIZE;
-    } else if ((width >= 768 && width <= 1024) || /tablet|ipad|playbook|silk/i.test(userAgent)) {
-      icon_size = ICON_SIZE;
-    } else {
-      icon_size = ICON_SIZE;
-    }
-    return icon_size;
-  }
 
   // Hàm để thay đổi hình ảnh
   function changeImageUrl(newUrl, icon) {
@@ -532,7 +512,7 @@ $(document).ready(function () {
       return;
     }
 
-    icon_size = getIconSize();
+    icon_size = getIconSize(ICON_SIZE);
     Konva.Image.fromURL(iconPath_1, function (icon) {
       icon.setAttrs({
         x: x || Math.random() * (stage.width() - 50),
@@ -554,7 +534,7 @@ $(document).ready(function () {
 
           playSound(icon.getAttr('sound'), currentIcon);
         } else {
-          alert("Not found the sound id.")
+          showToast('Not found the sound id!');
         }
       }
 
@@ -586,116 +566,81 @@ $(document).ready(function () {
     addPlayIcon();
   });
 
-  function requestRenderServer() {
-    const data_key = DATA_TYPE + CURRENT_PAGE_INDEX;
-    if (APP_DATA.has(data_key)) {
-      console.log("Data from stored app map. {%s,%s}", DATA_TYPE, CURRENT_PAGE_INDEX);
-      loadLinesByDraw(APP_DATA.get(data_key));
-    }
-    else {
-      showSpinner('#28a745');
-      const startTime = Date.now();
-      const dataToSend = {
-        sheet_name: DATA_TYPE.toString(),
-        page: CURRENT_PAGE_INDEX.toString()
-      };
-      fetch(global_const.SERVER_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(dataToSend)
-      })
-        .then(response => response.json()) // This actually calls the json() function
-        .then(data => {
-          checkLoadAppData(data);
-        })
-        .catch(error => {
-          console.error('There was an error with the fetch operation:');
-        })
-        .finally(() => {
-          hideSpinner();
-          const endTime = Date.now();
-          const requestTimeInSeconds = (endTime - startTime) / 1000;
-          console.log(`Fetch operation completed. Processing time: ${requestTimeInSeconds} seconds`);
-        });
-    }
-  }
+  // function requestRenderServer() {
+  //   showSpinner('#28a745');
+  //   const startTime = Date.now();
+  //   const dataToSend = {
+  //     sheet_name: DATA_TYPE.toString(),
+  //     page: CURRENT_PAGE_INDEX.toString()
+  //   };
+  //   fetch(global_const.SERVER_URL, {
+  //     method: 'POST',
+  //     headers: {
+  //       'Content-Type': 'application/json'
+  //     },
+  //     body: JSON.stringify(dataToSend)
+  //   })
+  //     .then(response => {
+  //       console.log(response);
+  //       if (!response.ok) {
+  //         throw new Error(`HTTP error! status: ${response.status}`);
+  //       }
+  //       return response.json();
+  //     })
+  //     .then(data => {
+  //       loadLinesByDraw(data);
+  //     })
+  //     .catch(error => {
+  //       console.error('There was an error with the fetch operation:');
+  //     })
+  //     .finally(() => {
+  //       hideSpinner();
+  //       const endTime = Date.now();
+  //       const requestTimeInSeconds = (endTime - startTime) / 1000;
+  //       console.log(`Fetch operation completed. Processing time: ${requestTimeInSeconds} seconds`);
+  //     });
 
-  function checkLoadAppData(retObjects) {
+  // }
 
-    // Chuyển đổi chuỗi JSON thành đối tượng JavaScript
-    const jsonObjects = retObjects.map(item => JSON.parse(item));
+  function loadLinesByDraw(page) {
+    if (page != null) {
+      const data_line = getLinesByKey(page);
+      if (data_line != null) {
+        $('#delete-line-btn').prop('disabled', true);
+        // Xóa các line hiện có
+        lines.forEach(line => line.destroy());
+        lines = [];
 
-    // Truy cập các giá trị
-    jsonObjects.forEach(data => {
-      const pageNo = data.background.split('.')[0];
-      if (pageNo == CURRENT_PAGE_INDEX.toString()) {
-        loadLinesByDraw(data);
+        if (data_line) {
+          data_line.forEach(savedLine => {
+            const points = savedLine.points.map((point, index) =>
+              index % 2 === 0
+                ? (point * backgroundImage.width()) + backgroundImage.x()  // Adjusted for X
+                : (point * backgroundImage.height()) + backgroundImage.y() // Adjusted for Y
+            );
+
+            // Tạo đối tượng Line từ Konva
+            const line = new Konva.Line({
+              points: points,
+              stroke: savedLine.stroke,
+              strokeWidth: savedLine.strokeWidth,
+              lineCap: savedLine.lineCap,
+              lineJoin: savedLine.lineJoin,
+              saved_stroke: savedLine.stroke
+            });
+
+            // Thêm line vào layer
+            drawingLayer.add(line);
+            lines.push(line);
+          }); // end of forEach
+        }
+        drawingLayer.batchDraw();
+        lineAddEvents();
       }
-      const data_key = DATA_TYPE + pageNo;
-      APP_DATA.set(data_key, data);
-    });
-
-    // only keep previous 5 pages if any
-    let keepPage = CURRENT_PAGE_INDEX - 10;
-    while (keepPage >= 0) {
-      const data_key = DATA_TYPE + keepPage;
-      APP_DATA.delete(data_key);
-      keepPage = keepPage - 1;
     }
   }
 
-  function loadLinesByDraw(data) {
-    $('#delete-line-btn').prop('disabled', true);
 
-    // Xóa các icon hiện có
-    playIcons.forEach(icon => icon.destroy());
-    playIcons = [];
-
-    // Xóa các line hiện có
-    lines.forEach(line => line.destroy());
-    lines = [];
-
-    // Tính toán vị trí mới của các icon dựa trên kích thước hình nền mới
-    if (data.icons) {
-      data.icons.forEach(iconData => {
-        const iconX = iconData.x * backgroundImage.width() + backgroundImage.x();
-        const iconY = iconData.y * backgroundImage.height() + backgroundImage.y();
-        addPlayIcon(iconX, iconY, iconData.sound);
-      });
-    }
-
-    if (data.lines) {
-      data.lines.forEach(savedLine => {
-        const points = savedLine.points.map((point, index) =>
-          index % 2 === 0
-            ? (point * backgroundImage.width()) + backgroundImage.x()  // Adjusted for X
-            : (point * backgroundImage.height()) + backgroundImage.y() // Adjusted for Y
-        );
-
-        // Tạo đối tượng Line từ Konva
-        const line = new Konva.Line({
-          points: points,
-          stroke: savedLine.stroke,
-          strokeWidth: savedLine.strokeWidth,
-          lineCap: savedLine.lineCap,
-          lineJoin: savedLine.lineJoin,
-          saved_stroke: savedLine.stroke
-        });
-
-        // Thêm line vào layer
-        drawingLayer.add(line);
-        lines.push(line);
-      }); // end of forEach
-    }
-    drawingLayer.batchDraw();
-    lineAddEvents();
-  }
-
-  function removeLine(arr, element) {
-    return arr.filter(item => item !== element);
-  }
 
   function lineAddEvents() {
     drawingLayer.getChildren().forEach((line) => {
@@ -737,15 +682,7 @@ $(document).ready(function () {
     });
   }
 
-  // Function to handle line deletion
-  function deleteSelectedLine() {
-    if (selectedLine) {
-      lines = removeLine(lines, selectedLine);
-      selectedLine.remove(); // Remove line from layer
-      selectedLine = null; // Reset selected line
-      drawingLayer.draw(); // Redraw the layer
-    }
-  }
+
 
   // Event listener for the 'Delete' key to delete selected line
   document.addEventListener('keydown', (e) => {
@@ -762,7 +699,7 @@ $(document).ready(function () {
     $('#settingsModal').modal('hide');
     CURRENT_PAGE_INDEX = parseInt($('#json-dropdown').val(), 10);
 
-    // loadBackgroundImage(CURRENT_PAGE_INDEX);
+    // Load background, icon from json data file
     loadAssetJson(CURRENT_PAGE_INDEX);
     fitStageIntoParentContainer();
   }
@@ -780,45 +717,36 @@ $(document).ready(function () {
       .then(data => {
         backgroundLayer.clear();
         iconLayer.clear();
-        loadJsonBackgroundAndIcons(data);
+        loadJsonBackgroundAndIcons(page, data);
       })
       .catch(error => console.error('Error loading JSON:', error));
   }
 
-    function loadJsonBackgroundAndIcons(data) {
-        if (data.background) {
-            const imageObj = new Image();
-            imageObj.onload = function () {
-                if (backgroundImage) backgroundImage.destroy();
+  function loadJsonBackgroundAndIcons(page, data) {
+    if (data.background) {
+      const imageObj = new Image();
+      imageObj.onload = function () {
+        if (backgroundImage) backgroundImage.destroy();
 
-                adjustBackgroundImage(imageObj);
+        adjustBackgroundImage(imageObj);
 
-                // Xóa các icon hiện có
-                playIcons.forEach(icon => icon.destroy());
-                playIcons = [];
+        // Xóa các icon hiện có
+        playIcons.forEach(icon => icon.destroy());
+        playIcons = [];
 
-                // Tính toán vị trí mới của các icon dựa trên kích thước hình nền mới
-                data.icons.forEach(iconData => {
-                    const iconX = iconData.x * backgroundImage.width() + backgroundImage.x();
-                    const iconY = iconData.y * backgroundImage.height() + backgroundImage.y();
-                    addPlayIcon(iconX, iconY, iconData.sound);
-                });
-            };
-            imageObj.src = global_const.PATH_ASSETS_IMG + data.background;
-        }
+        // Tính toán vị trí mới của các icon dựa trên kích thước hình nền mới
+        data.icons.forEach(iconData => {
+          const iconX = iconData.x * backgroundImage.width() + backgroundImage.x();
+          const iconY = iconData.y * backgroundImage.height() + backgroundImage.y();
+          addPlayIcon(iconX, iconY, iconData.sound);
+        });
+
+        // load lines, luc nay chi can lay tu APP_DATA ra thoi
+        listDrawingPagesDetailed(page.toString());
+      };
+      imageObj.src = global_const.PATH_ASSETS_IMG + data.background;
     }
-
-  // function loadJsonBackgroundAndIcons(data) {
-  //   const imageObj = new Image();
-  //   showSpinner('#ff5733');
-  //   imageObj.onload = function () {
-  //     hideSpinner();
-  //     adjustBackgroundImage(imageObj);
-  //     // requestRenderServer();
-  //   };
-  //    const imageUrl = global_const.PATH_IMG + data.background;
-  //   imageObj.src = imageUrl;
-  // }
+  }
 
 
   function adjustBackgroundImage(imageObj) {
@@ -1005,8 +933,8 @@ $(document).ready(function () {
     } if ("student37" == dataType) {
       CURRENT_PAGE_INDEX = 5;
       MAX_PAGE_NUM = 107;
-      MIN_PAGE_NUM = 1;      
-    } 
+      MIN_PAGE_NUM = 1;
+    }
   }
 
   // Function to play sounds in sequence
@@ -1105,7 +1033,7 @@ $(document).ready(function () {
       height: backgroundImage.height(),
     };
 
-    const fileName = getFileNameFromUrl(backgroundImage.image().src);
+    // const fileName = getFileNameFromUrl(backgroundImage.image().src);
 
     // Lấy tất cả đường line đã vẽ và chuyển thành dạng JSON
     const drawnLines = lines.map(line => ({
@@ -1122,14 +1050,14 @@ $(document).ready(function () {
 
 
     const jsonData = {
-      background: fileName,
-      icons: playIcons.map(icon => ({
-        x: (icon.x() - backgroundImage.x()) / backgroundSize.width,
-        y: (icon.y() - backgroundImage.y()) / backgroundSize.height,
-        sound: icon.getAttr('sound')
-      })),
-      lines: drawnLines,
-      backgroundSize: backgroundSize
+      // background: fileName,
+      // icons: playIcons.map(icon => ({
+      //   x: (icon.x() - backgroundImage.x()) / backgroundSize.width,
+      //   y: (icon.y() - backgroundImage.y()) / backgroundSize.height,
+      //   sound: icon.getAttr('sound')
+      // })),
+      lines: drawnLines
+      // backgroundSize: backgroundSize
     };
 
     //console.log('Data to send:', JSON.stringify(jsonData, null, 2)); // Kiểm tra dữ liệu trước khi gửi
@@ -1142,7 +1070,7 @@ $(document).ready(function () {
     };
 
     console.log(dataToSend);
-
+    showSpinner('#F54927');
     fetch(global_const.SERVER_URL, {
       method: 'POST',
       headers: {
@@ -1153,14 +1081,74 @@ $(document).ready(function () {
       .then(response => response)
       .then(data => {
         console.log('Success:', data);
-        alert('Lưu bài làm thành công!');
-        APP_DATA.delete(DATA_TYPE + page);
-        //drawProcess();
+        showToast('Lưu bài làm thành công!');
+        listDrawingPagesDetailed(page.toString(), true);
       })
       .catch(error => {
         console.log('Error:', error);
-        alert('Bị lỗi gì rồi không lưu được bạn ơi.');
-      });
+        showToast('Bị lỗi gì rồi không lưu được bạn ơi.!', 'danger');
+      })
+      .finally(() => {
+        hideSpinner();
+      });      
+  }
+
+  // Key is String
+  function getLinesByKey(key) {
+    console.log('getLinesByKey::', key)
+    if (APP_DATA != null) {
+      const raw = APP_DATA.get(key);
+      // 2. Parse nếu cần (nếu server trả chuỗi JSON)
+      let parsed;
+      if (typeof raw === 'string') {
+        try {
+          parsed = JSON.parse(raw);
+        } catch (err) {
+          console.error('Không parse được JSON cho key :', err);
+          parsed = null;
+        }
+      } else {
+        parsed = raw; // đã là object
+      }
+
+      // 3. Lấy mảng lines an toàn
+      const lines = parsed && Array.isArray(parsed.lines) ? parsed.lines : [];
+      return lines;
+    }
+
+    console.log('getLinesByKey::', null)
+    return null;
+  }
+
+  function listDrawingPagesDetailed(page = null, isRefresh = false) {
+
+    if (isRefresh || APP_DATA == null) {
+      showSpinner('#28a745');
+      const dataToSend = { sheet_name: String(DATA_TYPE) };
+      // Tạo promise và gắn xử lý lỗi — nhưng KHÔNG await/return
+      fetch(global_const.SERVER_API_ALL_METHOD, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(dataToSend)
+      })
+        .then(async response => {
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          return response.json();
+        })
+        .then(data => {
+          APP_DATA = new Map(Object.entries(data || {}));
+          console.log('Đã cập nhật APP_DATA');
+          loadLinesByDraw(page);
+        })
+        .catch(err => {
+          console.error('Fetch error (fire-and-forget):', err);
+        })
+        .finally(() => {
+          hideSpinner();
+        });
+    } else {
+      loadLinesByDraw(page);
+    }
   }
 
 
@@ -1171,5 +1159,6 @@ $(document).ready(function () {
 
   popDropdown($('#json-dropdown'), "Page", MIN_PAGE_NUM, MAX_PAGE_NUM, CURRENT_PAGE_INDEX);
   loadPage();
+  
 
 });

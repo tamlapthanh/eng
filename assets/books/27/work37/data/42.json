@@ -1,12 +1,8 @@
 {
-  "background" : "42.webp",
-  "icons" : [ {
-    "x" : 0.3969646338067391,
-    "y" : 0.1654012560989919,
-    "sound" : " 16"
-  } ],
-  "backgroundSize" : {
-    "width" : 718.2,
-    "height" : 945
-  }
+    "background": "42.webp",
+    "icons": [],
+    "backgroundSize": {
+        "width": 554.8127177700349,
+        "height": 730
+    }
 }

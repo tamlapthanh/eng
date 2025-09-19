@@ -1,7 +1,0 @@
-011 05.mp3/1.000000/2.277000/listening 11.
-011 05.mp3/3.000000/4.839000/Listen and do.
-011 05.mp3/7.000000/8.255000/Sit down please.
-011 05.mp3/10.000000/11.726000/Don't talk please.
-011 05.mp3/13.000000/15.046000/Stand up, please.
-011 05.mp3/17.000000/18.524000/Close your book, please.
-011 05.mp3/20.000000/21.957000/Open your book, please.

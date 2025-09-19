@@ -1,8 +1,0 @@
-051 02.mp3/1.000000/2.500000/listening 51.
-051 02.mp3/3.000000/5.023000/Listen and say.
-051 02.mp3/6.000000/8.609000/This is a monkey.
-051 02.mp3/9.000000/11.818000/I like monkeys.
-051 02.mp3/13.000000/15.410000/This is an elephant.
-051 02.mp3/16.000000/19.021000/I don't like elephants.
-051 02.mp3/20.000000/22.601000/The elephants are big.
-051 02.mp3/23.000000/24.714000/I'm little.

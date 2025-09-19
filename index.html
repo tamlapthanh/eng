@@ -186,6 +186,10 @@
     .clr-picker {
        z-index: 1055; /* Đảm bảo lớn hơn z-index của modal (Bootstrap modal là 1050) */
     }
+
+    .toast-container {
+            z-index: 1055; /* Đảm bảo hiển thị trên cùng, nếu cần */
+        }
   </style>
 </head>
 
@@ -193,7 +197,7 @@
 
   
   <div id="canvas-container">
-
+        <div class="toast-container position-fixed top-50 start-50 translate-middle"></div>
          <!-- Loading Spinner Overlay -->
          <div class="overlay" id="spinnerOverlay">
           <i class="fas fa-spinner spinner-icon"></i>
@@ -272,7 +276,7 @@
         <div class="modal-body">
           
           <div class="container mt-2">
-            <div class="d-flex flex-wrap align-items-center">
+            <div class="d-flex flex-wrap align-items-center" id="radioContainer">
 
                 <div class="form-check me-3">
                     <input class="form-check-input" type="radio" name="options" id="radio_student_37_book" value="student37" checked>
@@ -280,6 +284,13 @@
                         Student book 37
                     </label>
                 </div>
+
+                <div class="form-check me-3">
+                    <input class="form-check-input" type="radio" name="options" id="radio_work_37_book" value="work37">
+                    <label class="form-check-label" for="radio_work_37_book">
+                        Work book 37
+                    </label>
+                </div>                
 
                 <div class="form-check me-3">
                     <input class="form-check-input" type="radio" name="options" id="radio_student_book" value="student" >
@@ -334,7 +345,7 @@
       </div>
     </div>
   </div>
-
+    <script src ="common.js"></script>
     <script src ="index.js"></script>
     <script src ="assets/coloris.js"></script>
      

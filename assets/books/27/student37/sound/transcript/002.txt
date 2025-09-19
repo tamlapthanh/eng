@@ -1,7 +1,0 @@
-002.mp3/1.000000/2.131000/listening to.
-002.mp3/3.000000/4.675000/Listen and read.
-002.mp3/6.000000/10.834000/
-002.mp3/11.000000/12.687000/
-002.mp3/14.000000/16.217000/My name's Rosie.
-002.mp3/17.000000/18.624000/And my name's Tim.
-002.mp3/20.000000/24.377000/Hello class, my name's Miss Jones.

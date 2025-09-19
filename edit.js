@@ -13,10 +13,16 @@ $(document).ready(function () {
     // let MAX_PAGE_NUM = 65;
     // let MIN_PAGE_NUM = 1;
 
-    let DATA_TYPE = "student37"
-    let CURRENT_PAGE_INDEX = 5;
-    let MAX_PAGE_NUM = 107;
-    let MIN_PAGE_NUM = 5;
+    // let DATA_TYPE = "student37"
+    // let CURRENT_PAGE_INDEX = 5;
+    // let MAX_PAGE_NUM = 107;
+    // let MIN_PAGE_NUM = 5;
+
+
+    let DATA_TYPE = "work37"
+    let CURRENT_PAGE_INDEX = 1;
+    let MAX_PAGE_NUM = 97;
+    let MIN_PAGE_NUM = 1;
 
     let SERVER_URL = "http://localhost:8080/api/file/save-json";
     // const SAVAE_FOLDER = "D:/Working/Study/KHoi/zizi/english27/" + PATH_ROOT + "/data/";
