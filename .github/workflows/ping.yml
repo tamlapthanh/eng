@@ -10,4 +10,4 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Ping server
-        run: curl -s https://zizi-app.onrender.com/api/sheets/test/update
+        run: curl -s https://zizi-app.onrender.com/api/ping/method
