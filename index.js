@@ -1018,7 +1018,7 @@ $(document).ready(function () {
       .then(data => {
         console.log('Success:', data);
         showToast('Lưu bài làm thành công!');
-        listDrawingPagesDetailed(page.toString(), true);
+        // listDrawingPagesDetailed(page.toString());
       })
       .catch(error => {
         console.log('Error:', error);
@@ -1050,42 +1050,38 @@ $(document).ready(function () {
       // 3. Lấy mảng lines an toàn
       const lines = parsed && Array.isArray(parsed.lines) ? parsed.lines : [];
       return lines;
-    }
+    } 
 
-    console.log('getLinesByKey::', null)
     return null;
   }
 
-  function listDrawingPagesDetailed(page = null, isRefresh = false) {
+  function listDrawingPagesDetailed(page = null) {
+    console.log("listDrawingPagesDetailed::" + page);
 
-    // if (isRefresh || APP_DATA == null) {
-      // showSpinner('#28a745');
-      const dataToSend = { sheet_name: DATA_TYPE };
-      // Tạo promise và gắn xử lý lỗi — nhưng KHÔNG await/return
-      fetch(global_const.SERVER_API_ALL_METHOD, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(dataToSend)
+    // showSpinner('#28a745');
+    const dataToSend = { sheet_name: DATA_TYPE };
+    // Tạo promise và gắn xử lý lỗi — nhưng KHÔNG await/return
+    fetch(global_const.SERVER_API_ALL_METHOD, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(dataToSend)
+    })
+      .then(async response => {
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        return response.json();
       })
-        .then(async response => {
-          if (!response.ok) throw new Error(`HTTP ${response.status}`);
-          return response.json();
-        })
-        .then(data => {
-          
-          APP_DATA = new Map(Object.entries(data || {}));
-          console.log('Đã cập nhật APP_DATA');
-          loadLinesByDraw(page);
-        })
-        .catch(err => {
-          console.error('Fetch error (fire-and-forget):', err);
-        })
-        .finally(() => {
-          // hideSpinner();
-        });
-    // } else {
-    //   loadLinesByDraw(page);
-    // }
+      .then(data => {
+        
+        APP_DATA = new Map(Object.entries(data || {}));
+        console.log('Đã cập nhật APP_DATA');
+        loadLinesByDraw(page);
+      })
+      .catch(err => {
+        console.error('Fetch error (fire-and-forget):', err);
+      })
+      .finally(() => {
+        // hideSpinner();
+      });
   }
 
 
