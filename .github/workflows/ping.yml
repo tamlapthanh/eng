@@ -1,4 +1,4 @@
-name: Ping my server every 45 minutes (working hours)
+name: Ping my server every 30 minutes (working hours)
 
 on:
   schedule:
@@ -11,4 +11,4 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Ping server
-        run: timeout 20 curl -sSf https://zizi-app.onrender.com/api/ping/method
+        run: timeout 60 curl -sSf https://zizi-app.onrender.com/api/ping/method
