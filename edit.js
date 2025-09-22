@@ -7,7 +7,6 @@ $(document).ready(function () {
     // let MAX_PAGE_NUM = 66;
     // let MIN_PAGE_NUM = 4;
 
-    // let PATH_ROOT = "assets/books/27/work";
     // let DATA_TYPE = "work"
     // let CURRENT_PAGE_INDEX = 1;
     // let MAX_PAGE_NUM = 65;
@@ -19,10 +18,12 @@ $(document).ready(function () {
     // let MIN_PAGE_NUM = 5;
 
 
-    let DATA_TYPE = "work37"
+    let DATA_TYPE = "dict"
     let CURRENT_PAGE_INDEX = 1;
-    let MAX_PAGE_NUM = 97;
+    let MAX_PAGE_NUM = 87;
     let MIN_PAGE_NUM = 1;
+
+    
 
     let SERVER_URL = "http://localhost:8080/api/file/save-json";
     // const SAVAE_FOLDER = "D:/Working/Study/KHoi/zizi/english27/" + PATH_ROOT + "/data/";
@@ -395,7 +396,7 @@ $(document).ready(function () {
             iconSoundUrlInput.val('');
             currentIcon = null;
 
-            $('#settingsModal').modal('hide');
+            //$('#settingsModal').modal('hide');
         }
     });
 
