@@ -1,14 +1,1 @@
-{
-    "background": "60.webp",
-    "icons": [
-        {
-            "x": 0.5,
-            "y": 0.17598326668100248,
-            "sound": "x"
-        }
-    ],
-    "backgroundSize": {
-        "width": 554.8127177700349,
-        "height": 730
-    }
-}
+{"background":"60.webp","icons":[{"x":0.050186011904761844,"y":0.035242525940261726,"sound":"ocpd_33_sports_and_games_2"},{"x":0.002542162698412639,"y":0.8607850491407796,"sound":"ocpd_33_sports_and_games_2_activity"}],"backgroundSize":{"width":713.6283185840708,"height":945}}

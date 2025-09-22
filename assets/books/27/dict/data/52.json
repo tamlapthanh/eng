@@ -1,14 +1,1 @@
-{
-    "background": "52.webp",
-    "icons": [
-        {
-            "x": 0.5,
-            "y": 0.17598326668100248,
-            "sound": "x"
-        }
-    ],
-    "backgroundSize": {
-        "width": 554.8127177700349,
-        "height": 730
-    }
-}
+{"background":"52.webp","icons":[{"x":0.1104414682539682,"y":0.09026898096671676,"sound":"ocpd_29_art"},{"x":0.03617311507936502,"y":0.8388422141440167,"sound":"ocpd_29_art_activity"}],"backgroundSize":{"width":713.6283185840708,"height":945}}

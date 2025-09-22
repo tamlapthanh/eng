@@ -1,14 +1,1 @@
-{
-    "background": "70.webp",
-    "icons": [
-        {
-            "x": 0.5,
-            "y": 0.17598326668100248,
-            "sound": "x"
-        }
-    ],
-    "backgroundSize": {
-        "width": 554.8127177700349,
-        "height": 730
-    }
-}
+{"background":"70.webp","icons":[{"x":0.49999999999999994,"y":0.17598326668100248,"sound":"ocpd_40_whats_the_date"},{"x":0.023561507936507877,"y":0.9083262611188483,"sound":"ocpd_40_whats_the_date_activity"}],"backgroundSize":{"width":713.6283185840708,"height":945}}

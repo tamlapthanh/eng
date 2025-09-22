@@ -1,14 +1,1 @@
-{
-    "background": "67.webp",
-    "icons": [
-        {
-            "x": 0.5,
-            "y": 0.17598326668100248,
-            "sound": "x"
-        }
-    ],
-    "backgroundSize": {
-        "width": 554.8127177700349,
-        "height": 730
-    }
-}
+{"background":"67.webp","icons":[{"x":0.1664930555555555,"y":0.08497797567571147,"sound":"ocpd_37_the_weather"},{"x":0.05719246031746025,"y":0.8593585037484716,"sound":"ocpd_37_the_weather_activity"}],"backgroundSize":{"width":713.6283185840708,"height":945}}

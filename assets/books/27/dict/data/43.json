@@ -1,14 +1,1 @@
-{
-    "background": "43.webp",
-    "icons": [
-        {
-            "x": 0.5,
-            "y": 0.17598326668100248,
-            "sound": "x"
-        }
-    ],
-    "backgroundSize": {
-        "width": 554.8127177700349,
-        "height": 730
-    }
-}
+{"background":"43.webp","icons":[{"x":0.12165178571428566,"y":0.07016316086089665,"sound":"ocpd_24_my_classroom"},{"x":0.06840277777777772,"y":0.850336899727103,"sound":"ocpd_24_my_classroom_activity.mp3"}],"backgroundSize":{"width":713.6283185840708,"height":945}}

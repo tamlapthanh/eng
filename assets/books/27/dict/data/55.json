@@ -1,14 +1,1 @@
-{
-    "background": "55.webp",
-    "icons": [
-        {
-            "x": 0.5,
-            "y": 0.17598326668100248,
-            "sound": "x"
-        }
-    ],
-    "backgroundSize": {
-        "width": 554.8127177700349,
-        "height": 730
-    }
-}
+{"background":"55.webp","icons":[{"x":0.029166666666666605,"y":0.08815257885031463,"sound":"ocpd_31_at_the_zoo"},{"x":0.026364087301587243,"y":0.8436238854941558,"sound":"ocpd_31_at_the_zoo_activity"}],"backgroundSize":{"width":713.6283185840708,"height":945}}

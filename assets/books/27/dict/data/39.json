@@ -1,14 +1,1 @@
-{
-    "background": "39.webp",
-    "icons": [
-        {
-            "x": 0.5,
-            "y": 0.17598326668100248,
-            "sound": "x"
-        }
-    ],
-    "backgroundSize": {
-        "width": 554.8127177700349,
-        "height": 730
-    }
-}
+{"background":"39.webp","icons":[{"x":0.13846726190476183,"y":0.07545416615190194,"sound":"ocpd_22_people_at_work_activity.mp3"}],"backgroundSize":{"width":713.6283185840708,"height":945}}

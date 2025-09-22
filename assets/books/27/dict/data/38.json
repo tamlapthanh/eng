@@ -1,14 +1,1 @@
-{
-    "background": "38.webp",
-    "icons": [
-        {
-            "x": 0.5,
-            "y": 0.17598326668100248,
-            "sound": "x"
-        }
-    ],
-    "backgroundSize": {
-        "width": 554.8127177700349,
-        "height": 730
-    }
-}
+{"background":"38.webp","icons":[{"x":0.010949900793650734,"y":0.045824536522272315,"sound":"ocpd_21_transport"},{"x":0.031969246031745974,"y":0.8545684562897286,"sound":"ocpd_21_transport_activity.mp3"}],"backgroundSize":{"width":713.6283185840708,"height":945}}

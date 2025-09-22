@@ -1,14 +1,1 @@
-{
-    "background": "53.webp",
-    "icons": [
-        {
-            "x": 0.5,
-            "y": 0.17598326668100248,
-            "sound": "x"
-        }
-    ],
-    "backgroundSize": {
-        "width": 554.8127177700349,
-        "height": 730
-    }
-}
+{"background":"53.webp","icons":[{"x":0.08802083333333327,"y":0.07862876932650512,"sound":"ocpd_30_on_the_farm"},{"x":0.03897569444444438,"y":0.8470136415454437,"sound":"ocpd_30_on_the_farm_activity"}],"backgroundSize":{"width":713.6283185840708,"height":945}}
