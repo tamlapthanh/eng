@@ -1,8 +1,8 @@
-name: Ping my server every 45 minutes (working hours)
+name: Ping my server every 14 minutes (working hours)
 
 on:
   schedule:
-    - cron: '*/45 * * * *'
+    - cron: '*/14 * * * *'
   workflow_dispatch:
 
 
@@ -11,4 +11,4 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Ping server
-        run: timeout 20 curl -sSf https://zizi-app.onrender.com/api/ping/method
+        run: timeout 60 curl -sSf https://zizi-app.onrender.com/api/ping/method
