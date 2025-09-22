@@ -1,8 +1,8 @@
 {
-    "name": "English 2/7",
-    "short_name": "English 2/7",
-    "description": "English 2/7 Web App.",
-    "start_url": "/english27/index.html",
+    "name": "English ",
+    "short_name": "English ",
+    "description": "EnglishWeb App.",
+    "start_url": "/eng/index.html",
     "display": "standalone",
     "background_color": "#ffffff",
     "theme_color": "#0000ff",
