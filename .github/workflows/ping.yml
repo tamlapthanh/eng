@@ -11,4 +11,4 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Ping server
-        run: timeout 60 curl -sSf https://zizi-app.onrender.com/api/ping/method
+        run: timeout 120 curl -sSf https://zizi-app.onrender.com/api/ping/method
