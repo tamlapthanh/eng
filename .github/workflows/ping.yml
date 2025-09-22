@@ -1,8 +1,8 @@
-name: Ping my server every 30 minutes (working hours)
+name: Ping my server every 14 minutes (working hours)
 
 on:
   schedule:
-    - cron: '*/30 * * * *'
+    - cron: '*/14 * * * *'
   workflow_dispatch:
 
 
