@@ -334,40 +334,6 @@ $(document).ready(function () {
 
 
 
-  // Zoom with mouse wheel
-  // stage.on('wheel', function (event) {
-  //   event.evt.preventDefault();
-  //   const oldScale = stage.scaleX();
-  //   const pointer = stage.getPointerPosition();
-
-  //   const scaleBy = 1.1;
-  //   let newScale = oldScale;
-
-  //   if (event.evt.deltaY > 0) {
-  //     newScale = oldScale / scaleBy;
-  //   } else {
-  //     newScale = oldScale * scaleBy;
-  //   }
-
-  //   // Limit the zoom level
-  //   newScale = Math.max(minZoom, Math.min(maxZoom, newScale));
-
-  //   const mousePointTo = {
-  //     x: (pointer.x - stage.x()) / oldScale,
-  //     y: (pointer.y - stage.y()) / oldScale,
-  //   };
-
-  //   const newPos = {
-  //     x: pointer.x - mousePointTo.x * newScale,
-  //     y: pointer.y - mousePointTo.y * newScale,
-  //   };
-
-  //   zoomLevel = newScale;
-  //   stage.scale({ x: newScale, y: newScale });
-  //   stage.position(newPos);
-  //   stage.batchDraw();
-  // });
-
   stage.on('wheel', function (event) {
 
     if ($('#lock-icon').hasClass('bi-unlock-fill')) {
@@ -386,18 +352,6 @@ $(document).ready(function () {
     }
   });
 
-  // interact('#canvas').draggable({
-  //   listeners: {
-  //     move(event) {
-  //       if (!isPinching && !isDrawingMode) {  // Only allow dragging if not pinching
-  //         const { dx, dy } = event;
-  //         stage.x(stage.x() + dx);
-  //         stage.y(stage.y() + dy);
-  //         stage.batchDraw();
-  //       }
-  //     }
-  //   }
-  // });
   interact('#canvas').draggable(false);
 
   // end zoom
@@ -583,41 +537,7 @@ $(document).ready(function () {
     addPlayIcon();
   });
 
-  // function requestRenderServer() {
-  //   showSpinner('#28a745');
-  //   const startTime = Date.now();
-  //   const dataToSend = {
-  //     sheet_name: DATA_TYPE.toString(),
-  //     page: CURRENT_PAGE_INDEX.toString()
-  //   };
-  //   fetch(global_const.SERVER_URL, {
-  //     method: 'POST',
-  //     headers: {
-  //       'Content-Type': 'application/json'
-  //     },
-  //     body: JSON.stringify(dataToSend)
-  //   })
-  //     .then(response => {
-  //       console.log(response);
-  //       if (!response.ok) {
-  //         throw new Error(`HTTP error! status: ${response.status}`);
-  //       }
-  //       return response.json();
-  //     })
-  //     .then(data => {
-  //       loadLinesByDraw(data);
-  //     })
-  //     .catch(error => {
-  //       console.error('There was an error with the fetch operation:');
-  //     })
-  //     .finally(() => {
-  //       hideSpinner();
-  //       const endTime = Date.now();
-  //       const requestTimeInSeconds = (endTime - startTime) / 1000;
-  //       console.log(`Fetch operation completed. Processing time: ${requestTimeInSeconds} seconds`);
-  //     });
-
-  // }
+  
 
   function loadLinesByDraw(page) {
     if (page != null) {
@@ -936,24 +856,25 @@ $(document).ready(function () {
   });
 
   function setPageInfo(dataType) {
+    DATA_TYPE = dataType;
     if ("student" == dataType) {
       CURRENT_PAGE_INDEX = 4;
       MAX_PAGE_NUM = 66;
       MIN_PAGE_NUM = 1;
-    } if ("work" == dataType) {
+    }else if ("work" == dataType) {
       CURRENT_PAGE_INDEX = 1;
       MAX_PAGE_NUM = 65;
       MIN_PAGE_NUM = 1;
-    } if ("dict" == dataType) {
+    } else if ("dict" == dataType) {
       CURRENT_PAGE_INDEX = 2;
       MAX_PAGE_NUM = 87;
       MIN_PAGE_NUM = 1;
-    } if ("student37" == dataType) {
+    } else if ("student37" == dataType) {
       CURRENT_PAGE_INDEX = 5;
       MAX_PAGE_NUM = 107;
       MIN_PAGE_NUM = 1;
     }
-    if ("work37" == dataType) {
+    else if ("work37" == dataType) {
       CURRENT_PAGE_INDEX = 1;
       MAX_PAGE_NUM = 97;
       MIN_PAGE_NUM = 1;
@@ -1137,9 +1058,9 @@ $(document).ready(function () {
 
   function listDrawingPagesDetailed(page = null, isRefresh = false) {
 
-    if (isRefresh || APP_DATA == null) {
+    // if (isRefresh || APP_DATA == null) {
       // showSpinner('#28a745');
-      const dataToSend = { sheet_name: String(DATA_TYPE) };
+      const dataToSend = { sheet_name: DATA_TYPE };
       // Tạo promise và gắn xử lý lỗi — nhưng KHÔNG await/return
       fetch(global_const.SERVER_API_ALL_METHOD, {
         method: 'POST',
@@ -1151,6 +1072,7 @@ $(document).ready(function () {
           return response.json();
         })
         .then(data => {
+          
           APP_DATA = new Map(Object.entries(data || {}));
           console.log('Đã cập nhật APP_DATA');
           loadLinesByDraw(page);
@@ -1161,9 +1083,9 @@ $(document).ready(function () {
         .finally(() => {
           // hideSpinner();
         });
-    } else {
-      loadLinesByDraw(page);
-    }
+    // } else {
+    //   loadLinesByDraw(page);
+    // }
   }
 
 
