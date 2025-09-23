@@ -290,7 +290,7 @@ $(document).ready(function () {
   interact('#canvas').gesturable({
     onstart: function () {
       isPinching = true;
-      stage.draggable(false);  // Disable dragging during pinch-to-zoom
+      //stage.draggable(false);  // Disable dragging during pinch-to-zoom
     },
     onmove: function (event) {
       const { da } = event;
@@ -302,7 +302,7 @@ $(document).ready(function () {
     },
     onend: function () {
       isPinching = false;
-      stage.draggable(true);  // Re-enable dragging after pinch-to-zoom
+      //stage.draggable(true);  // Re-enable dragging after pinch-to-zoom
     }
   });
 
