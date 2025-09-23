@@ -151,7 +151,7 @@ $(document).ready(function () {
     if (isDrawing) {
       isDrawing = false;  // Dừng vẽ
       lastLine = null;    // Xóa đường vẽ cuối cùng
-      stage.draggable(true);  
+      //stage.draggable(true);  
     }
   });
   // end of xu ly ve tren canva
@@ -302,7 +302,7 @@ $(document).ready(function () {
     },
     onend: function () {
       isPinching = false;
-      stage.draggable(true);  // Re-enable dragging after pinch-to-zoom
+      // stage.draggable(true);  // Re-enable dragging after pinch-to-zoom
     }
   });
 
