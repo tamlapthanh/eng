@@ -276,13 +276,13 @@ $(document).ready(function () {
 
 
     // Toggle draggable
-    if (stage.draggable()) {
-      stage.draggable(false);
-      console.log('Stage is now NOT draggable');
-    } else {
-      stage.draggable(true);
-      console.log('Stage is now draggable');
-    }
+    // if (stage.draggable()) {
+    //   stage.draggable(false);
+    //   console.log('Stage is now NOT draggable');
+    // } else {
+    //   stage.draggable(true);
+    //   console.log('Stage is now draggable');
+    // }
 
   }
 
@@ -634,8 +634,7 @@ $(document).ready(function () {
   // show page
   function loadPage() {
 
-    // interact('#canvas').draggable(false);
-    stage.draggable(false);
+    // interact('#canvas').draggable(false);  
     clearCanvas();
     $('#settingsModal').modal('hide');
     CURRENT_PAGE_INDEX = parseInt($('#json-dropdown').val(), 10);
@@ -643,6 +642,7 @@ $(document).ready(function () {
     // Load background, icon from json data file
     loadAssetJson(CURRENT_PAGE_INDEX);
     fitStageIntoParentContainer();
+    stage.draggable(false);
   }
 
 
@@ -1094,6 +1094,6 @@ $(document).ready(function () {
 
   popDropdown($('#json-dropdown'), "Page", MIN_PAGE_NUM, MAX_PAGE_NUM, CURRENT_PAGE_INDEX);
   loadPage();
-  toggleLockIcon();
+  toggleLockIcon(true);
 
 });
