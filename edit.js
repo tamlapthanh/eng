@@ -1,5 +1,7 @@
 $(document).ready(function () {
 
+    
+
     let PATH_ROOT = "assets/books/27/";
         
     // let DATA_TYPE = "student"

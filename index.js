@@ -3,6 +3,15 @@ const selected_color = 'black';
 
 $(document).ready(function () {
 
+  let PATH_ROOT = "assets/books/27/";
+  let APP_DATA = null;
+
+  let DATA_TYPE = "student37";
+  let CURRENT_PAGE_INDEX = 2;
+  let MAX_PAGE_NUM = 107;
+  let MIN_PAGE_NUM = 1;
+  createRadioButtons();
+
   const stage = new Konva.Stage({
     container: 'canvas',
     width: window.innerWidth,
@@ -10,15 +19,9 @@ $(document).ready(function () {
     draggable: true,
   });
 
-  let PATH_ROOT = "assets/books/27/";
-  let DATA_TYPE = "student37";
-  let CURRENT_PAGE_INDEX = 5;
-  let MAX_PAGE_NUM = 107;
-  let MIN_PAGE_NUM = 1;
 
   // Create a new Map
-  let ICON_SIZE = 18;
-  let APP_DATA = null;
+  let ICON_SIZE = 18;  
   const RUN_URL_SERVER = "https://zizi-app.onrender.com/";
   const RUN_URL_LOCAL = "http://localhost:8080/";
   // const API_METHOD = "api/sheets/lines"
@@ -843,42 +846,33 @@ $(document).ready(function () {
 
   // Event listener for radio button click/change
   $('input[name="options"]').on('click', function () {
+    
+    // Retrieve custom attributes using jQuery .data()
     var selectedValue = $(this).val();
+    var currentPageIndex = $(this).data('current-page-index');
+    var maxPageNum = $(this).data('max-page-num');
+    var minPageNum = $(this).data('min-page-num');
+    
+    // Display the attributes in an alert
+    // alert(`Current Page Index: ${currentPageIndex}, Max Page Num: ${maxPageNum}, Min Page Num: ${minPageNum}`);    
     if (selectedValue === 'math_page') {
       window.location.href = 'math.html'; // Redirect to newpage.html
     } else if (DATA_TYPE !== selectedValue) {
       DATA_TYPE = selectedValue;
-      setPageInfo(DATA_TYPE);
+      setPageInfo(DATA_TYPE, currentPageIndex, maxPageNum, minPageNum);
       popDropdown($('#json-dropdown'), "Page", MIN_PAGE_NUM, MAX_PAGE_NUM, CURRENT_PAGE_INDEX);
+      APP_DATA = null;
       loadPage();
       $('#settingsModal').modal('hide');
     }
   });
 
-  function setPageInfo(dataType) {
-    DATA_TYPE = dataType;
-    if ("student" == dataType) {
-      CURRENT_PAGE_INDEX = 4;
-      MAX_PAGE_NUM = 66;
-      MIN_PAGE_NUM = 1;
-    }else if ("work" == dataType) {
-      CURRENT_PAGE_INDEX = 1;
-      MAX_PAGE_NUM = 65;
-      MIN_PAGE_NUM = 1;
-    } else if ("dict" == dataType) {
-      CURRENT_PAGE_INDEX = 2;
-      MAX_PAGE_NUM = 87;
-      MIN_PAGE_NUM = 1;
-    } else if ("student37" == dataType) {
-      CURRENT_PAGE_INDEX = 5;
-      MAX_PAGE_NUM = 107;
-      MIN_PAGE_NUM = 1;
-    }
-    else if ("work37" == dataType) {
-      CURRENT_PAGE_INDEX = 1;
-      MAX_PAGE_NUM = 97;
-      MIN_PAGE_NUM = 1;
-    }
+  function setPageInfo(dataType, currentPageIndex, maxPageNum, minPageNum) {
+
+      DATA_TYPE = dataType;
+      CURRENT_PAGE_INDEX = currentPageIndex;
+      MAX_PAGE_NUM = maxPageNum;
+      MIN_PAGE_NUM = minPageNum;      
   }
 
   // Function to play sounds in sequence
@@ -1018,7 +1012,8 @@ $(document).ready(function () {
       .then(data => {
         console.log('Success:', data);
         showToast('Lưu bài làm thành công!');
-        // listDrawingPagesDetailed(page.toString());
+        APP_DATA = null;
+        listDrawingPagesDetailed(page.toString());
       })
       .catch(error => {
         console.log('Error:', error);
@@ -1057,31 +1052,38 @@ $(document).ready(function () {
 
   function listDrawingPagesDetailed(page = null) {
     console.log("listDrawingPagesDetailed::" + page);
+    if (APP_DATA == null) {
 
-    // showSpinner('#28a745');
-    const dataToSend = { sheet_name: DATA_TYPE };
-    // Tạo promise và gắn xử lý lỗi — nhưng KHÔNG await/return
-    fetch(global_const.SERVER_API_ALL_METHOD, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(dataToSend)
-    })
-      .then(async response => {
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        return response.json();
+      // showSpinner('#28a745');
+      const dataToSend = { sheet_name: DATA_TYPE };
+      // Tạo promise và gắn xử lý lỗi — nhưng KHÔNG await/return
+      fetch(global_const.SERVER_API_ALL_METHOD, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(dataToSend)
       })
-      .then(data => {
-        
-        APP_DATA = new Map(Object.entries(data || {}));
-        console.log('Đã cập nhật APP_DATA');
+        .then(async response => {
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          return response.json();
+        })
+        .then(data => {
+          
+          APP_DATA = new Map(Object.entries(data || {}));
+          console.log('Đã cập nhật APP_DATA');
+          loadLinesByDraw(page);
+        })
+        .catch(err => {
+          console.error('Fetch error (fire-and-forget):', err);
+        })
+        .finally(() => {
+          // hideSpinner();
+        });
+    } else {
         loadLinesByDraw(page);
-      })
-      .catch(err => {
-        console.error('Fetch error (fire-and-forget):', err);
-      })
-      .finally(() => {
-        // hideSpinner();
-      });
+    }
+
+
+
   }
 
 
