@@ -16,7 +16,7 @@ $(document).ready(function () {
     container: 'canvas',
     width: window.innerWidth,
     height: window.innerHeight,
-    draggable: true,
+    draggable: false,
   });
 
 
@@ -302,7 +302,7 @@ $(document).ready(function () {
     },
     onend: function () {
       isPinching = false;
-      // stage.draggable(true);  // Re-enable dragging after pinch-to-zoom
+      stage.draggable(true);  // Re-enable dragging after pinch-to-zoom
     }
   });
 
@@ -355,7 +355,7 @@ $(document).ready(function () {
     }
   });
 
-  interact('#canvas').draggable(false);
+  // interact('#canvas').draggable(false);
 
   // end zoom
 
