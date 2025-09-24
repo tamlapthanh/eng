@@ -631,6 +631,16 @@ $(document).ready(function () {
     }
   });
 
+      // Function to handle line deletion
+    function deleteSelectedLine() {
+        if (selectedLine) {
+            lines = removeLine(lines, selectedLine);
+            selectedLine.remove(); // Remove line from layer
+            selectedLine = null; // Reset selected line
+            drawingLayer.draw(); // Redraw the layer
+        }
+    }
+
   // show page
   function loadPage() {
 
