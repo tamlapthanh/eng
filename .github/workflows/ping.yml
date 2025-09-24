@@ -2,9 +2,9 @@ name: Ping my server every 14 minutes (working hours)
 
 on:
   schedule:
-    - cron: '*/14 * * * *'
+    - cron: '*/12 1-15 * * *'  # every 14 minutes between 01:00-15:59 UTC => 06:00-22:59 Asia/Ho_Chi_Minh
+    - cron: '0 16 * * *'       # 16:00 UTC => 23:00 Asia/Ho_Chi_Minh (last run at 23:00)
   workflow_dispatch:
-
 
 jobs:
   ping:
