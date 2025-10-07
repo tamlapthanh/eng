@@ -454,11 +454,11 @@ $(document).ready(function () {
         stage.container().style.cursor = 'pointer';
       });
       icon.on('mouseout', function () {
-        const drawControls = document.querySelector('.draw-controls');
-        if ((drawControls.style.display === 'none' || drawControls.style.display === '')) {
-          stage.container().style.cursor = 'default';
+        
+        if (isDrawingMode) {
+          stage.container().style.cursor = 'crosshair';          
         } else {
-          stage.container().style.cursor = 'crosshair';
+          stage.container().style.cursor = 'default';
         }
       });
 
