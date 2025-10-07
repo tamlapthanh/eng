@@ -141,7 +141,7 @@
         const userAgent = navigator.userAgent.toLowerCase();
 
         if (width < 768 || /mobile|android|iphone|ipod|blackberry|iemobile|opera mini/i.test(userAgent)) {
-            icon_size = ICON_SIZE;
+            icon_size = 11;
         } else if ((width >= 768 && width <= 1024) || /tablet|ipad|playbook|silk/i.test(userAgent)) {
             icon_size = ICON_SIZE;
         } else {

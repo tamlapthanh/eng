@@ -1,5 +1,7 @@
 let line_color = " #ff6347"; // Tomato
+let line_stroke_width = 3;
 const selected_color = 'black';
+let is_auto_ShowPanel = true;
 
 $(document).ready(function () {
 
@@ -81,11 +83,8 @@ $(document).ready(function () {
   let isPinching = false;
 
   function setZoom(scale) {
-
-    if ($('#lock-icon').hasClass('bi-unlock-fill')) {
-      stage.scale({ x: scale, y: scale });
-      stage.batchDraw();
-    }
+    stage.scale({ x: scale, y: scale });
+    stage.batchDraw();
   }
 
   // xu ly ve tren canva
@@ -100,10 +99,11 @@ $(document).ready(function () {
 
   // Hàm chuyển đổi tọa độ từ canvas sang tọa độ của stage (đã được zoom)
   function getRelativePointerPosition() {
-    const transform = stage.getAbsoluteTransform().copy();
-    transform.invert();  // Đảo ngược transform để lấy tọa độ chính xác
     const pos = stage.getPointerPosition();
-    return transform.point(pos); // Trả về tọa độ đã điều chỉnh
+    if (!pos) return { x: 0, y: 0 }; // hoặc return null và kiểm tra nơi gọi
+    const transform = stage.getAbsoluteTransform().copy();
+    transform.invert();
+    return transform.point(pos);
   }
 
   // Xử lý bắt đầu vẽ
@@ -122,7 +122,7 @@ $(document).ready(function () {
 
     lastLine = new Konva.Line({
       stroke: line_color,
-      strokeWidth: 3,
+      strokeWidth: line_stroke_width,
       globalCompositeOperation: 'source-over',
       points: [pos.x, pos.y],  // Sử dụng tọa độ đã điều chỉnh
       lineCap: 'round',
@@ -157,7 +157,7 @@ $(document).ready(function () {
   // end of xu ly ve tren canva
   $('#delete-line-btn').on('click', function () {
     deleteSelectedLine();
-    $('#delete-line-btn').prop('disabled', true);
+    // $('#delete-line-btn').prop('disabled', true);
   });
 
   $('#undo-btn').on('click', function () {
@@ -170,18 +170,7 @@ $(document).ready(function () {
 
   $('#setting').on('click', function () {
     const controls = document.querySelector('.controls');
-    if (controls.style.display === 'none' || controls.style.display === '') {
-      controls.style.display = 'flex';
-    } else {
-      controls.style.display = 'none';
-      toggleDrawIcon(true);
-    }
-
-  });
-
-  $('#zoom').on('click', function () {
-    const controls = document.querySelector('.zoom-controls');
-    if ((controls.style.display === 'none' || controls.style.display === '')) {
+    if (controls.style.display === 'none') {
       controls.style.display = 'flex';
     } else {
       controls.style.display = 'none';
@@ -190,10 +179,10 @@ $(document).ready(function () {
 
   // Zoom In button
   $('#zoom-in').on('click', function () {
-    if (zoomLevel < maxZoom) {
+    // if (zoomLevel < maxZoom) {
       zoomLevel += zoomStep;
       setZoom(zoomLevel);
-    }
+    // }
   });
 
   // Zoom Out button
@@ -205,10 +194,10 @@ $(document).ready(function () {
 
   // Zoom Out button
   $('#zoom-out').on('click', function () {
-    if (zoomLevel > minZoom) {
+    // if (zoomLevel > minZoom) {
       zoomLevel -= zoomStep;
       setZoom(zoomLevel);
-    }
+    // }
   });
 
   $('#draw').on('click', function () {
@@ -216,27 +205,20 @@ $(document).ready(function () {
   });
 
   function toggleDrawIcon(isDraw = false) {
-    const drawControls = document.querySelector('.draw-controls');
-    if (isDraw) {
+    const $btn = $('#draw');
+    if (isDraw || isDrawingMode) {
       isDrawingMode = false;
       stage.container().style.cursor = 'default';
-      drawControls.style.display = 'none';
+       $btn.removeClass('btn-danger').addClass('btn-dark');
     } else {
-      if ((drawControls.style.display === 'none' || drawControls.style.display === '')) {
-        drawControls.style.display = 'flex';
         stage.container().style.cursor = 'crosshair';
         isDrawingMode = true;
         toggleLockIcon(true); // khong cho move trong khi ve
-      } else {
-        isDrawingMode = false;
-        stage.container().style.cursor = 'default';
-        drawControls.style.display = 'none';
-      }
+        $btn.removeClass('btn-dark').addClass('btn-danger');
     }
   }
 
-  $('#lock').on('click', function () {
-
+  $('#lock').on('click', function () {  
     toggleLockIcon();
   });
 
@@ -273,16 +255,6 @@ $(document).ready(function () {
         stage.draggable(false);  
       }
     }
-
-
-    // Toggle draggable
-    // if (stage.draggable()) {
-    //   stage.draggable(false);
-    //   console.log('Stage is now NOT draggable');
-    // } else {
-    //   stage.draggable(true);
-    //   console.log('Stage is now draggable');
-    // }
 
   }
 
@@ -368,9 +340,9 @@ $(document).ready(function () {
   let backgroundImage = null;
   let playIcons = [];
   let currentIcon = null;
-  let audio = null;
-  let iconPath_1 = "assets/icons/icons8-play_1.gif";
-  let iconPath_2 = "assets/icons/icons8-play_2.gif";
+  // let audio = null;
+  let iconPath_1 = "assets/play_icon.png";
+  let iconPath_2 = "assets/music_icon.svg";
 
   function resetIcons() {
     const imageList = iconLayer.find('Image');
@@ -408,56 +380,60 @@ $(document).ready(function () {
 
     return arr;
   }
-  function playSound(soundFileName, icon) {
-    resetIcons();
 
-    if (soundFileName && "x" != soundFileName.trim()) {
-      const [fileName, start, end] = getSoundStartEnd(soundFileName);
-      console.log(fileName, start, end);
-      // let url = global_const.PATH_SOUND + fileName.trim() + ".mp3";
-      let url = global_const.PATH_SOUND + fileName.trim() + (fileName.trim().endsWith('.mp3') ? '' : '.mp3');
+  // function playSound(soundFileName, icon) {
+  //   resetIcons();
 
-      // Kiểm tra và dừng âm thanh nếu đang phát
-      if (audio && !audio.paused) {
-        audio.pause();        // Tạm dừng âm thanh hiện tại
-        audio.currentTime = 0; // Đặt lại thời gian phát về đầu
-      }
+  //   if (soundFileName && "x" != soundFileName.trim()) {
+  //     const [fileName, start, end] = getSoundStartEnd(soundFileName);
+  //     console.log(fileName, start, end);
+  //     // let url = global_const.PATH_SOUND + fileName.trim() + ".mp3";
+  //     let url = global_const.PATH_SOUND + fileName.trim() + (fileName.trim().endsWith('.mp3') ? '' : '.mp3');
 
-      // Tạo đối tượng âm thanh mới
-      audio = new Audio(url);
+  //     // Kiểm tra và dừng âm thanh nếu đang phát
+  //     if (audio && !audio.paused) {
+  //       audio.pause();        // Tạm dừng âm thanh hiện tại
+  //       audio.currentTime = 0; // Đặt lại thời gian phát về đầu
+  //     }
 
-      if (start) {
-        audio.currentTime = start;
+  //     // <-- STOP existing audio before creating a new one
+  //     stopAudio();      
 
-        // Theo dõi thời gian và dừng âm thanh khi đạt đến thời gian kết thúc
-        audio.addEventListener('timeupdate', () => {
-          if (audio.currentTime >= end) {
-            console.log("addEventListener timeupdate");
-            if (!audio.paused) {
-              audio.pause();
-              audio.currentTime = 0;
-            }
-            changeImageUrl(iconPath_1, icon);
-          }
-        });
-      } else {
-        audio.addEventListener("ended", (event) => {
-          console.log("addEventListener ended");
-          changeImageUrl(iconPath_1, icon);
-        });
-      }
+  //     // Tạo đối tượng âm thanh mới
+  //     audio = new Audio(url);
+
+  //     if (start) {
+  //       audio.currentTime = start;
+
+  //       // Theo dõi thời gian và dừng âm thanh khi đạt đến thời gian kết thúc
+  //       audio.addEventListener('timeupdate', () => {
+  //         if (audio.currentTime >= end) {
+  //           console.log("addEventListener timeupdate");
+  //           if (!audio.paused) {
+  //             audio.pause();
+  //             audio.currentTime = 0;
+  //           }
+  //           changeImageUrl(iconPath_1, icon);
+  //         }
+  //       });
+  //     } else {
+  //       audio.addEventListener("ended", (event) => {
+  //         console.log("addEventListener ended");
+  //         changeImageUrl(iconPath_1, icon);
+  //       });
+  //     }
 
 
-      // Phát âm thanh nếu không có lỗi
-      changeImageUrl(iconPath_2, icon);
-      audio.play().then(() => {
-        console.log("Playing");
-      }).catch(error => {
-        console.error('Playback failed:', error);
-      });
+  //     // Phát âm thanh nếu không có lỗi
+  //     changeImageUrl(iconPath_2, icon);
+  //     audio.play().then(() => {
+  //       console.log("Playing");
+  //     }).catch(error => {
+  //       console.error('Playback failed:', error);
+  //     });
 
-    }
-  }
+  //   }
+  // }
 
 
   // Hàm để thay đổi hình ảnh
@@ -506,7 +482,9 @@ $(document).ready(function () {
         iconYInput.val(icon.y());
         if (icon.getAttr('sound')) {
 
-          playSound(icon.getAttr('sound'), currentIcon);
+          // playSound(icon.getAttr('sound'), currentIcon);          
+          AudioService.setAutoShowPanel(is_auto_ShowPanel); 
+          AudioService.playSound(icon.getAttr('sound'), currentIcon);
         } else {
           showToast('Not found the sound id!');
         }
@@ -546,7 +524,7 @@ $(document).ready(function () {
     if (page != null) {
       const data_line = getLinesByKey(page);
       if (data_line != null) {
-        $('#delete-line-btn').prop('disabled', true);
+        // $('#delete-line-btn').prop('disabled', true);
         // Xóa các line hiện có
         lines.forEach(line => line.destroy());
         lines = [];
@@ -584,29 +562,24 @@ $(document).ready(function () {
 
   function lineAddEvents() {
     drawingLayer.getChildren().forEach((line) => {
-      if (line.className === 'Line') {
-        // Add a click event to select the line
+      if (line.className === 'Line' && !line._hasLineEvents) {
+        line._hasLineEvents = true; // custom flag
+
         line.on('click', (e) => {
-          e.cancelBubble = true; // Prevent other events from firing
-          resetAllLineColors(); // Reset colors of all lines
-          selectedLine = line; // Set the selected line
-          $('#delete-line-btn').prop('disabled', false);
-          line.stroke('black'); // Highlight the selected line
+          e.cancelBubble = true;
+          resetAllLineColors();
+          selectedLine = line;
+          // $('#delete-line-btn').prop('disabled', false);
+          line.stroke('black');
           drawingLayer.draw();
         });
 
-
-        // Đảm bảo con trỏ chuột thay đổi thành pointer khi hover qua line
-        line.on('mouseover', function () {
+        line.on('mouseover', () => {
           stage.container().style.cursor = 'pointer';
         });
-
-        line.on('mouseout', function () {
-          if (isDrawingMode) {
-            stage.container().style.cursor = 'crosshair';
-          } else {
-            stage.container().style.cursor = 'default';
-          }
+        line.on('mouseout', () => {
+          if (isDrawingMode) stage.container().style.cursor = 'crosshair';
+          else stage.container().style.cursor = 'default';
         });
       }
     });
@@ -643,7 +616,7 @@ $(document).ready(function () {
 
   // show page
   function loadPage() {
-
+    AudioService.stopAudio();
     // interact('#canvas').draggable(false);  
     clearCanvas();
     $('#settingsModal').modal('hide');
@@ -752,18 +725,24 @@ $(document).ready(function () {
 
 
   window.addEventListener('resize', resizeEvent);
+  window.addEventListener('beforeunload', function() {
+    AudioService.stopAudio();
+  });
 
+  let resizeTimer;
   function resizeEvent() {
-    //fitStageIntoParentContainer();
-    loadPage();
-    // window.location.reload();
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      fitStageIntoParentContainer();
+      // nếu muốn reload assets: loadPage(); // nhưng tốt hơn là chỉ fit
+    }, 200);
   }
 
   // Hàm để xóa tất cả các play icon và làm lại từ đầu, bao gồm cả hình nền
   function clearCanvas() {
-    if (audio) {
-      audio.pause();
-    }
+
+    // Stop any playing audio
+    AudioService.stopAudio();
 
     // Xóa tất cả các play icons
     playIcons.forEach(function (icon) {
@@ -820,6 +799,8 @@ $(document).ready(function () {
   });
 
   function processNextPrePage(isNext = true) {
+    AudioService.stopAudio();
+
     if (isNext) {
       CURRENT_PAGE_INDEX = CURRENT_PAGE_INDEX + 1;
       if (CURRENT_PAGE_INDEX > MAX_PAGE_NUM) {
@@ -834,10 +815,15 @@ $(document).ready(function () {
     $('#json-dropdown').val(CURRENT_PAGE_INDEX).change();
   }
 
-  $('#jump-to-index-jso').on('change', function () {
-    var inputValue = $(this).val();
-    $('#json-dropdown').val(inputValue).change();
-  });
+  $('#id_line_stroke_width').on('change', function () {
+    line_stroke_width = $(this).val();
+  }); 
+  
+
+$('#switchCheckChecked').on('change', function () {
+   is_auto_ShowPanel = $(this).prop('checked');  
+});  
+  
 
   $('#clearButton').on('click', function () {
     clearCanvas();
@@ -885,83 +871,6 @@ $(document).ready(function () {
       MIN_PAGE_NUM = minPageNum;      
   }
 
-  // Function to play sounds in sequence
-  let playAllIndex = 0;
-  function playAllSounds(icons) {
-    let iconCount = icons.length;
-
-    // Function to play a sound
-    function playNextSound() {
-
-      if (playAllIndex >= iconCount) {
-        return; // All sounds played
-      }
-
-      let icon = icons[playAllIndex]; // Get the current icon
-      let soundFileName = icon.getAttr('sound'); // Get the sound associated with the icon
-      if (soundFileName && soundFileName.trim() !== 'x') {
-
-        const [fileName, start, end] = getSoundStartEnd(soundFileName);
-        console.log(fileName, start, end);
-
-        // let url = global_const.PATH_SOUND + fileName.trim() + ".mp3";
-        let url = global_const.PATH_SOUND + fileName.trim() + (fileName.trim().endsWith('.mp3') ? '' : '.mp3');
-
-        // Kiểm tra và dừng âm thanh nếu đang phát
-        if (audio && !audio.paused) {
-          audio.pause();        // Tạm dừng âm thanh hiện tại
-          audio.currentTime = 0; // Đặt lại thời gian phát về đầu
-        }
-
-        audio = new Audio(url);
-        changeImageUrl(iconPath_2, icon); // Change the icon to indicate it's playing
-        if (start) {
-          audio.currentTime = start;
-          // Theo dõi thời gian và dừng âm thanh khi đạt đến thời gian kết thúc
-          audio.addEventListener('timeupdate', () => {
-            if (audio.currentTime >= end) {
-              console.log("addEventListener timeupdate");
-              if (!audio.paused) {
-                audio.pause();
-                audio.currentTime = 0;
-              }
-              changeImageUrl(iconPath_1, icon);
-              playAllIndex++; // Move to the next icon
-              playNextSound(); // Recursively play the next sound
-            }
-          });
-
-        } else {
-          // Listen for when the sound finishes playing
-          audio.addEventListener('ended', function () {
-            console.log("addEventListener ended");
-            changeImageUrl(iconPath_1, icon); // Reset the icon after playing
-            playAllIndex++; // Move to the next icon
-            playNextSound(); // Recursively play the next sound
-          });
-        }
-
-        // Phát âm thanh nếu không có lỗi
-        audio.play().then(() => {
-          console.log("Playing");
-        }).catch(error => {
-          console.error('Playback failed:', error);
-        });
-
-      } else {
-        // If no sound or "x" is found, skip to the next icon
-        playAllIndex++;
-      }
-    }
-
-    playNextSound(); // Start playing the sounds
-  }
-
-  // Bind the play-all button to play all sounds when clicked
-  $('#play-all-btn').on('click', function () {
-    playAllIndex = 0;
-    playAllSounds(playIcons); // Pass in the array of play icons
-  });
 
   function getFileNameFromUrl(imageSrc) {
     try {
@@ -975,7 +884,14 @@ $(document).ready(function () {
     }
   }
 
+
   function sendJsonToServer() {
+
+    if (!backgroundImage) {
+      showToast('Không có background, không thể lưu!', 'warning');
+      return;
+    }
+
     const backgroundSize = {
       width: backgroundImage.width(),
       height: backgroundImage.height(),
@@ -1105,5 +1021,16 @@ $(document).ready(function () {
   popDropdown($('#json-dropdown'), "Page", MIN_PAGE_NUM, MAX_PAGE_NUM, CURRENT_PAGE_INDEX);
   loadPage();
   toggleLockIcon(true);
+
+  // gọi init sau khi bạn đã có global_const, changeImageUrl, resetIcons, getSoundStartEnd
+  AudioService.init({
+    iconPathPlaying: iconPath_2,          // your global iconPath_2
+    iconPathIdle: iconPath_1,             // your global iconPath_1
+    resetIcons: resetIcons,               // function hiện có của bạn
+    changeImageUrl: changeImageUrl,       // function hiện có của bạn
+    getSoundStartEnd: getSoundStartEnd,   // function hiện có của bạn
+    global_const: global_const,            // object có PATH_SOUND
+    autoShowPanel: is_auto_ShowPanel // nếu bạn muốn KHÔNG tự show panel khi play
+  });  
 
 });

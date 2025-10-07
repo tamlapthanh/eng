@@ -14,16 +14,16 @@ $(document).ready(function () {
     // let MAX_PAGE_NUM = 65;
     // let MIN_PAGE_NUM = 1;
 
-    // let DATA_TYPE = "student37"
-    // let CURRENT_PAGE_INDEX = 5;
-    // let MAX_PAGE_NUM = 107;
-    // let MIN_PAGE_NUM = 5;
-
-
-    let DATA_TYPE = "dict"
-    let CURRENT_PAGE_INDEX = 1;
-    let MAX_PAGE_NUM = 87;
+    let DATA_TYPE = "student37"
+    let CURRENT_PAGE_INDEX = 5;
+    let MAX_PAGE_NUM = 107;
     let MIN_PAGE_NUM = 1;
+
+
+    // let DATA_TYPE = "dict"
+    // let CURRENT_PAGE_INDEX = 1;
+    // let MAX_PAGE_NUM = 87;
+    // let MIN_PAGE_NUM = 1;
 
     
 
@@ -75,6 +75,8 @@ $(document).ready(function () {
     const playIconButton = $('#play-icon');
     const saveIconButton = $('#save-icon');
     const saveSendIconButton = $('#save-icon-send');    
+    const saveSendIconButton2 = $('#save-icon-send-2');    
+
     const saveJsonButton = $('#save-json');
 
     const previous_page = $('#previous_page');
@@ -85,6 +87,7 @@ $(document).ready(function () {
     let playIcons = [];
     let currentIcon = null;
     let audio = null;
+    let currentSoundNum = 0;
 
 
 
@@ -148,7 +151,7 @@ $(document).ready(function () {
     }
 
     function addPlayIcon(x, y, sound) {
-        icon_size = 18;
+        icon_size = getIconSize(18);;
         Konva.Image.fromURL('assets/play_icon.png', function (icon) {
             icon.setAttrs({
                 x: x || (stage.width() - 150),
@@ -411,8 +414,17 @@ $(document).ready(function () {
         saveIcon();
         sendJsonToServer();
         checkSoundPath();
-        $('#settingsModal').modal('hide');
+        $('#settingsModal').modal('hide');        
+        processNextPage();
     });
+
+    saveSendIconButton2.off('click').on('click', function (e) {
+        saveIcon();
+        sendJsonToServer();
+        checkSoundPath();        
+        $('#settingsModal').modal('hide');        
+        processNextPage();
+    });    
 
     function saveIcon() {
         // Lưu màu ban đầu của nút
@@ -429,6 +441,8 @@ $(document).ready(function () {
             });
             iconLayer.batchDraw();
         }
+
+        currentSoundNum = Number(iconSoundUrlInput.val());
 
         // Hoàn lại màu ban đầu sau khi lưu
         saveIconButton.css('background-color', originalBackgroundColor);
@@ -587,13 +601,16 @@ $(document).ready(function () {
         // loadPage();
     });
 
-    next_page.on('click', function () {
-        CURRENT_PAGE_INDEX = CURRENT_PAGE_INDEX + 1;
+    function processNextPage() {
+         CURRENT_PAGE_INDEX = CURRENT_PAGE_INDEX + 1;
         if (CURRENT_PAGE_INDEX > MAX_PAGE_NUM) {
             CURRENT_PAGE_INDEX = 1;
         }
         $('#json-dropdown').val(CURRENT_PAGE_INDEX).change();
-        // loadPage();
+    }
+
+    next_page.on('click', function () {
+       processNextPage();
     });
 
     $('#clearButton').on('click', function () {
@@ -683,5 +700,18 @@ $(document).ready(function () {
     popDropdown($('#image-dropdown'), "Image", MIN_PAGE_NUM, MAX_PAGE_NUM)
 
     loadPage();
+
+
+    $('#settingsModal').on('show.bs.modal', function () {
+        const iconNode = currentIcon || (playIcons?.[0]);
+        const val = iconNode?.getAttr('sound') || '';
+
+        // Nếu val rỗng thì tăng currentSoundNum
+        if (!val) {
+            currentSoundNum = currentSoundNum + 1;
+        }
+
+        $('#icon-sound-url').val(val || currentSoundNum);
+    });
 
 });

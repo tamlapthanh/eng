@@ -1,8 +1,1 @@
-{
-    "background": "90.webp",
-    "icons": [],
-    "backgroundSize": {
-        "width": 554.8127177700349,
-        "height": 730
-    }
-}
+{"background":"90.webp","icons":[{"x":0.4162519751119503,"y":0.06390883228084092,"sound":"143"},{"x":0.2799840024127508,"y":0.0985241172335123,"sound":"144"}],"backgroundSize":{"width":704.4942263279446,"height":945}}
