@@ -204,6 +204,15 @@ $(document).ready(function () {
     toggleDrawIcon();
   });
 
+  $('#id_ShowPanel').on('click', function () {
+    is_auto_ShowPanel = !is_auto_ShowPanel;
+    $(this)
+      .toggleClass('btn-success', is_auto_ShowPanel)
+      .toggleClass('btn-dark', !is_auto_ShowPanel);
+
+    $('#audio-control-panel').toggle(is_auto_ShowPanel);
+  });
+
   function toggleDrawIcon(isDraw = false) {
     const $btn = $('#draw');
     if (isDraw || isDrawingMode) {
@@ -380,61 +389,6 @@ $(document).ready(function () {
 
     return arr;
   }
-
-  // function playSound(soundFileName, icon) {
-  //   resetIcons();
-
-  //   if (soundFileName && "x" != soundFileName.trim()) {
-  //     const [fileName, start, end] = getSoundStartEnd(soundFileName);
-  //     console.log(fileName, start, end);
-  //     // let url = global_const.PATH_SOUND + fileName.trim() + ".mp3";
-  //     let url = global_const.PATH_SOUND + fileName.trim() + (fileName.trim().endsWith('.mp3') ? '' : '.mp3');
-
-  //     // Kiểm tra và dừng âm thanh nếu đang phát
-  //     if (audio && !audio.paused) {
-  //       audio.pause();        // Tạm dừng âm thanh hiện tại
-  //       audio.currentTime = 0; // Đặt lại thời gian phát về đầu
-  //     }
-
-  //     // <-- STOP existing audio before creating a new one
-  //     stopAudio();      
-
-  //     // Tạo đối tượng âm thanh mới
-  //     audio = new Audio(url);
-
-  //     if (start) {
-  //       audio.currentTime = start;
-
-  //       // Theo dõi thời gian và dừng âm thanh khi đạt đến thời gian kết thúc
-  //       audio.addEventListener('timeupdate', () => {
-  //         if (audio.currentTime >= end) {
-  //           console.log("addEventListener timeupdate");
-  //           if (!audio.paused) {
-  //             audio.pause();
-  //             audio.currentTime = 0;
-  //           }
-  //           changeImageUrl(iconPath_1, icon);
-  //         }
-  //       });
-  //     } else {
-  //       audio.addEventListener("ended", (event) => {
-  //         console.log("addEventListener ended");
-  //         changeImageUrl(iconPath_1, icon);
-  //       });
-  //     }
-
-
-  //     // Phát âm thanh nếu không có lỗi
-  //     changeImageUrl(iconPath_2, icon);
-  //     audio.play().then(() => {
-  //       console.log("Playing");
-  //     }).catch(error => {
-  //       console.error('Playback failed:', error);
-  //     });
-
-  //   }
-  // }
-
 
   // Hàm để thay đổi hình ảnh
   function changeImageUrl(newUrl, icon) {
@@ -819,10 +773,6 @@ $(document).ready(function () {
     line_stroke_width = $(this).val();
   }); 
   
-
-$('#switchCheckChecked').on('change', function () {
-   is_auto_ShowPanel = $(this).prop('checked');  
-});  
   
 
   $('#clearButton').on('click', function () {
