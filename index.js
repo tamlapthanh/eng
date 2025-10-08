@@ -146,15 +146,15 @@ $(document).ready(function () {
     }
   });
 
-  $('#setting').on('click', function () { 
-    const controls = document.querySelector('.controls'); 
-    if (controls.style.display === 'none') { 
-      controls.style.display = 'flex'; 
-    } 
-    else { 
-      controls.style.display = 'none'; 
-      toggleDrawIcon(true); 
-    } 
+  $('#setting').on('click', function () {
+    const controls = document.querySelector('.controls');
+    if (controls.style.display === 'none') {
+      controls.style.display = 'flex';
+    }
+    else {
+      controls.style.display = 'none';
+      toggleDrawIcon(true);
+    }
   });
 
   $('#zoom-in').on('click', function () {
@@ -535,7 +535,7 @@ $(document).ready(function () {
         }
       }
       // ensure node is listening
-      icon.listening(true);      
+      icon.listening(true);
 
       // prefer Konva's tap + click; also register mousedown/touchstart for maximum compatibility
       icon.on('click tap mousedown touchstart', function (e) {
@@ -559,36 +559,119 @@ $(document).ready(function () {
 
   $('.add-icon').on('click', function () { addPlayIcon(); });
 
-  function loadLinesByDraw(page) {
-    if (page != null) {
-      const data_line = getLinesByKey(page);
-      if (data_line != null) {
-        lines.forEach(line => line.destroy());
-        lines = [];
-        if (data_line) {
-          data_line.forEach(savedLine => {
-            const points = savedLine.points.map((point, index) =>
-              index % 2 === 0
-                ? (point * backgroundImage.width()) + backgroundImage.x()
-                : (point * backgroundImage.height()) + backgroundImage.y()
-            );
-            const line = new Konva.Line({
-              points: points,
-              stroke: savedLine.stroke,
-              strokeWidth: savedLine.strokeWidth,
-              lineCap: savedLine.lineCap,
-              lineJoin: savedLine.lineJoin,
-              saved_stroke: savedLine.stroke
-            });
-            drawingLayer.add(line);
-            lines.push(line);
-          });
+  // Thay thế loadLinesByDraw()
+  function loadLinesByDraw(page, _tryCount = 0) {
+  if (page == null) return;
+
+  const data_line = getLinesByKey(page);
+  if (data_line == null) return;
+
+  // ensure background ready
+  if (!backgroundImage || !backgroundImage.image()) {
+    if (_tryCount < 5) {
+      setTimeout(() => loadLinesByDraw(page, _tryCount + 1), 60);
+    } else {
+      console.warn('backgroundImage not ready after retries when loading lines for page', page);
+    }
+    return;
+  }
+
+  // reset existing lines
+  lines.forEach(l => l.destroy());
+  lines = [];
+
+  // get display size & natural
+  const bgX = backgroundImage.x();
+  const bgY = backgroundImage.y();
+  const bgW = backgroundImage.width();
+  const bgH = backgroundImage.height();
+
+  const imgEl = backgroundImage.image && backgroundImage.image();
+  const natW = (imgEl && (imgEl.naturalWidth || imgEl.width)) ? (imgEl.naturalWidth || imgEl.width) : bgW;
+  const natH = (imgEl && (imgEl.naturalHeight || imgEl.height)) ? (imgEl.naturalHeight || imgEl.height) : bgH;
+
+  // If APP_DATA parse provided meta, check it
+  // Note: data_line may be just the lines array; try to get meta via APP_DATA raw entry
+  let rawEntry;
+  try {
+    const raw = APP_DATA && APP_DATA.get(String(page));
+    rawEntry = (typeof raw === 'string') ? JSON.parse(raw) : raw;
+  } catch (err) {
+    rawEntry = null;
+  }
+  const coordSystem = rawEntry && rawEntry.meta && rawEntry.meta.coordSystem ? rawEntry.meta.coordSystem : null;
+
+  data_line.forEach(savedLine => {
+    const pts = savedLine.points || [];
+    const restored = [];
+
+    if (coordSystem === 'normalized_display') {
+      // explicit normalized: map directly (allow <0 or >1)
+      for (let i = 0; i < pts.length; i += 2) {
+        const nx = Number(pts[i]);
+        const ny = Number(pts[i + 1]);
+        restored.push(nx * bgW + bgX);
+        restored.push(ny * bgH + bgY);
+      }
+    } else {
+      // fallback heuristic (backwards compatible with older data)
+      let allIn01 = true;
+      for (let i = 0; i < pts.length; i++) {
+        const v = Number(pts[i]);
+        if (!isFinite(v) || v < -0.01 || v > 1.01) { allIn01 = false; break; }
+      }
+
+      if (allIn01) {
+        for (let i = 0; i < pts.length; i += 2) {
+          restored.push(Number(pts[i]) * bgW + bgX);
+          restored.push(Number(pts[i + 1]) * bgH + bgY);
         }
-        drawingLayer.batchDraw();
-        lineAddEvents();
+      } else {
+        // try interpret as natural-image pixel coords
+        let looksLikeNatural = true;
+        for (let i = 0; i < pts.length; i += 2) {
+          const vx = Number(pts[i]);
+          const vy = Number(pts[i + 1]);
+          if (!isFinite(vx) || !isFinite(vy)) { looksLikeNatural = false; break; }
+          if (vx < -1 || vy < -1) { looksLikeNatural = false; break; }
+          if (vx > natW * 1.05 || vy > natH * 1.05) { looksLikeNatural = false; break; }
+        }
+
+        if (looksLikeNatural) {
+          for (let i = 0; i < pts.length; i += 2) {
+            const vx = Number(pts[i]);
+            const vy = Number(pts[i + 1]);
+            restored.push((vx / natW) * bgW + bgX);
+            restored.push((vy / natH) * bgH + bgY);
+          }
+        } else {
+          // fallback: absolute stage coords
+          for (let i = 0; i < pts.length; i++) {
+            restored.push(Number(pts[i]) || 0);
+          }
+        }
       }
     }
-  }
+
+    const line = new Konva.Line({
+      points: restored,
+      stroke: savedLine.stroke || line_color,
+      strokeWidth: savedLine.strokeWidth || line_stroke_width,
+      lineCap: savedLine.lineCap || 'round',
+      lineJoin: savedLine.lineJoin || 'round',
+      saved_stroke: savedLine.stroke || line_color
+    });
+
+    drawingLayer.add(line);
+    lines.push(line);
+  });
+
+  drawingLayer.batchDraw();
+  lineAddEvents();
+}
+
+
+
 
   function lineAddEvents() {
     drawingLayer.getChildren().forEach((line) => {
@@ -777,7 +860,7 @@ $(document).ready(function () {
     }
   });
 
-  $('#id_reset_app_data').on('click', function () { 
+  $('#id_reset_app_data').on('click', function () {
     APP_DATA = null;
     loadPage();
   });
@@ -801,34 +884,88 @@ $(document).ready(function () {
     }
   }
 
+  // Thay thế sendJsonToServer()
   function sendJsonToServer() {
-    if (!backgroundImage) { showToast('Không có background, không thể lưu!', 'warning'); return; }
-    const backgroundSize = { width: backgroundImage.width(), height: backgroundImage.height() };
-    const drawnLines = lines.map(line => ({
-      points: line.points().map((point, index) =>
-        index % 2 === 0 ? (point - backgroundImage.x()) / backgroundSize.width : (point - backgroundImage.y()) / backgroundSize.height
-      ),
+  if (!backgroundImage) {
+    showToast('Không có background, không thể lưu!', 'warning');
+    return;
+  }
+
+  // display size & offset (hiện tại trên stage)
+  const bgDisplay = {
+    x: backgroundImage.x(),
+    y: backgroundImage.y(),
+    width: backgroundImage.width(),
+    height: backgroundImage.height()
+  };
+
+  // natural size (nếu có) - fallback vào display nếu không có
+  const imgNode = backgroundImage.image && backgroundImage.image();
+  const naturalWidth = (imgNode && (imgNode.naturalWidth || imgNode.width)) ? (imgNode.naturalWidth || imgNode.width) : bgDisplay.width;
+  const naturalHeight = (imgNode && (imgNode.naturalHeight || imgNode.height)) ? (imgNode.naturalHeight || imgNode.height) : bgDisplay.height;
+
+  // convert each line's absolute points -> normalized [may be <0 or >1] relative to display box
+  const drawnLines = lines.map(line => {
+    const pts = line.points();
+    const norm = [];
+    for (let i = 0; i < pts.length; i += 2) {
+      const x = Number(pts[i]);
+      const y = Number(pts[i + 1]);
+      // normalize relative to display box; values outside box become <0 or >1
+      const nx = bgDisplay.width ? (x - bgDisplay.x) / bgDisplay.width : 0;
+      const ny = bgDisplay.height ? (y - bgDisplay.y) / bgDisplay.height : 0;
+      // keep some precision
+      norm.push(Number(nx.toFixed(6)));
+      norm.push(Number(ny.toFixed(6)));
+    }
+    return {
+      points: norm,
       stroke: line.stroke(),
       strokeWidth: line.strokeWidth(),
       lineCap: line.lineCap(),
       lineJoin: line.lineJoin()
-    }));
-    const jsonData = { lines: drawnLines };
-    const page = $('#json-dropdown').val();
-    const dataToSend = { sheet_name: DATA_TYPE, page: page, json: JSON.stringify(jsonData) };
-    console.log(dataToSend);
-    showSpinner('#F54927');
-    fetch(global_const.SERVER_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(dataToSend) })
-      .then(response => response)
-      .then(data => {
-        console.log('Success:', data);
-        showToast('Lưu bài làm thành công!');
-        APP_DATA = null;
-        listDrawingPagesDetailed(page.toString());
-      })
-      .catch(error => { console.log('Error:', error); showToast('Bị lỗi gì rồi không lưu được bạn ơi.!', 'danger'); })
-      .finally(() => { hideSpinner(); });
-  }
+    };
+  });
+
+  const jsonData = {
+    lines: drawnLines,
+    meta: {
+      savedAtDisplay: bgDisplay,
+      natural: { width: naturalWidth, height: naturalHeight },
+      coordSystem: 'normalized_display' // QUAN TRỌNG: mark as normalized display coords
+    }
+  };
+
+  const page = $('#json-dropdown').val();
+  const dataToSend = {
+    sheet_name: DATA_TYPE,
+    page: page,
+    json: JSON.stringify(jsonData)
+  };
+
+  showSpinner('#F54927');
+  fetch(global_const.SERVER_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(dataToSend)
+  })
+    .then(response => response)
+    .then(data => {
+      console.log('Success:', data);
+      showToast('Lưu bài làm thành công!');
+      APP_DATA = null;
+      listDrawingPagesDetailed(page.toString());
+    })
+    .catch(error => {
+      console.log('Error:', error);
+      showToast('Bị lỗi gì rồi không lưu được bạn ơi.!', 'danger');
+    })
+    .finally(() => {
+      hideSpinner();
+    });
+}
+
+
 
   function getLinesByKey(key) {
     console.log('getLinesByKey::', key)
