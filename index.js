@@ -108,8 +108,9 @@ $(document).ready(function () {
 
   // Xử lý bắt đầu vẽ
   stage.on('mousedown touchstart', function (e) {
+    // Note: this handler also used for touchstart double-tap/pinch logic elsewhere;
+    // but Konva will call this on both mouse and touch events.
     if (isDrawingMode == false) {
-
       console.log("Chỉ cho phép vẽ khi ở chế độ vẽ"); 
       return;  // Chỉ cho phép vẽ khi ở chế độ vẽ
     }
@@ -267,59 +268,151 @@ $(document).ready(function () {
 
   }
 
-  // Pinch-to-zoom with gestures
-  interact('#canvas').gesturable({
-    onstart: function () {
-      isPinching = true;
-      //stage.draggable(false);  // Disable dragging during pinch-to-zoom
-    },
-    onmove: function (event) {
-      const { da } = event;
-      const scale = stage.scaleX() * (1 + da / 100);
-      if (scale >= minZoom && scale <= maxZoom) {
-        stage.scale({ x: scale, y: scale });
-        stage.batchDraw();
-      }
-    },
-    onend: function () {
-      isPinching = false;
-      //stage.draggable(true);  // Re-enable dragging after pinch-to-zoom
-    }
-  });
+  // ---- Improved pinch-to-zoom (two-finger) implementation ----
+  // Remove interact(...).gesturable usage. Use touch handlers on stage to compute midpoint,
+  // keep the point under fingers stationary while scaling, clamp scale, and disable drag while pinching.
 
-  let lastTouchTime = 0; // To store the time of the last touch
+  // Helpers
+  function getDistance(t1, t2) {
+    const dx = t2.clientX - t1.clientX;
+    const dy = t2.clientY - t1.clientY;
+    return Math.hypot(dx, dy);
+  }
+  function getMidpoint(t1, t2) {
+    return {
+      x: (t1.clientX + t2.clientX) / 2,
+      y: (t1.clientY + t2.clientY) / 2
+    };
+  }
+
+  let pinchState = {
+    isPinching: false,
+    startDist: 0,
+    startScale: 1,
+    startCenter: { x: 0, y: 0 } // client coords
+  };
+
+  // Combine touchstart logic: support double-tap (single touch) and pinch (two touches)
+  let lastTouchTime = 0; // used for double-tap detection
   stage.on('touchstart', (e) => {
+    const touches = e.evt.touches || (e.evt.targetTouches ? e.evt.targetTouches : null);
+
+    // If two touches -> start pinch
+    if (touches && touches.length === 2) {
+      pinchState.isPinching = true;
+      pinchState.startDist = getDistance(touches[0], touches[1]);
+      pinchState.startScale = stage.scaleX(); // assume uniform scale
+      pinchState.startCenter = getMidpoint(touches[0], touches[1]);
+
+      // disable dragging while pinching
+      stage.draggable(false);
+      // prevent default browser gestures
+      e.evt.preventDefault && e.evt.preventDefault();
+      return;
+    }
+
+    // Single touch -> double-tap detection (existing behavior)
     const now = Date.now();
     const touchInterval = now - lastTouchTime;
-
-    if (touchInterval < 300) { // 300ms is the threshold for double-tap detection
-      // Handle double-tap event here
-      //console.log('Double-tap detected!');
+    if (touchInterval < 300) { // double-tap threshold
       if (zoomLevel < maxZoom) {
-        zoomLevel += zoomStep;
-        setZoom(zoomLevel);
+        zoomLevel = Math.min(maxZoom, zoomLevel + zoomStep);
+        // zoom around pointer
+        const pointer = stage.getPointerPosition();
+        if (pointer) {
+          const oldScale = stage.scaleX();
+          const newScale = zoomLevel;
+          const mousePointTo = {
+              x: (pointer.x - stage.x()) / oldScale,
+              y: (pointer.y - stage.y()) / oldScale
+          };
+          stage.scale({ x: newScale, y: newScale });
+          stage.position({
+            x: pointer.x - mousePointTo.x * newScale,
+            y: pointer.y - mousePointTo.y * newScale
+          });
+          stage.batchDraw();
+        } else {
+          setZoom(zoomLevel);
+        }
       }
     }
-
     lastTouchTime = now;
   });
 
+  stage.on('touchmove', (e) => {
+    if (!pinchState.isPinching) return;
 
+    const touches = e.evt.touches || (e.evt.targetTouches ? e.evt.targetTouches : null);
+    if (!touches || touches.length < 2) return;
 
-  // Mouse double-click event
-  stage.on('dblclick', (e) => {
+    const curDist = getDistance(touches[0], touches[1]);
+    if (pinchState.startDist === 0) return;
 
-      console.log('Double-click detected! 111');
-      if (zoomLevel < maxZoom) {
-        zoomLevel += zoomStep;
-        setZoom(zoomLevel);
-      }
+    // compute desired scale
+    const scaleFactor = curDist / pinchState.startDist;
+    let newScale = pinchState.startScale * scaleFactor;
+    newScale = Math.max(minZoom, Math.min(maxZoom, newScale));
+    zoomLevel = newScale;
+
+    // compute midpoint in client coords
+    const mid = getMidpoint(touches[0], touches[1]);
+
+    // Convert client midpoint to stage coords BEFORE scaling
+    const oldScale = stage.scaleX();
+    const pointer = { x: mid.x, y: mid.y };
+    const mousePointTo = {
+      x: (pointer.x - stage.x()) / oldScale,
+      y: (pointer.y - stage.y()) / oldScale
+    };
+
+    // Apply new scale and adjust position so that the point under fingers stays put
+    stage.scale({ x: newScale, y: newScale });
+    stage.position({
+      x: pointer.x - mousePointTo.x * newScale,
+      y: pointer.y - mousePointTo.y * newScale
+    });
+
+    stage.batchDraw();
+
+    // prevent default scrolling
+    e.evt.preventDefault && e.evt.preventDefault();
   });
 
+  stage.on('touchend touchcancel', (e) => {
+    const touches = e.evt.touches || (e.evt.targetTouches ? e.evt.targetTouches : null);
+    if (!touches || touches.length < 2) {
+      if (pinchState.isPinching) {
+        pinchState.isPinching = false;
+        // re-enable dragging depending on lock state
+        if (document.getElementById('lock-icon') && document.getElementById('lock-icon').classList.contains('bi-unlock-fill')) {
+          stage.draggable(true);
+        } else {
+          stage.draggable(false);
+        }
+      }
+    }
+  });
 
+  // Mouse double-click event (zoom around pointer)
+  stage.on('dblclick', (e) => {
+      const pointer = stage.getPointerPosition();
+      if (!pointer) return;
+      const oldScale = stage.scaleX();
+      const newScale = Math.min(maxZoom, oldScale + zoomStep);
+      const mousePointTo = {
+        x: (pointer.x - stage.x()) / oldScale,
+        y: (pointer.y - stage.y()) / oldScale
+      };
+      stage.scale({ x: newScale, y: newScale });
+      stage.position({
+        x: pointer.x - mousePointTo.x * newScale,
+        y: pointer.y - mousePointTo.y * newScale
+      });
+      stage.batchDraw();
+  });
 
   stage.on('wheel', function (event) {
-
     if ($('#lock-icon').hasClass('bi-unlock-fill')) {
         event.evt.preventDefault();
 
@@ -330,13 +423,24 @@ $(document).ready(function () {
         newScale = Math.max(minZoom, Math.min(maxZoom, newScale));
         zoomLevel = newScale;
 
-        // Chỉ scale mà không di chuyển
-        stage.scale({ x: newScale, y: newScale });
+        // Chỉ scale mà không di chuyển (or center at pointer)
+        const pointer = stage.getPointerPosition();
+        if (pointer) {
+          const mousePointTo = {
+            x: (pointer.x - stage.x()) / oldScale,
+            y: (pointer.y - stage.y()) / oldScale
+          };
+          stage.scale({ x: newScale, y: newScale });
+          stage.position({
+            x: pointer.x - mousePointTo.x * newScale,
+            y: pointer.y - mousePointTo.y * newScale
+          });
+        } else {
+          stage.scale({ x: newScale, y: newScale });
+        }
         stage.batchDraw();
     }
   });
-
-  // interact('#canvas').draggable(false);
 
   // end zoom
 
@@ -774,7 +878,6 @@ $(document).ready(function () {
   }); 
   
   
-
   $('#clearButton').on('click', function () {
     clearCanvas();
   });
