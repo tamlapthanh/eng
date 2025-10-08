@@ -138,6 +138,25 @@ $(document).ready(function () {
   }
 
   // ------------------------- UI controls (zoom buttons, draw, lock, etc.) -------------------------
+    $('#undo-btn').on('click', function () {
+    if (lines.length > 0) {
+      const lastLine = lines.pop(); // Lấy đường vẽ cuối cùng 
+      lastLine.destroy(); // Xóa đường vẽ khỏi canvas 
+      drawingLayer.batchDraw(); // Cập nhật canvas 
+    }
+  });
+
+  $('#setting').on('click', function () { 
+    const controls = document.querySelector('.controls'); 
+    if (controls.style.display === 'none') { 
+      controls.style.display = 'flex'; 
+    } 
+    else { 
+      controls.style.display = 'none'; 
+      toggleDrawIcon(true); 
+    } 
+  });
+  
   $('#zoom-in').on('click', function () {
     const oldScale = stage.scaleX();
     const newScale = Math.min(maxZoom, oldScale + zoomStep);
