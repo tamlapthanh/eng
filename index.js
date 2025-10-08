@@ -146,15 +146,15 @@ $(document).ready(function () {
     }
   });
 
-  $('#setting').on('click', function () { 
-    const controls = document.querySelector('.controls'); 
-    if (controls.style.display === 'none') { 
-      controls.style.display = 'flex'; 
-    } 
-    else { 
-      controls.style.display = 'none'; 
-      toggleDrawIcon(true); 
-    } 
+  $('#setting').on('click', function () {
+    const controls = document.querySelector('.controls');
+    if (controls.style.display === 'none') {
+      controls.style.display = 'flex';
+    }
+    else {
+      controls.style.display = 'none';
+      toggleDrawIcon(true);
+    }
   });
 
   $('#zoom-in').on('click', function () {
@@ -521,7 +521,8 @@ $(document).ready(function () {
     Konva.Image.fromURL(iconPath_1, function (icon) {
       icon.setAttrs({ x: x || Math.random() * (stage.width() - 50), y: y || Math.random() * (stage.height() - 50), width: icon_size, height: icon_size });
       icon.setAttr('sound', (sound || '').trim());
-      function handleInteraction() {
+      function handleInteraction(e) {
+        console.log('handleInteraction called', { sound: icon.getAttr('sound'), isDrawingMode, event: e?.type });
         currentIcon = icon;
         iconSoundUrlInput.val(icon.getAttr('sound') || '');
         iconXInput.val(icon.x());
@@ -533,8 +534,19 @@ $(document).ready(function () {
           showToast('Not found the sound id!');
         }
       }
-      icon.on('click', handleInteraction);
-      icon.on('touchend', handleInteraction);
+      // ensure node is listening
+      icon.listening(true);
+
+      // prefer Konva's tap + click; also register mousedown/touchstart for maximum compatibility
+      icon.on('click tap mousedown touchstart', function (e) {
+        // debug: uncomment khi cần
+        // console.log('ICON EVENT:', e.type, 'pointerType?', e.evt && e.evt.pointerType);
+
+        // Prevent stage from processing this event as a drag start (optional)
+        e.cancelBubble = true;
+
+        handleInteraction();
+      });
       playIcons.push(icon);
       icon.on('mouseover', function () { stage.container().style.cursor = 'pointer'; });
       icon.on('mouseout', function () {
