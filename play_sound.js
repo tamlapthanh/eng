@@ -286,7 +286,9 @@
       const end = (parts.length > 2) ? parseFloat(parts[2]) : null;
 
       const pathPrefix = (cfg.global_const && cfg.global_const.PATH_SOUND) ? cfg.global_const.PATH_SOUND : '';
-      const url = pathPrefix + fileName + (fileName.endsWith('.mp3') || fileName.endsWith('.mp4') ? '' : '');
+      // const url = pathPrefix + fileName + (fileName.endsWith('.mp3') || fileName.endsWith('.mp4') ? '' : '');
+      // Append .mp3 if fileName doesn't end with .mp3 or .mp4
+      const url = pathPrefix + fileName + (fileName.endsWith('.mp3') || fileName.endsWith('.mp4') ? '' : '.mp3');
 
       stopAudio();
 
@@ -409,7 +411,7 @@
     return {
       init: init,
       playSound: playSound,
-      playAllSounds: playAllSounds,
+      // playAllSounds: playAllSounds,
       stopAudio: stopAudio,
       showPanel: showPanel,
       hidePanel: hidePanel,

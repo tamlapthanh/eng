@@ -87,6 +87,90 @@ $(document).ready(function () {
     stage.batchDraw();
   }
 
+  // --- Helper: animate stage transform (scale & position) using Konva.Tween ---
+  // duration in seconds
+  function animateStageTo(newScale, newPos, duration = 0.18) {
+    // clamp duration minimum
+    duration = Math.max(0.02, duration);
+    // stop any existing tween (if any)
+    if (stage._activeTween) {
+      try { stage._activeTween.destroy(); } catch (e) {}
+      stage._activeTween = null;
+    }
+
+    // create tween
+    const tween = new Konva.Tween({
+      node: stage,
+      duration: duration,
+      easing: Konva.Easings.EaseInOut,
+      x: newPos.x,
+      y: newPos.y,
+      scaleX: newScale,
+      scaleY: newScale
+    });
+
+    stage._activeTween = tween;
+    tween.play();
+    // ensure draw after tween
+    tween.onFinish = function () {
+      stage.batchDraw();
+      try { tween.destroy(); } catch (e) {}
+      stage._activeTween = null;
+    };
+  }
+
+  // ---------- bounding (clamp) helpers ----------
+  // Given desired scale and desired stage position, clamp to keep background image visible
+  function clampPositionForScale(desiredX, desiredY, scale) {
+    // If no backgroundImage, just return desired
+    if (!backgroundImage) {
+      return { x: desiredX, y: desiredY };
+    }
+
+    const cw = stage.width();
+    const ch = stage.height();
+
+    const bw = backgroundImage.x(); // background left in stage coords
+    const bh = backgroundImage.y();
+    const bwW = backgroundImage.width();
+    const bwH = backgroundImage.height();
+
+    // Calculate allowed range for stage.x (sX) so that:
+    // left edge: sX + bw * scale <= 0  -> sX <= -bw*scale
+    // right edge: sX + (bw + bwW) * scale >= cw -> sX >= cw - (bw + bwW) * scale
+    const maxX = -bw * scale;
+    const minX = cw - (bw + bwW) * scale;
+
+    // For Y:
+    // top: sY + bh * scale <= 0 -> sY <= -bh*scale
+    // bottom: sY + (bh + bwH) * scale >= ch -> sY >= ch - (bh + bwH) * scale
+    const maxY = -bh * scale;
+    const minY = ch - (bh + bwH) * scale;
+
+    let finalX = desiredX;
+    let finalY = desiredY;
+
+    if (minX > maxX) {
+      // content narrower than container -> center horizontally
+      const contentWidth = bwW * scale;
+      finalX = (cw - contentWidth) / 2 - bw * scale;
+    } else {
+      finalX = Math.min(maxX, Math.max(minX, desiredX));
+    }
+
+    if (minY > maxY) {
+      // content shorter than container -> center vertically
+      const contentHeight = bwH * scale;
+      finalY = (ch - contentHeight) / 2 - bh * scale;
+    } else {
+      finalY = Math.min(maxY, Math.max(minY, desiredY));
+    }
+
+    return { x: finalX, y: finalY };
+  }
+
+  // ---------- end bounding helpers ----------
+
   // xu ly ve tren canva
   // Biến để lưu trạng thái có đang ở chế độ vẽ hay không
   let isDrawingMode = false;
@@ -180,25 +264,48 @@ $(document).ready(function () {
 
   // Zoom In button
   $('#zoom-in').on('click', function () {
-    // if (zoomLevel < maxZoom) {
-      zoomLevel += zoomStep;
-      setZoom(zoomLevel);
-    // }
+    // compute new scale and center on canvas center
+    const oldScale = stage.scaleX();
+    const newScale = Math.min(maxZoom, oldScale + zoomStep);
+    const center = { x: stage.width() / 2, y: stage.height() / 2 };
+    // compute pointer transform
+    const mousePointTo = {
+      x: (center.x - stage.x()) / oldScale,
+      y: (center.y - stage.y()) / oldScale
+    };
+    const desiredPos = {
+      x: center.x - mousePointTo.x * newScale,
+      y: center.y - mousePointTo.y * newScale
+    };
+    const clamped = clampPositionForScale(desiredPos.x, desiredPos.y, newScale);
+    zoomLevel = newScale;
+    animateStageTo(newScale, clamped, 0.2);
   });
 
-  // Zoom Out button
+  // Reset zoom
   $('#reset-zoom').on('click', function () {
-    stage.scale({ x: 1, y: 1 });
-    stage.position({ x: 0, y: 0 }); // Optionally reset position to top-left corner
-    stage.batchDraw(); // Re-draw the stage to apply changes
+    // animate back to identity
+    const clamped = clampPositionForScale(0, 0, 1);
+    zoomLevel = 1;
+    animateStageTo(1, clamped, 0.25);
   });
 
   // Zoom Out button
   $('#zoom-out').on('click', function () {
-    // if (zoomLevel > minZoom) {
-      zoomLevel -= zoomStep;
-      setZoom(zoomLevel);
-    // }
+    const oldScale = stage.scaleX();
+    const newScale = Math.max(minZoom, oldScale - zoomStep);
+    const center = { x: stage.width() / 2, y: stage.height() / 2 };
+    const mousePointTo = {
+      x: (center.x - stage.x()) / oldScale,
+      y: (center.y - stage.y()) / oldScale
+    };
+    const desiredPos = {
+      x: center.x - mousePointTo.x * newScale,
+      y: center.y - mousePointTo.y * newScale
+    };
+    const clamped = clampPositionForScale(desiredPos.x, desiredPos.y, newScale);
+    zoomLevel = newScale;
+    animateStageTo(newScale, clamped, 0.2);
   });
 
   $('#draw').on('click', function () {
@@ -244,7 +351,6 @@ $(document).ready(function () {
       icon.classList.add("bi-lock-fill");
 
       // Đổi lại background của nút về màu ban đầu khi ở trạng thái "lock"
-      // interact('#canvas').draggable(false);
       stage.draggable(false);  
     } else {
       // Kiểm tra và thay đổi class của phần tử <i>
@@ -253,22 +359,18 @@ $(document).ready(function () {
         icon.classList.add("bi-unlock-fill");
 
         // Đổi background của nút sang màu khác khi ở trạng thái "unlock"
-        // interact('#canvas').draggable(true);
         stage.draggable(true);  
         toggleDrawIcon(true); // Không cho vẽ
       } else {
         icon.classList.remove("bi-unlock-fill");
         icon.classList.add("bi-lock-fill");
-
-        // Đổi lại background của nút về màu ban đầu khi ở trạng thái "lock"
-        // interact('#canvas').draggable(false);
         stage.draggable(false);  
       }
     }
 
   }
 
-  // ---- Improved pinch-to-zoom (two-finger) implementation ----
+  // ---- Improved pinch-to-zoom (two-finger) implementation with bounds & tween ----
   // Remove interact(...).gesturable usage. Use touch handlers on stage to compute midpoint,
   // keep the point under fingers stationary while scaling, clamp scale, and disable drag while pinching.
 
@@ -316,24 +418,35 @@ $(document).ready(function () {
     const touchInterval = now - lastTouchTime;
     if (touchInterval < 300) { // double-tap threshold
       if (zoomLevel < maxZoom) {
-        zoomLevel = Math.min(maxZoom, zoomLevel + zoomStep);
-        // zoom around pointer
+        const oldScale = stage.scaleX();
+        const newScale = Math.min(maxZoom, zoomLevel + zoomStep);
+        zoomLevel = newScale;
+
+        // zoom around pointer (single touch pointer)
         const pointer = stage.getPointerPosition();
         if (pointer) {
-          const oldScale = stage.scaleX();
-          const newScale = zoomLevel;
           const mousePointTo = {
-              x: (pointer.x - stage.x()) / oldScale,
-              y: (pointer.y - stage.y()) / oldScale
+            x: (pointer.x - stage.x()) / oldScale,
+            y: (pointer.y - stage.y()) / oldScale
           };
-          stage.scale({ x: newScale, y: newScale });
-          stage.position({
+          const desiredPos = {
             x: pointer.x - mousePointTo.x * newScale,
             y: pointer.y - mousePointTo.y * newScale
-          });
-          stage.batchDraw();
+          };
+          const clamped = clampPositionForScale(desiredPos.x, desiredPos.y, newScale);
+          animateStageTo(newScale, clamped, 0.2);
         } else {
-          setZoom(zoomLevel);
+          const center = { x: stage.width() / 2, y: stage.height() / 2 };
+          const mousePointTo = {
+            x: (center.x - stage.x()) / oldScale,
+            y: (center.y - stage.y()) / oldScale
+          };
+          const desiredPos = {
+            x: center.x - mousePointTo.x * newScale,
+            y: center.y - mousePointTo.y * newScale
+          };
+          const clamped = clampPositionForScale(desiredPos.x, desiredPos.y, newScale);
+          animateStageTo(newScale, clamped, 0.2);
         }
       }
     }
@@ -366,14 +479,17 @@ $(document).ready(function () {
       y: (pointer.y - stage.y()) / oldScale
     };
 
-    // Apply new scale and adjust position so that the point under fingers stays put
-    stage.scale({ x: newScale, y: newScale });
-    stage.position({
+    const desiredPos = {
       x: pointer.x - mousePointTo.x * newScale,
       y: pointer.y - mousePointTo.y * newScale
-    });
+    };
 
-    stage.batchDraw();
+    // clamp pos
+    const clamped = clampPositionForScale(desiredPos.x, desiredPos.y, newScale);
+
+    // animate to clamped transform (short duration for smooth continuous feel)
+    // small duration makes it smooth but still responsive
+    animateStageTo(newScale, clamped, 0.05);
 
     // prevent default scrolling
     e.evt.preventDefault && e.evt.preventDefault();
@@ -404,12 +520,13 @@ $(document).ready(function () {
         x: (pointer.x - stage.x()) / oldScale,
         y: (pointer.y - stage.y()) / oldScale
       };
-      stage.scale({ x: newScale, y: newScale });
-      stage.position({
+      const desiredPos = {
         x: pointer.x - mousePointTo.x * newScale,
         y: pointer.y - mousePointTo.y * newScale
-      });
-      stage.batchDraw();
+      };
+      const clamped = clampPositionForScale(desiredPos.x, desiredPos.y, newScale);
+      zoomLevel = newScale;
+      animateStageTo(newScale, clamped, 0.2);
   });
 
   stage.on('wheel', function (event) {
@@ -423,22 +540,23 @@ $(document).ready(function () {
         newScale = Math.max(minZoom, Math.min(maxZoom, newScale));
         zoomLevel = newScale;
 
-        // Chỉ scale mà không di chuyển (or center at pointer)
+        // center at pointer
         const pointer = stage.getPointerPosition();
         if (pointer) {
           const mousePointTo = {
             x: (pointer.x - stage.x()) / oldScale,
             y: (pointer.y - stage.y()) / oldScale
           };
-          stage.scale({ x: newScale, y: newScale });
-          stage.position({
+          const desiredPos = {
             x: pointer.x - mousePointTo.x * newScale,
             y: pointer.y - mousePointTo.y * newScale
-          });
+          };
+          const clamped = clampPositionForScale(desiredPos.x, desiredPos.y, newScale);
+          animateStageTo(newScale, clamped, 0.18);
         } else {
-          stage.scale({ x: newScale, y: newScale });
+          const clamped = clampPositionForScale(stage.x(), stage.y(), newScale);
+          animateStageTo(newScale, clamped, 0.18);
         }
-        stage.batchDraw();
     }
   });
 
