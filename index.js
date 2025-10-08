@@ -138,7 +138,7 @@ $(document).ready(function () {
   }
 
   // ------------------------- UI controls (zoom buttons, draw, lock, etc.) -------------------------
-    $('#undo-btn').on('click', function () {
+  $('#undo-btn').on('click', function () {
     if (lines.length > 0) {
       const lastLine = lines.pop(); // Lấy đường vẽ cuối cùng 
       lastLine.destroy(); // Xóa đường vẽ khỏi canvas 
@@ -156,7 +156,7 @@ $(document).ready(function () {
       toggleDrawIcon(true); 
     } 
   });
-  
+
   $('#zoom-in').on('click', function () {
     const oldScale = stage.scaleX();
     const newScale = Math.min(maxZoom, oldScale + zoomStep);
@@ -268,20 +268,6 @@ $(document).ready(function () {
   let touchDrawTimer = null;
   let pinchState = { isPinching: false, startDist: 0, startScale: 1, startCenter: { x: 0, y: 0 } };
 
-  // Swipe config (tweak nếu cần)
-  const SWIPE_THRESHOLD = 80;         // px ngang tối thiểu để kích hoạt chuyển trang
-  const SWIPE_MAX_VERTICAL = 70;      // nếu di chuyển dọc lớn hơn giá trị này -> hủy swipe
-  const SWIPE_COOLDOWN = 600;         // ms: tránh quẹt liên tiếp quá nhanh
-
-  let swipeState = {
-    active: false,
-    startX: 0,
-    startY: 0,
-    startTime: 0,
-    fired: false
-  };
-  let lastSwipeTime = 0;
-
   // convert client coords to stage coords using transform
   function clientToStage(clientX, clientY) {
     const rect = container.getBoundingClientRect();
@@ -313,40 +299,50 @@ $(document).ready(function () {
     try { container.setPointerCapture(evt.pointerId); } catch (e) { }
     if (evt.pointerType === 'touch') evt.preventDefault();
 
-    // --- double-tap detection (touch) ---
+    // --- double-tap detection for touch ---
     if (evt.pointerType === 'touch') {
       const now = Date.now();
-      const dx = evt.clientX - (lastTapPos?.x || 0);
-      const dy = evt.clientY - (lastTapPos?.y || 0);
+      const dx = evt.clientX - lastTapPos.x;
+      const dy = evt.clientY - lastTapPos.y;
       const dist = Math.hypot(dx, dy);
 
       if (now - lastTapTime <= DOUBLE_TAP_THRESHOLD && dist <= DOUBLE_TAP_DISTANCE) {
-        // double-tap: zoom in
-        lastTapTime = 0;
+        // double-tap detected -> zoom around this point
+        lastTapTime = 0; // reset
         lastTapPos = { x: 0, y: 0 };
+
+        // cancel any pending drawing starts
         cancelPendingDraw();
         cancelActiveDrawing();
 
+        // compute new scale (zoom in)
         const oldScale = stage.scaleX();
         const newScale = Math.min(maxZoom, oldScale + zoomStep);
         zoomLevel = newScale;
+
+        // compute desired pos to keep tapped point stable
         const pointer = { x: evt.clientX, y: evt.clientY };
         const mousePointTo = { x: (pointer.x - stage.x()) / oldScale, y: (pointer.y - stage.y()) / oldScale };
         const desiredPos = { x: pointer.x - mousePointTo.x * newScale, y: pointer.y - mousePointTo.y * newScale };
         const clamped = clampPositionForScale(desiredPos.x, desiredPos.y, newScale);
         animateStageTo(newScale, clamped, 0.2);
+
+        // ensure pinch/draw state remains safe
         pinchState.isPinching = false;
-        return;
+        return; // do not proceed to drawing logic
       }
 
+      // not a double-tap -> record as possible first tap
       lastTapTime = now;
       lastTapPos = { x: evt.clientX, y: evt.clientY };
+
+      // (continue below to register pointer as usual)
     }
 
-    // Register pointer
+    // register pointer
     activePointers.set(evt.pointerId, { x: evt.clientX, y: evt.clientY, type: evt.pointerType });
 
-    // If multi-pointer -> start pinch immediately
+    // if >=2 pointers -> pinch mode immediately, cancel any drawing
     if (activePointers.size >= 2) {
       pinchState.isPinching = true;
       const pts = Array.from(activePointers.values());
@@ -357,39 +353,11 @@ $(document).ready(function () {
       cancelPendingDraw();
       cancelActiveDrawing();
       stage.draggable(false);
-      // Also disable swipe
-      swipeState.active = false;
       return;
     }
 
-    // SINGLE pointer: decide whether this is a swipe candidate or a draw candidate
+    // single pointer path
     const pointerInfo = activePointers.values().next().value;
-
-    // Map client->stage coords to check hit
-    const stagePt = clientToStage(evt.clientX, evt.clientY);
-    const hit = stage.getIntersection(stagePt);
-
-    // Start swipe only when:
-    // - touch
-    // - only 1 pointer
-    // - NOT in drawing mode (to avoid conflict)
-    // - NOT starting on an icon (hit && hit.className === 'Image')
-    if (evt.pointerType === 'touch' && activePointers.size === 1 && !isDrawingMode && !pinchState.isPinching && !(hit && hit.className === 'Image')) {
-      // initialize swipe state
-      swipeState.active = true;
-      swipeState.startX = evt.clientX;
-      swipeState.startY = evt.clientY;
-      swipeState.startTime = Date.now();
-      swipeState.fired = false;
-
-      // prevent starting draw
-      cancelPendingDraw();
-      cancelActiveDrawing();
-      // no return -> do not start drawing
-      return;
-    }
-
-    // Otherwise follow normal drawing logic: (touch with small delay or immediate for mouse/pen)
     if (evt.pointerType === 'touch') {
       cancelPendingDraw();
       touchDrawTimer = setTimeout(() => {
@@ -412,7 +380,7 @@ $(document).ready(function () {
         lines.push(lastLine);
       }, TOUCH_DRAW_DELAY);
     } else {
-      // mouse/pen immediate
+      // mouse/pen => immediate
       if (!isDrawingMode) return;
       cancelPendingDraw();
       isDrawing = true;
@@ -432,13 +400,14 @@ $(document).ready(function () {
     }
   }, { passive: false });
 
+
   // pointermove
   container.addEventListener('pointermove', function (evt) {
     if (!activePointers.has(evt.pointerId)) return;
     activePointers.set(evt.pointerId, { x: evt.clientX, y: evt.clientY, type: evt.pointerType });
 
-    // If multi-pointer -> pinch behavior
     if (activePointers.size >= 2) {
+      // ensure pinch state
       if (!pinchState.isPinching) {
         pinchState.isPinching = true;
         const pts0 = Array.from(activePointers.values());
@@ -448,7 +417,6 @@ $(document).ready(function () {
         pinchState.startCenter = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
         cancelPendingDraw();
         cancelActiveDrawing();
-        swipeState.active = false;
       }
 
       // compute pinch scale & reposition
@@ -472,38 +440,7 @@ $(document).ready(function () {
       return;
     }
 
-    // SINGLE pointer: swipe handling (only when swipeState.active)
-    if (swipeState.active) {
-      const dx = evt.clientX - swipeState.startX;
-      const dy = evt.clientY - swipeState.startY;
-
-      // cancel swipe if too vertical
-      if (Math.abs(dy) > SWIPE_MAX_VERTICAL) {
-        swipeState.active = false;
-      } else {
-        // if threshold reached and not fired recently, trigger page change
-        if (!swipeState.fired && Math.abs(dx) >= SWIPE_THRESHOLD && (Date.now() - lastSwipeTime > SWIPE_COOLDOWN)) {
-          swipeState.fired = true;
-          lastSwipeTime = Date.now();
-
-          const isNext = dx < 0; // left swipe -> next, right swipe -> previous
-          // small UX: cancel any playing audio before changing page
-          AudioService.stopAudio();
-          processNextPrePage(isNext);
-
-          // optionally: provide small haptic/vibrate on mobile
-          if (navigator.vibrate) navigator.vibrate(30);
-
-          // hide swipe state (will be cleared on pointerup)
-        }
-      }
-
-      // prevent default scroll while swiping
-      if (evt.pointerType === 'touch') evt.preventDefault();
-      return;
-    }
-
-    // If not swiping and not pinching, continue drawing if active
+    // single pointer -> drawing (only if not pinching)
     if (pinchState.isPinching) {
       cancelPendingDraw();
       cancelActiveDrawing();
@@ -511,6 +448,7 @@ $(document).ready(function () {
     }
 
     if (!isDrawing) return;
+
     const pt = clientToStage(evt.clientX, evt.clientY);
     if (!lastLine) return;
     const newPoints = lastLine.points().concat([pt.x, pt.y]);
@@ -522,25 +460,11 @@ $(document).ready(function () {
   function releasePointer(evt) {
     try { container.releasePointerCapture(evt.pointerId); } catch (e) { }
     activePointers.delete(evt.pointerId);
-
-    // if pointer count drops below 2, exit pinch
     if (activePointers.size < 2 && pinchState.isPinching) {
       pinchState.isPinching = false;
       pinchState.startDist = 0;
     }
-
-    // clear pending draw timer always on pointer up
     cancelPendingDraw();
-
-    // finalize/cleanup swipe state
-    if (swipeState.active) {
-      // if swipe didn't reach threshold, we can optionally treat short flick as page change by velocity;
-      // but for now we simply cancel
-      swipeState.active = false;
-      swipeState.fired = false;
-    }
-
-    // if no more pointers, finish drawing
     if (activePointers.size === 0) {
       if (isDrawing) {
         isDrawing = false;
@@ -554,7 +478,6 @@ $(document).ready(function () {
     }
   }
 
-
   container.addEventListener('pointerup', releasePointer, { passive: false });
   container.addEventListener('pointercancel', releasePointer, { passive: false });
 
@@ -562,8 +485,6 @@ $(document).ready(function () {
   const iconSoundUrlInput = $('#icon-sound-url');
   const iconXInput = $('#icon-x');
   const iconYInput = $('#icon-y');
-  const previous_page = $('#previous_page');
-  const next_page = $('#next_page');
 
   let backgroundImage = null;
   let playIcons = [];
@@ -804,8 +725,8 @@ $(document).ready(function () {
     }
   }
 
-  // const previous_page = $('#previous_page');
-  // const next_page = $('#next_page');
+  const previous_page = $('#previous_page');
+  const next_page = $('#next_page');
   previous_page.on('click', function () { processNextPrePage(false); });
   next_page.on('click', function () { processNextPrePage(true); });
 
