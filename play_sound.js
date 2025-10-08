@@ -7,24 +7,25 @@
     let _timeUpdateHandler = null;
     let _endedHandler = null;
     let currentIcon = null;
-    let isLoop = false;
-
+    let isLoop = true;                 // default: loop enabled
+  
     // config
     const cfg = {
-      iconPathPlaying: 'assets/icons/music_icon.svg',
-      iconPathIdle: 'assets/icons/music_icon.png',
+      iconPathPlaying: 'assets/music_icon.svg',
+      iconPathIdle: 'assets/play_icon.png',
       resetIcons: null,
       changeImageUrl: null,
       getSoundStartEnd: null,
       global_const: null,
-      autoShowPanel: true
+      autoShowPanel: true,
+      defaultPlaybackRate: 1
     };
 
-    // create panel HTML if not exist (includes video container)
+    // create panel HTML if not exist (includes video container and speed control as range)
     function ensurePanel() {
-      if (document.getElementById('audio-control-panel')) return;
+  if (document.getElementById('audio-control-panel')) return;
 
-      const html = `
+  const html = `
 <div id="audio-control-panel" style="display:none; position:fixed; right:18px; bottom:18px; width:360px; max-width:95vw; z-index:9999; box-shadow:0 6px 18px rgba(0,0,0,0.18); border-radius:10px; background:#fff; font-family:Arial, sans-serif; overflow:hidden;">
   <div style="display:flex; align-items:center; justify-content:space-between; padding:8px 10px; border-bottom:1px solid rgba(0,0,0,0.06);">
     <div style="display:flex; align-items:center; gap:8px;">
@@ -32,22 +33,28 @@
       <div style="font-size:14px; font-weight:600;" id="acp-title">Media</div>
     </div>
     <div style="display:flex; gap:6px; align-items:center;">
-      <button id="acp-stop" class="btn btn-sm btn-light" title="Stop">■</button>
-      <button id="acp-close" class="btn btn-sm btn-light" title="Close">✕</button>
+     <button  id="acp-loop"  class="btn btn-sm btn-primary" title="Toggle loop" aria-pressed="true"><i class="bi bi-arrow-repeat" style="font-size:14px;"></i></button>
+      <button id="acp-close" class="btn btn-sm btn-danger" title="Close"><i class="bi bi-x-lg" style="font-size:14px;"></i></button>
     </div>
   </div>
 
-  <!-- video container: hidden when playing audio -->
+  <!-- video container -->
   <div id="acp-video-wrap" style="display:none; padding:8px;">
     <video id="acp-video" style="width:100%; border-radius:6px; background:#000;" playsinline controls></video>
   </div>
 
   <div style="padding:10px;">
-    <div style="display:flex; gap:8px; align-items:center; margin-bottom:6px;">
-      <button id="acp-playpause" class="btn btn-primary" style="min-width:56px;">Play</button>
-      <div style="flex:1;">
+    <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px; height:40px;">
+      <!-- Play/Pause button -->
+      <button id="acp-playpause" class="btn btn-sm btn-primary d-flex align-items-center justify-content-center"
+              style="width:34px; height:34px; padding:0;">
+        <i class="bi bi-play-fill" style="font-size:14px;"></i>
+      </button>
+
+      <!-- Progress + time -->
+      <div style="flex:1; display:flex; flex-direction:column; justify-content:center;">
         <input id="acp-progress" type="range" min="0" max="1000" value="0" step="1" style="width:100%;">
-        <div style="display:flex; justify-content:space-between; font-size:12px; color:#666; margin-top:4px;">
+        <div style="display:flex; justify-content:space-between; font-size:12px; color:#666;">
           <span id="acp-current">0:00</span>
           <span id="acp-duration">0:00</span>
         </div>
@@ -55,21 +62,26 @@
     </div>
 
     <div style="display:flex; gap:8px; align-items:center;">
-      <label style="font-size:12px; color:#666;">Vol</label>
+      <i class="bi bi-volume-up" style="font-size:24px; color:#666;"></i>
       <input id="acp-volume" type="range" min="0" max="1" step="0.01" value="1" style="flex:1;">
-      <button id="acp-loop" class="btn btn-sm btn-light" title="Toggle loop">🔁</button>
+     
+      <i class="bi bi-speedometer" style="font-size:18px; color:#666;"></i>
+      <input id="acp-speed" type="range" min="0.5" max="2" step="0.5" value="${cfg.defaultPlaybackRate}" style="width:70px;">
+      <span id="speedValue" style="min-width:44px; text-align:right; display:inline-block;">${cfg.defaultPlaybackRate.toFixed(1)}x</span>
     </div>
   </div>
 </div>`;
-      const div = document.createElement('div');
-      div.innerHTML = html;
-      document.body.appendChild(div);
-    }
+
+  const div = document.createElement('div');
+  div.innerHTML = html;
+  document.body.appendChild(div);
+}
+
 
     function isVideoFile(fileName) {
       if (!fileName) return false;
       const lower = fileName.toLowerCase();
-      return lower.endsWith('.mp4') || lower.endsWith('.webm') || lower.endsWith('.ogg') && lower.indexOf('.mp3') === -1;
+      return lower.endsWith('.mp4') || lower.endsWith('.webm') || lower.endsWith('.ogg') || lower.endsWith('.mkv');
     }
 
     // format time
@@ -78,7 +90,7 @@
       sec = Math.floor(sec);
       const m = Math.floor(sec / 60);
       const s = sec % 60;
-      return `${m}:${s.toString().padStart(2,'0')}`;
+      return `${m}:${s.toString().padStart(2, '0')}`;
     }
 
     function panelEls() {
@@ -87,7 +99,7 @@
         iconImg: document.getElementById('acp-icon'),
         title: document.getElementById('acp-title'),
         playpauseBtn: document.getElementById('acp-playpause'),
-        stopBtn: document.getElementById('acp-stop'),
+        // stopBtn: document.getElementById('acp-stop'),
         closeBtn: document.getElementById('acp-close'),
         progress: document.getElementById('acp-progress'),
         currentTimeEl: document.getElementById('acp-current'),
@@ -95,7 +107,9 @@
         volume: document.getElementById('acp-volume'),
         loopBtn: document.getElementById('acp-loop'),
         videoWrap: document.getElementById('acp-video-wrap'),
-        videoEl: document.getElementById('acp-video')
+        videoEl: document.getElementById('acp-video'),
+        speed: document.getElementById('acp-speed'),
+        speedLabel: document.getElementById('speedValue')
       };
     }
 
@@ -118,16 +132,14 @@
         try {
           if (_timeUpdateHandler) mediaEl.removeEventListener('timeupdate', _timeUpdateHandler);
           if (_endedHandler) mediaEl.removeEventListener('ended', _endedHandler);
-        } catch (err) {}
-        try { mediaEl.pause(); } catch (e) {}
-        try { mediaEl.currentTime = 0; } catch (e) {}
-        // if it's a created video element we remove src for memory
+        } catch (err) { }
+        try { mediaEl.pause(); } catch (e) { }
+        try { mediaEl.currentTime = 0; } catch (e) { }
         try {
           if (mediaEl.tagName && mediaEl.tagName.toLowerCase() === 'video') {
             mediaEl.removeAttribute('src');
-            // do not remove element node (we reuse panel's videoEl), but if mediaEl isn't the panel's videoEl it's okay
           }
-        } catch (e) {}
+        } catch (e) { }
       }
       mediaEl = null;
       _timeUpdateHandler = null;
@@ -135,9 +147,17 @@
       currentIcon = null;
       hidePanel();
       if (typeof cfg.resetIcons === 'function') cfg.resetIcons();
-      // hide video container
       const e = panelEls();
       if (e && e.videoWrap) e.videoWrap.style.display = 'none';
+    }
+
+    // Update loop button UI
+    function updateLoopUI() {
+      const e = panelEls();
+      if (!e || !e.loopBtn) return;
+      e.loopBtn.style.opacity = isLoop ? '1' : '0.6';
+      e.loopBtn.setAttribute('aria-pressed', !!isLoop);
+      e.loopBtn.classList.toggle('active', !!isLoop);
     }
 
     // one-time panel UI wiring
@@ -148,24 +168,21 @@
       ensurePanel();
       const e = panelEls();
 
+      // Play/pause toggle: change icon instead of text
       e.playpauseBtn.addEventListener('click', function () {
         if (!mediaEl) return;
+        const icon = e.playpauseBtn.querySelector('i');
         if (mediaEl.paused) {
-          mediaEl.play().catch(()=>{});
-          e.playpauseBtn.textContent = 'Pause';
+          mediaEl.play().catch(() => { });
+          if (icon) { icon.className = 'bi bi-pause-fill'; }
         } else {
           mediaEl.pause();
-          e.playpauseBtn.textContent = 'Play';
+          if (icon) { icon.className = 'bi bi-play-fill'; }
         }
       });
 
-      e.stopBtn.addEventListener('click', function () {
-        stopAudio();
-      });
-
-      e.closeBtn.addEventListener('click', function () {
-        stopAudio();
-      });
+      // e.stopBtn.addEventListener('click', function () { stopAudio(); });
+      e.closeBtn.addEventListener('click', function () { stopAudio(); });
 
       e.volume.addEventListener('input', function () {
         if (mediaEl) mediaEl.volume = parseFloat(e.volume.value);
@@ -176,14 +193,40 @@
         const ratio = parseFloat(e.progress.value) / 1000;
         const target = mediaEl.duration * ratio;
         mediaEl.currentTime = target;
-        e.currentTimeEl.textContent = formatTime(target);
+        if (e.currentTimeEl) e.currentTimeEl.textContent = formatTime(target);
       });
 
+      // loop button
       e.loopBtn.addEventListener('click', function () {
         isLoop = !isLoop;
-        e.loopBtn.style.opacity = isLoop ? '1' : '0.6';
-        if (mediaEl) mediaEl.loop = isLoop;
+        updateLoopUI();
+        if (mediaEl) {
+          try {
+            mediaEl.loop = !!isLoop;
+            if (mediaEl.tagName && mediaEl.tagName.toLowerCase() === 'video') {
+              if (isLoop) mediaEl.setAttribute('loop', ''); else mediaEl.removeAttribute('loop');
+            }
+          } catch (err) { /* ignore */ }
+        }
       });
+
+      // speed slider handler
+      if (e.speed) {
+        e.speed.addEventListener('input', function () {
+          const rate = parseFloat(e.speed.value) || 1;
+          if (mediaEl) {
+            try { mediaEl.playbackRate = rate; } catch (err) { }
+          }
+          if (e.speedLabel) e.speedLabel.textContent = rate.toFixed(1) + 'x';
+        });
+      }
+
+      // initial UI states
+      updateLoopUI();
+      if (e.speed && e.speedLabel) {
+        e.speed.value = (cfg.defaultPlaybackRate || 1).toString();
+        e.speedLabel.textContent = (cfg.defaultPlaybackRate || 1).toFixed(1) + 'x';
+      }
     }
 
     // attach handlers to current mediaEl
@@ -198,37 +241,80 @@
       _timeUpdateHandler = function () {
         let cur = mediaEl.currentTime;
         let dur = mediaEl.duration || 0;
+
         if (typeof end === 'number' && !isNaN(end)) {
+          // We're playing a clipped segment [start .. end]
           if (cur >= end) {
-            if (!mediaEl.paused) mediaEl.pause();
-            mediaEl.currentTime = start || 0;
-            if (typeof cfg.changeImageUrl === 'function') cfg.changeImageUrl(cfg.iconPathIdle, iconNode);
-            if (!isLoop) e.playpauseBtn.textContent = 'Play';
+            if (isLoop) {
+              try { mediaEl.currentTime = start || 0; } catch (e) { }
+              if (mediaEl.paused) mediaEl.play().catch(() => { });
+              if (typeof cfg.changeImageUrl === 'function') cfg.changeImageUrl(cfg.iconPathPlaying, iconNode);
+              const icon = e.playpauseBtn && e.playpauseBtn.querySelector('i'); if (icon) icon.className = 'bi bi-pause-fill';
+            } else {
+              if (!mediaEl.paused) mediaEl.pause();
+              try { mediaEl.currentTime = start || 0; } catch (e) { }
+              if (typeof cfg.changeImageUrl === 'function') cfg.changeImageUrl(cfg.iconPathIdle, iconNode);
+              const icon = e.playpauseBtn && e.playpauseBtn.querySelector('i'); if (icon) icon.className = 'bi bi-play-fill';
+            }
           }
+
           dur = Math.max(0.01, end - (start || 0));
           const relCur = Math.max(0, cur - (start || 0));
-          e.progress.value = Math.floor((relCur / dur) * 1000);
-          e.currentTimeEl.textContent = formatTime(relCur);
-          e.durationEl.textContent = formatTime(dur);
+          if (e.progress) e.progress.value = Math.floor((relCur / dur) * 1000);
+          if (e.currentTimeEl) e.currentTimeEl.textContent = formatTime(relCur);
+          if (e.durationEl) e.durationEl.textContent = formatTime(dur);
         } else {
+          // full file progress
           if (dur && isFinite(dur)) {
-            e.progress.value = Math.floor((cur / dur) * 1000);
-            e.currentTimeEl.textContent = formatTime(cur);
-            e.durationEl.textContent = formatTime(dur);
+            if (e.progress) e.progress.value = Math.floor((cur / dur) * 1000);
+            if (e.currentTimeEl) e.currentTimeEl.textContent = formatTime(cur);
+            if (e.durationEl) e.durationEl.textContent = formatTime(dur);
           }
         }
       };
 
       _endedHandler = function () {
         if (typeof cfg.changeImageUrl === 'function') cfg.changeImageUrl(cfg.iconPathIdle, iconNode);
-        e.playpauseBtn.textContent = 'Play';
-        e.progress.value = 0;
+
+        if (isLoop) {
+          try { mediaEl.currentTime = start || 0; } catch (e) { }
+          mediaEl.play().catch(() => { });
+          const icon = e.playpauseBtn && e.playpauseBtn.querySelector('i'); if (icon) icon.className = 'bi bi-pause-fill';
+        } else {
+          const icon = e.playpauseBtn && e.playpauseBtn.querySelector('i'); if (icon) icon.className = 'bi bi-play-fill';
+          if (e.progress) e.progress.value = 0;
+        }
       };
 
       mediaEl.addEventListener('timeupdate', _timeUpdateHandler);
       mediaEl.addEventListener('ended', _endedHandler);
-      mediaEl.loop = isLoop;
+
+      // ensure loop property and attribute are applied (for full media)
+      try {
+        mediaEl.loop = !!isLoop;
+        if (mediaEl.tagName && mediaEl.tagName.toLowerCase() === 'video') {
+          if (isLoop) mediaEl.setAttribute('loop', ''); else mediaEl.removeAttribute('loop');
+        }
+      } catch (err) { /* ignore */ }
+
       mediaEl.volume = parseFloat(e.volume.value || 1);
+
+      // set playbackRate from UI / config
+      const uiRate = parseFloat(e.speed && e.speed.value) || cfg.defaultPlaybackRate || 1;
+      try { mediaEl.playbackRate = uiRate; } catch (err) { }
+
+      // set start time safely when metadata available (for clips)
+      if (start) {
+        const setStartWhenMeta = function () {
+          try { mediaEl.currentTime = start; } catch (e) { }
+          mediaEl.removeEventListener('loadedmetadata', setStartWhenMeta);
+        };
+        if (mediaEl.readyState >= 1) {
+          try { mediaEl.currentTime = start; } catch (e) { }
+        } else {
+          mediaEl.addEventListener('loadedmetadata', setStartWhenMeta);
+        }
+      }
     }
 
     // create media element (audio or video) and attach to panel if video
@@ -237,21 +323,20 @@
       const e = panelEls();
       const videoRecommended = forceVideo || isVideoFile(url);
 
-      // If videoRecommended, use the panel's <video> element
       if (videoRecommended) {
-        // Use panel video element
         const panelVideo = e.videoEl;
-        panelVideo.pause();
-        panelVideo.removeAttribute('src');
+        try { panelVideo.pause(); } catch (e) { }
+        try { panelVideo.removeAttribute('src'); } catch (e) { }
         panelVideo.src = url;
-        // ensure video element is used as mediaEl
+        try {
+          if (isLoop) panelVideo.setAttribute('loop', ''); else panelVideo.removeAttribute('loop');
+          panelVideo.loop = !!isLoop;
+        } catch (err) { }
         mediaEl = panelVideo;
-        // make video container visible
         e.videoWrap.style.display = 'block';
       } else {
-        // audio file — create a new Audio object (not attached to DOM)
         mediaEl = new Audio(url);
-        // hide video container when playing audio
+        try { mediaEl.loop = !!isLoop; } catch (e) { }
         e.videoWrap.style.display = 'none';
       }
       return mediaEl;
@@ -266,9 +351,20 @@
       cfg.getSoundStartEnd = typeof options.getSoundStartEnd === 'function' ? options.getSoundStartEnd : null;
       cfg.global_const = options.global_const || null;
       if (typeof options.autoShowPanel !== 'undefined') cfg.autoShowPanel = !!options.autoShowPanel;
+      if (typeof options.defaultPlaybackRate !== 'undefined') cfg.defaultPlaybackRate = parseFloat(options.defaultPlaybackRate) || 1;
 
       ensurePanel();
       setupPanelEvents();
+
+      // ensure UI speed control reflects default
+      const e = panelEls();
+      if (e && e.speed) {
+        e.speed.value = (cfg.defaultPlaybackRate || 1).toString();
+        if (e.speedLabel) e.speedLabel.textContent = (cfg.defaultPlaybackRate || 1).toFixed(1) + 'x';
+      }
+
+      // ensure loop UI reflects default
+      updateLoopUI();
     }
 
     // Public: play one media (audio or video)
@@ -286,8 +382,6 @@
       const end = (parts.length > 2) ? parseFloat(parts[2]) : null;
 
       const pathPrefix = (cfg.global_const && cfg.global_const.PATH_SOUND) ? cfg.global_const.PATH_SOUND : '';
-      // const url = pathPrefix + fileName + (fileName.endsWith('.mp3') || fileName.endsWith('.mp4') ? '' : '');
-      // Append .mp3 if fileName doesn't end with .mp3 or .mp4
       const url = pathPrefix + fileName + (fileName.endsWith('.mp3') || fileName.endsWith('.mp4') ? '' : '.mp3');
 
       stopAudio();
@@ -311,15 +405,15 @@
       attachMediaUI(iconNode, start, end);
 
       const e = panelEls();
-      e.playpauseBtn.textContent = 'Pause';
+      const icon = e.playpauseBtn && e.playpauseBtn.querySelector('i');
+      if (icon) icon.className = 'bi bi-pause-fill';
 
       // ensure play attempt after metadata if needed
       mediaEl.play().catch(err => {
-        // if play is blocked or not yet ready, try to play after loadedmetadata
         if (mediaEl && !mediaEl._loadedHandlerAttached) {
           mediaEl._loadedHandlerAttached = true;
           const onMeta = function () {
-            try { mediaEl.play().catch(()=>{}); } catch(e) {}
+            try { mediaEl.play().catch(() => { }); } catch (e) { }
             mediaEl.removeEventListener('loadedmetadata', onMeta);
             mediaEl._loadedHandlerAttached = false;
           };
@@ -327,95 +421,38 @@
         }
       });
     }
+    
 
-    // playAllSounds (sequential) - similar logic but advances index
-    function playAllSounds(iconsArr = []) {
-      if (!Array.isArray(iconsArr) || iconsArr.length === 0) return;
-      let idx = 0;
-      function next() {
-        if (idx >= iconsArr.length) return;
-        const icon = iconsArr[idx];
-        const soundFileName = icon.getAttr && icon.getAttr('sound');
-        if (!soundFileName || soundFileName.trim() === 'x') {
-          idx++;
-          next();
-          return;
-        }
-
-        stopAudio();
-
-        const parts = (typeof cfg.getSoundStartEnd === 'function')
-          ? cfg.getSoundStartEnd(soundFileName)
-          : (function (s) { return s.split('/'); })(soundFileName);
-
-        const fileName = parts[0];
-        const start = (parts.length > 1) ? parseFloat(parts[1]) : null;
-        const end = (parts.length > 2) ? parseFloat(parts[2]) : null;
-
-        const pathPrefix = (cfg.global_const && cfg.global_const.PATH_SOUND) ? cfg.global_const.PATH_SOUND : '';
-        const url = pathPrefix + fileName + (fileName.endsWith('.mp4') || fileName.endsWith('.mp3') ? '' : '');
-
-        try {
-          createMediaElement(url);
-        } catch (err) {
-          console.error('create media failed', err);
-          idx++;
-          return next();
-        }
-
-        currentIcon = icon;
-        if (cfg.autoShowPanel) showPanel(cfg.iconPathPlaying, fileName);
-        else if (typeof cfg.changeImageUrl === 'function') cfg.changeImageUrl(cfg.iconPathPlaying, icon);
-
-        if (start) {
-          try { mediaEl.currentTime = start; } catch(e) {}
-        }
-
-        // override handlers to advance when finished or clip end
-        if (_timeUpdateHandler) mediaEl.removeEventListener('timeupdate', _timeUpdateHandler);
-        if (_endedHandler) mediaEl.removeEventListener('ended', _endedHandler);
-
-        _timeUpdateHandler = function () {
-          let cur = mediaEl.currentTime;
-          if (typeof end === 'number' && !isNaN(end)) {
-            if (cur >= end) {
-              if (!mediaEl.paused) mediaEl.pause();
-              if (typeof cfg.changeImageUrl === 'function') cfg.changeImageUrl(cfg.iconPathIdle, icon);
-              idx++;
-              setTimeout(next, 120);
-            }
-          }
-        };
-
-        _endedHandler = function () {
-          if (typeof cfg.changeImageUrl === 'function') cfg.changeImageUrl(cfg.iconPathIdle, icon);
-          idx++;
-          setTimeout(next, 120);
-        };
-
-        mediaEl.addEventListener('timeupdate', _timeUpdateHandler);
-        mediaEl.addEventListener('ended', _endedHandler);
-        mediaEl.loop = isLoop;
-        mediaEl.volume = 1;
+    // Public API additions for playback rate
+    function setPlaybackRate(rate) {
+      try {
+        const r = parseFloat(rate);
+        if (!isFinite(r) || r <= 0) return;
         const e = panelEls();
-        e.playpauseBtn.textContent = 'Pause';
-        setupPanelEvents();
-
-        mediaEl.play().catch(()=>{ idx++; next(); });
-      } // end next
-
-      next();
+        if (e && e.speed) e.speed.value = r.toString();
+        if (e && e.speedLabel) e.speedLabel.textContent = r.toFixed(1) + 'x';
+        if (mediaEl) mediaEl.playbackRate = r;
+        cfg.defaultPlaybackRate = r;
+      } catch (err) { }
+    }
+    function getPlaybackRate() {
+      try {
+        if (mediaEl) return mediaEl.playbackRate || cfg.defaultPlaybackRate || 1;
+        const e = panelEls();
+        return (e && parseFloat(e.speed.value)) || cfg.defaultPlaybackRate || 1;
+      } catch (err) { return cfg.defaultPlaybackRate || 1; }
     }
 
     // public API
     return {
       init: init,
       playSound: playSound,
-      // playAllSounds: playAllSounds,
       stopAudio: stopAudio,
       showPanel: showPanel,
       hidePanel: hidePanel,
-      setAutoShowPanel: function(flag) { cfg.autoShowPanel = !!flag; },
+      setAutoShowPanel: function (flag) { cfg.autoShowPanel = !!flag; },
+      setPlaybackRate: setPlaybackRate,
+      getPlaybackRate: getPlaybackRate,
       getState: function () { return { mediaEl, currentIcon }; }
     };
   })();

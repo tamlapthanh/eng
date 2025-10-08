@@ -219,10 +219,19 @@
       font-weight: 500;
     }
 
-    #canvas { 
-      touch-action: none; 
+    #canvas {
+      touch-action: none;
     }
 
+    #audio-control-panel i {
+      font-size: 1.2rem;
+    }
+
+    #speedValue {
+      min-width: 36px;
+      text-align: right;
+      font-weight: 500;
+    }
   </style>
 </head>
 
@@ -314,7 +323,7 @@
             <input type="text" id="jump-to-index-jso" class="form-control" placeholder="Jump to which page?" />
           </div> -->
 
-          <hr class="my-4 border border-primary">          
+          <hr class="my-4 border border-primary">
           <div class="range-container">
             <label for="range2" class="form-label">Stroke Width</label>
             <input type="range" class="form-range" id="id_line_stroke_width" min="3" max="9" step="1" value="3">
@@ -327,7 +336,7 @@
               <span>8</span>
               <span>9</span>
             </div>
-          </div>               
+          </div>
 
           <hr class="my-4 border border-primary">
           <div class="input-group flex-nowrap">
@@ -336,6 +345,7 @@
 
           <br>
           <div class="modal-footer">
+            <button type="button" class="btn btn-danger" id="id_reset_app_data" data-bs-dismiss="modal">Reset</button>
             <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Close</button>
           </div>
         </div>
@@ -351,4 +361,4 @@
 
 </body>
 
-</html>
+</html> 

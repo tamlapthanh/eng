@@ -146,15 +146,15 @@ $(document).ready(function () {
     }
   });
 
-  $('#setting').on('click', function () {
-    const controls = document.querySelector('.controls');
-    if (controls.style.display === 'none') {
-      controls.style.display = 'flex';
-    }
-    else {
-      controls.style.display = 'none';
-      toggleDrawIcon(true);
-    }
+  $('#setting').on('click', function () { 
+    const controls = document.querySelector('.controls'); 
+    if (controls.style.display === 'none') { 
+      controls.style.display = 'flex'; 
+    } 
+    else { 
+      controls.style.display = 'none'; 
+      toggleDrawIcon(true); 
+    } 
   });
 
   $('#zoom-in').on('click', function () {
@@ -535,7 +535,7 @@ $(document).ready(function () {
         }
       }
       // ensure node is listening
-      icon.listening(true);
+      icon.listening(true);      
 
       // prefer Konva's tap + click; also register mousedown/touchstart for maximum compatibility
       icon.on('click tap mousedown touchstart', function (e) {
@@ -775,6 +775,11 @@ $(document).ready(function () {
       loadPage();
       $('#settingsModal').modal('hide');
     }
+  });
+
+  $('#id_reset_app_data').on('click', function () { 
+    APP_DATA = null;
+    loadPage();
   });
 
   function setPageInfo(dataType, currentPageIndex, maxPageNum, minPageNum) {
