@@ -3,6 +3,11 @@ let line_stroke_width = 3;
 const selected_color = 'black';
 let is_auto_ShowPanel = true;
 
+// --- Prevent accidental drawing during pinch ---
+// add near your other variables
+let touchDrawTimer = null;
+const TOUCH_DRAW_DELAY = 50; // ms, small delay to confirm single-touch
+
 $(document).ready(function () {
 
   let PATH_ROOT = "assets/books/27/";
@@ -23,7 +28,7 @@ $(document).ready(function () {
 
 
   // Create a new Map
-  let ICON_SIZE = 18;  
+  let ICON_SIZE = 18;
   const RUN_URL_SERVER = "https://zizi-app.onrender.com/";
   const RUN_URL_LOCAL = "http://localhost:8080/";
   // const API_METHOD = "api/sheets/lines"
@@ -94,7 +99,7 @@ $(document).ready(function () {
     duration = Math.max(0.02, duration);
     // stop any existing tween (if any)
     if (stage._activeTween) {
-      try { stage._activeTween.destroy(); } catch (e) {}
+      try { stage._activeTween.destroy(); } catch (e) { }
       stage._activeTween = null;
     }
 
@@ -114,7 +119,7 @@ $(document).ready(function () {
     // ensure draw after tween
     tween.onFinish = function () {
       stage.batchDraw();
-      try { tween.destroy(); } catch (e) {}
+      try { tween.destroy(); } catch (e) { }
       stage._activeTween = null;
     };
   }
@@ -190,40 +195,114 @@ $(document).ready(function () {
     return transform.point(pos);
   }
 
-  // Xử lý bắt đầu vẽ
+  // Replace previous 'mousedown touchstart' handler with:
   stage.on('mousedown touchstart', function (e) {
-    // Note: this handler also used for touchstart double-tap/pinch logic elsewhere;
-    // but Konva will call this on both mouse and touch events.
-    if (isDrawingMode == false) {
-      console.log("Chỉ cho phép vẽ khi ở chế độ vẽ"); 
-      return;  // Chỉ cho phép vẽ khi ở chế độ vẽ
+    // If currently pinching, do not start drawing
+    if (pinchState.isPinching) {
+      // ensure any pending draw timer is cleared
+      if (touchDrawTimer) {
+        clearTimeout(touchDrawTimer);
+        touchDrawTimer = null;
+      }
+      return;
     }
 
-    // cho phep ve nhưng khong cho drag able khi dang lock
-    isDrawing = true;  // Bắt đầu vẽ
-    stage.draggable(false);  
+    const evt = e.evt || {};
+    const touches = evt.touches || (evt.targetTouches ? evt.targetTouches : null);
 
-    const pos = getRelativePointerPosition();  // Lấy tọa độ đã điều chỉnh
+    // If this is a touch event with multiple touches => definitely not drawing
+    if (touches && touches.length > 1) {
+      return;
+    }
 
-    lastLine = new Konva.Line({
-      stroke: line_color,
-      strokeWidth: line_stroke_width,
-      globalCompositeOperation: 'source-over',
-      points: [pos.x, pos.y],  // Sử dụng tọa độ đã điều chỉnh
-      lineCap: 'round',
-      lineJoin: 'round',
-      saved_stroke: line_color
-    });
+    // If this is a touch (single finger), wait a tiny delay to confirm it's not
+    // the start of a pinch (a second finger quickly following).
+    if (touches && touches.length === 1) {
+      // schedule starting drawing after small delay, but cancel if pinch starts
+      if (touchDrawTimer) clearTimeout(touchDrawTimer);
+      touchDrawTimer = setTimeout(() => {
+        touchDrawTimer = null;
+        if (pinchState.isPinching) return; // abort if pinch started meanwhile
 
-    drawingLayer.add(lastLine);
-    lines.push(lastLine); // Lưu đường vẽ vào mảng
+        // Only start drawing when drawing mode is enabled
+        if (!isDrawingMode) {
+          // optional: console.log('Chỉ cho phép vẽ khi ở chế độ vẽ');
+          return;
+        }
+
+        isDrawing = true;
+        stage.draggable(false);
+
+        const pos = getRelativePointerPosition();
+        lastLine = new Konva.Line({
+          stroke: line_color,
+          strokeWidth: line_stroke_width,
+          globalCompositeOperation: 'source-over',
+          points: [pos.x, pos.y],
+          lineCap: 'round',
+          lineJoin: 'round',
+          saved_stroke: line_color
+        });
+
+        drawingLayer.add(lastLine);
+        lines.push(lastLine);
+      }, TOUCH_DRAW_DELAY);
+
+      return;
+    }
+
+    // Mouse / pointer (non-touch) path: start immediately
+    if (!touches) {
+      if (!isDrawingMode) {
+        // console.log("Chỉ cho phép vẽ khi ở chế độ vẽ");
+        return;
+      }
+      isDrawing = true;
+      stage.draggable(false);
+
+      const pos = getRelativePointerPosition();
+      lastLine = new Konva.Line({
+        stroke: line_color,
+        strokeWidth: line_stroke_width,
+        globalCompositeOperation: 'source-over',
+        points: [pos.x, pos.y],
+        lineCap: 'round',
+        lineJoin: 'round',
+        saved_stroke: line_color
+      });
+
+      drawingLayer.add(lastLine);
+      lines.push(lastLine);
+    }
   });
 
-  // Xử lý khi di chuyển chuột (hoặc touch) trong khi vẽ
+  // Replace 'mousemove touchmove' handler with:
   stage.on('mousemove touchmove', function (e) {
-    if (!isDrawing) return;  // Chỉ vẽ nếu đang trong quá trình vẽ
+    // If currently pinching, abort drawing
+    if (pinchState.isPinching) {
+      if (isDrawing) {
+        isDrawing = false;
+        lastLine = null;
+      }
+      return;
+    }
 
-    const pos = getRelativePointerPosition();  // Lấy tọa độ đã điều chỉnh
+    const evt = e.evt || {};
+    const touches = evt.touches || (evt.targetTouches ? evt.targetTouches : null);
+    // If multi-touch detected during move, cancel drawing
+    if (touches && touches.length > 1) {
+      if (touchDrawTimer) { clearTimeout(touchDrawTimer); touchDrawTimer = null; }
+      if (isDrawing) {
+        isDrawing = false;
+        lastLine = null;
+      }
+      return;
+    }
+
+    if (!isDrawing) return;
+
+    const pos = getRelativePointerPosition();
+    if (!pos) return;
 
     let newPoints = lastLine.points().concat([pos.x, pos.y]);
     lastLine.points(newPoints);
@@ -231,14 +310,26 @@ $(document).ready(function () {
     lineAddEvents();
   });
 
-  // Xử lý khi kết thúc vẽ
-  stage.on('mouseup touchend', function (e) {
+  // Replace 'mouseup touchend' handler with:
+  stage.on('mouseup touchend touchcancel', function (e) {
+    // clear any scheduled start
+    if (touchDrawTimer) {
+      clearTimeout(touchDrawTimer);
+      touchDrawTimer = null;
+    }
+
     if (isDrawing) {
-      isDrawing = false;  // Dừng vẽ
-      lastLine = null;    // Xóa đường vẽ cuối cùng
-      //stage.draggable(true);  
+      isDrawing = false;
+      lastLine = null;
+      // optionally restore draggable depending on lock state
+      if (document.getElementById('lock-icon') && document.getElementById('lock-icon').classList.contains('bi-unlock-fill')) {
+        stage.draggable(true);
+      } else {
+        stage.draggable(false);
+      }
     }
   });
+
   // end of xu ly ve tren canva
   $('#delete-line-btn').on('click', function () {
     deleteSelectedLine();
@@ -326,16 +417,16 @@ $(document).ready(function () {
     if (isDraw || isDrawingMode) {
       isDrawingMode = false;
       stage.container().style.cursor = 'default';
-       $btn.removeClass('btn-danger').addClass('btn-dark');
+      $btn.removeClass('btn-danger').addClass('btn-dark');
     } else {
-        stage.container().style.cursor = 'crosshair';
-        isDrawingMode = true;
-        toggleLockIcon(true); // khong cho move trong khi ve
-        $btn.removeClass('btn-dark').addClass('btn-danger');
+      stage.container().style.cursor = 'crosshair';
+      isDrawingMode = true;
+      toggleLockIcon(true); // khong cho move trong khi ve
+      $btn.removeClass('btn-dark').addClass('btn-danger');
     }
   }
 
-  $('#lock').on('click', function () {  
+  $('#lock').on('click', function () {
     toggleLockIcon();
   });
 
@@ -347,11 +438,12 @@ $(document).ready(function () {
     const icon = button.querySelector("i");
 
     if (isLock) {
+      // sẽ lock
       icon.classList.remove("bi-unlock-fill");
       icon.classList.add("bi-lock-fill");
 
       // Đổi lại background của nút về màu ban đầu khi ở trạng thái "lock"
-      stage.draggable(false);  
+      stage.draggable(false);
     } else {
       // Kiểm tra và thay đổi class của phần tử <i>
       if (icon.classList.contains("bi-lock-fill")) {
@@ -359,12 +451,12 @@ $(document).ready(function () {
         icon.classList.add("bi-unlock-fill");
 
         // Đổi background của nút sang màu khác khi ở trạng thái "unlock"
-        stage.draggable(true);  
-        toggleDrawIcon(true); // Không cho vẽ
+        stage.draggable(true);
+        toggleDrawIcon(true); // Không cho vẽ        
       } else {
         icon.classList.remove("bi-unlock-fill");
         icon.classList.add("bi-lock-fill");
-        stage.draggable(false);  
+        stage.draggable(false);
       }
     }
 
@@ -512,51 +604,51 @@ $(document).ready(function () {
 
   // Mouse double-click event (zoom around pointer)
   stage.on('dblclick', (e) => {
-      const pointer = stage.getPointerPosition();
-      if (!pointer) return;
-      const oldScale = stage.scaleX();
-      const newScale = Math.min(maxZoom, oldScale + zoomStep);
-      const mousePointTo = {
-        x: (pointer.x - stage.x()) / oldScale,
-        y: (pointer.y - stage.y()) / oldScale
-      };
-      const desiredPos = {
-        x: pointer.x - mousePointTo.x * newScale,
-        y: pointer.y - mousePointTo.y * newScale
-      };
-      const clamped = clampPositionForScale(desiredPos.x, desiredPos.y, newScale);
-      zoomLevel = newScale;
-      animateStageTo(newScale, clamped, 0.2);
+    const pointer = stage.getPointerPosition();
+    if (!pointer) return;
+    const oldScale = stage.scaleX();
+    const newScale = Math.min(maxZoom, oldScale + zoomStep);
+    const mousePointTo = {
+      x: (pointer.x - stage.x()) / oldScale,
+      y: (pointer.y - stage.y()) / oldScale
+    };
+    const desiredPos = {
+      x: pointer.x - mousePointTo.x * newScale,
+      y: pointer.y - mousePointTo.y * newScale
+    };
+    const clamped = clampPositionForScale(desiredPos.x, desiredPos.y, newScale);
+    zoomLevel = newScale;
+    animateStageTo(newScale, clamped, 0.2);
   });
 
   stage.on('wheel', function (event) {
     if ($('#lock-icon').hasClass('bi-unlock-fill')) {
-        event.evt.preventDefault();
+      event.evt.preventDefault();
 
-        const oldScale = stage.scaleX();
-        const scaleBy = 1.1;
-        let newScale = event.evt.deltaY > 0 ? oldScale / scaleBy : oldScale * scaleBy;
+      const oldScale = stage.scaleX();
+      const scaleBy = 1.1;
+      let newScale = event.evt.deltaY > 0 ? oldScale / scaleBy : oldScale * scaleBy;
 
-        newScale = Math.max(minZoom, Math.min(maxZoom, newScale));
-        zoomLevel = newScale;
+      newScale = Math.max(minZoom, Math.min(maxZoom, newScale));
+      zoomLevel = newScale;
 
-        // center at pointer
-        const pointer = stage.getPointerPosition();
-        if (pointer) {
-          const mousePointTo = {
-            x: (pointer.x - stage.x()) / oldScale,
-            y: (pointer.y - stage.y()) / oldScale
-          };
-          const desiredPos = {
-            x: pointer.x - mousePointTo.x * newScale,
-            y: pointer.y - mousePointTo.y * newScale
-          };
-          const clamped = clampPositionForScale(desiredPos.x, desiredPos.y, newScale);
-          animateStageTo(newScale, clamped, 0.18);
-        } else {
-          const clamped = clampPositionForScale(stage.x(), stage.y(), newScale);
-          animateStageTo(newScale, clamped, 0.18);
-        }
+      // center at pointer
+      const pointer = stage.getPointerPosition();
+      if (pointer) {
+        const mousePointTo = {
+          x: (pointer.x - stage.x()) / oldScale,
+          y: (pointer.y - stage.y()) / oldScale
+        };
+        const desiredPos = {
+          x: pointer.x - mousePointTo.x * newScale,
+          y: pointer.y - mousePointTo.y * newScale
+        };
+        const clamped = clampPositionForScale(desiredPos.x, desiredPos.y, newScale);
+        animateStageTo(newScale, clamped, 0.18);
+      } else {
+        const clamped = clampPositionForScale(stage.x(), stage.y(), newScale);
+        animateStageTo(newScale, clamped, 0.18);
+      }
     }
   });
 
@@ -659,7 +751,7 @@ $(document).ready(function () {
         if (icon.getAttr('sound')) {
 
           // playSound(icon.getAttr('sound'), currentIcon);          
-          AudioService.setAutoShowPanel(is_auto_ShowPanel); 
+          AudioService.setAutoShowPanel(is_auto_ShowPanel);
           AudioService.playSound(icon.getAttr('sound'), currentIcon);
         } else {
           showToast('Not found the sound id!');
@@ -676,9 +768,9 @@ $(document).ready(function () {
         stage.container().style.cursor = 'pointer';
       });
       icon.on('mouseout', function () {
-        
+
         if (isDrawingMode) {
-          stage.container().style.cursor = 'crosshair';          
+          stage.container().style.cursor = 'crosshair';
         } else {
           stage.container().style.cursor = 'default';
         }
@@ -694,7 +786,7 @@ $(document).ready(function () {
     addPlayIcon();
   });
 
-  
+
 
   function loadLinesByDraw(page) {
     if (page != null) {
@@ -780,15 +872,15 @@ $(document).ready(function () {
     }
   });
 
-      // Function to handle line deletion
-    function deleteSelectedLine() {
-        if (selectedLine) {
-            lines = removeLine(lines, selectedLine);
-            selectedLine.remove(); // Remove line from layer
-            selectedLine = null; // Reset selected line
-            drawingLayer.draw(); // Redraw the layer
-        }
+  // Function to handle line deletion
+  function deleteSelectedLine() {
+    if (selectedLine) {
+      lines = removeLine(lines, selectedLine);
+      selectedLine.remove(); // Remove line from layer
+      selectedLine = null; // Reset selected line
+      drawingLayer.draw(); // Redraw the layer
     }
+  }
 
   // show page
   function loadPage() {
@@ -901,7 +993,7 @@ $(document).ready(function () {
 
 
   window.addEventListener('resize', resizeEvent);
-  window.addEventListener('beforeunload', function() {
+  window.addEventListener('beforeunload', function () {
     AudioService.stopAudio();
   });
 
@@ -993,9 +1085,9 @@ $(document).ready(function () {
 
   $('#id_line_stroke_width').on('change', function () {
     line_stroke_width = $(this).val();
-  }); 
-  
-  
+  });
+
+
   $('#clearButton').on('click', function () {
     clearCanvas();
   });
@@ -1013,13 +1105,13 @@ $(document).ready(function () {
 
   // Event listener for radio button click/change
   $('input[name="options"]').on('click', function () {
-    
+
     // Retrieve custom attributes using jQuery .data()
     var selectedValue = $(this).val();
     var currentPageIndex = $(this).data('current-page-index');
     var maxPageNum = $(this).data('max-page-num');
     var minPageNum = $(this).data('min-page-num');
-    
+
     // Display the attributes in an alert
     // alert(`Current Page Index: ${currentPageIndex}, Max Page Num: ${maxPageNum}, Min Page Num: ${minPageNum}`);    
     if (selectedValue === 'math_page') {
@@ -1036,10 +1128,10 @@ $(document).ready(function () {
 
   function setPageInfo(dataType, currentPageIndex, maxPageNum, minPageNum) {
 
-      DATA_TYPE = dataType;
-      CURRENT_PAGE_INDEX = currentPageIndex;
-      MAX_PAGE_NUM = maxPageNum;
-      MIN_PAGE_NUM = minPageNum;      
+    DATA_TYPE = dataType;
+    CURRENT_PAGE_INDEX = currentPageIndex;
+    MAX_PAGE_NUM = maxPageNum;
+    MIN_PAGE_NUM = minPageNum;
   }
 
 
@@ -1118,7 +1210,7 @@ $(document).ready(function () {
       })
       .finally(() => {
         hideSpinner();
-      });      
+      });
   }
 
   // Key is String
@@ -1142,7 +1234,7 @@ $(document).ready(function () {
       // 3. Lấy mảng lines an toàn
       const lines = parsed && Array.isArray(parsed.lines) ? parsed.lines : [];
       return lines;
-    } 
+    }
 
     return null;
   }
@@ -1164,7 +1256,7 @@ $(document).ready(function () {
           return response.json();
         })
         .then(data => {
-          
+
           APP_DATA = new Map(Object.entries(data || {}));
           console.log('Đã cập nhật APP_DATA');
           loadLinesByDraw(page);
@@ -1176,7 +1268,7 @@ $(document).ready(function () {
           // hideSpinner();
         });
     } else {
-        loadLinesByDraw(page);
+      loadLinesByDraw(page);
     }
 
 
@@ -1202,6 +1294,6 @@ $(document).ready(function () {
     getSoundStartEnd: getSoundStartEnd,   // function hiện có của bạn
     global_const: global_const,            // object có PATH_SOUND
     autoShowPanel: is_auto_ShowPanel // nếu bạn muốn KHÔNG tự show panel khi play
-  });  
+  });
 
 });
