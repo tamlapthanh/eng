@@ -529,25 +529,9 @@
         const stagePt = clientToStage(evt.clientX, evt.clientY);
         const hit = stage.getIntersection(stagePt);
 
-        // start swipe only when:
-        // - touch
-        // - only 1 pointer
-        // - not pinching
-        // - not starting on icon
-        if (
-          evt.pointerType === "touch" &&
-          activePointers.size === 1 &&
-          !pinchState.isPinching &&
-          !(hit && hit.className === "Image")
-        ) {
-          swipeState.active = true;
-          swipeState.startX = evt.clientX;
-          swipeState.startY = evt.clientY;
-          swipeState.startTime = Date.now();
-          swipeState.fired = false;
-          cancelPendingDraw();
-          cancelActiveDrawing();
-          return; // don't start drawing
+        if (evt.pointerType === "touch" && hitIsIcon) {
+        // Touch on an icon — let icon handlers manage it, do not start drawing.
+        return;
         }
 
         // otherwise handle drawing: for touch start with tiny delay; mouse/pen immediate
