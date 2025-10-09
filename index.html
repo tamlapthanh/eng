@@ -338,15 +338,12 @@
           </div>
           <div class="modal-body">
             <div class="container mt-2">
-              <div
-                class="d-flex flex-wrap align-items-center"
-                id="radioContainer"
-              >
+              <div class="d-flex flex-wrap align-items-center" id="radioContainer">
                 <!-- radios here-->
               </div>
             </div>
 
-            <hr class="my-4 border border-primary" />
+            <!-- <hr class="my-4 border border-primary" /> -->
             <div class="input-group flex-nowrap">
               <select id="json-dropdown" class="form-select"></select>
             </div>
@@ -356,19 +353,21 @@
             <input type="text" id="jump-to-index-jso" class="form-control" placeholder="Jump to which page?" />
           </div> -->
 
-            <hr class="my-4 border border-primary" />
+            <!-- <hr class="my-4 border border-primary" /> -->
             <div class="range-container">
               <label for="range2" class="form-label">Stroke Width</label>
               <input
                 type="range"
                 class="form-range"
                 id="id_line_stroke_width"
-                min="3"
+                min="1"
                 max="9"
                 step="1"
                 value="3"
               />
               <div class="range-labels">
+                <span>1</span>
+                <span>2</span>
                 <span>3</span>
                 <span>4</span>
                 <span>5</span>
@@ -379,8 +378,9 @@
               </div>
             </div>
 
-            <hr class="my-4 border border-primary" />
-            <div class="input-group flex-nowrap">
+            <!-- <hr class="my-4 border border-primary" /> -->
+            <div class="range-container">
+              <label for="select_color" class="form-label">Select Color: </label>
               <input type="text" class="coloris instance1" value="Tomato" />
             </div>
 

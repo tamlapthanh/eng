@@ -204,15 +204,17 @@
     }
 
     function deleteSelectedLine() {
+      var ret = false;
       if (selectedLine) {
         lines = lines.filter(l => l !== selectedLine);
         selectedLine.remove();
         selectedLine = null;
         drawingLayer.draw();
-        return true;
+        ret = true;
       } else {
-        return false;
+        ret = undoLastLine();        
       }
+      return ret;
     }
 
     // add play icon (Konva image node)
@@ -855,7 +857,8 @@ stage.on('dblclick', function (e) {
       resetZoom,
       setZoomAt,
       undoLastLine,
-      setLineColor: function (mColor)  { line_color = mColor; }
+      setLineColor: function (value)  { line_color = value; },
+      setLineStrokeWidth: function (value)  { line_stroke_width = value; },      
     };
   })();
 

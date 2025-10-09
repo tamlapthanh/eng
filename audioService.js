@@ -17,8 +17,9 @@
       changeImageUrl: null,
       getSoundStartEnd: null,
       global_const: null,
-      autoShowPanel: true,
-      defaultPlaybackRate: 1
+      autoShowPanel: true,      // NEW: nếu false thì không tự show panel khi play
+      onClose: null,             // ✅ callback được gọi khi user nhấn nút close panel
+      defaultPlaybackRate: 1, 
     };
 
     // create panel HTML if not exist (includes video container and speed control as range)
@@ -66,8 +67,8 @@
       <input id="acp-volume" type="range" min="0" max="1" step="0.01" value="1" style="flex:1;">
      
       <i class="bi bi-speedometer" style="font-size:18px; color:#666;"></i>
-      <input id="acp-speed" type="range" min="0.5" max="2" step="0.5" value="${cfg.defaultPlaybackRate}" style="width:70px;">
-      <span id="speedValue" style="min-width:44px; text-align:right; display:inline-block;">${cfg.defaultPlaybackRate.toFixed(1)}x</span>
+      <input id="acp-speed" type="range" min="0.5" max="2" step="0.25" value="${cfg.defaultPlaybackRate}" style="width:70px;">
+      <span id="speedValue" style="min-width:44px; text-align:right; display:inline-block;">${cfg.defaultPlaybackRate.toFixed(2)}x</span>
     </div>
   </div>
 </div>`;
@@ -182,7 +183,12 @@
       });
 
       // e.stopBtn.addEventListener('click', function () { stopAudio(); });
-      e.closeBtn.addEventListener('click', function () { stopAudio(); });
+      e.closeBtn.addEventListener('click', function () { 
+        stopAudio(); 
+        if (typeof cfg.onClose === 'function') {
+          cfg.onClose();
+        }
+      });
 
       e.volume.addEventListener('input', function () {
         if (mediaEl) mediaEl.volume = parseFloat(e.volume.value);
@@ -217,7 +223,7 @@
           if (mediaEl) {
             try { mediaEl.playbackRate = rate; } catch (err) { }
           }
-          if (e.speedLabel) e.speedLabel.textContent = rate.toFixed(1) + 'x';
+          if (e.speedLabel) e.speedLabel.textContent = rate.toFixed(2) + 'x';
         });
       }
 
@@ -225,7 +231,7 @@
       updateLoopUI();
       if (e.speed && e.speedLabel) {
         e.speed.value = (cfg.defaultPlaybackRate || 1).toString();
-        e.speedLabel.textContent = (cfg.defaultPlaybackRate || 1).toFixed(1) + 'x';
+        e.speedLabel.textContent = (cfg.defaultPlaybackRate || 1).toFixed(2) + 'x';
       }
     }
 
@@ -353,6 +359,9 @@
       if (typeof options.autoShowPanel !== 'undefined') cfg.autoShowPanel = !!options.autoShowPanel;
       if (typeof options.defaultPlaybackRate !== 'undefined') cfg.defaultPlaybackRate = parseFloat(options.defaultPlaybackRate) || 1;
 
+      // <-- add this line:
+      cfg.onClose = typeof options.onClose === 'function' ? options.onClose : null;
+  
       ensurePanel();
       setupPanelEvents();
 
@@ -360,7 +369,7 @@
       const e = panelEls();
       if (e && e.speed) {
         e.speed.value = (cfg.defaultPlaybackRate || 1).toString();
-        if (e.speedLabel) e.speedLabel.textContent = (cfg.defaultPlaybackRate || 1).toFixed(1) + 'x';
+        if (e.speedLabel) e.speedLabel.textContent = (cfg.defaultPlaybackRate || 1).toFixed(2) + 'x';
       }
 
       // ensure loop UI reflects default
@@ -430,7 +439,7 @@
         if (!isFinite(r) || r <= 0) return;
         const e = panelEls();
         if (e && e.speed) e.speed.value = r.toString();
-        if (e && e.speedLabel) e.speedLabel.textContent = r.toFixed(1) + 'x';
+        if (e && e.speedLabel) e.speedLabel.textContent = r.toFixed(2) + 'x';
         if (mediaEl) mediaEl.playbackRate = r;
         cfg.defaultPlaybackRate = r;
       } catch (err) { }

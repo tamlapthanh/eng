@@ -8,11 +8,12 @@ $(document).ready(function () {
   let APP_DATA = null;
 
   let DATA_TYPE = "student37";
-  let CURRENT_PAGE_INDEX = 2;
+  let CURRENT_PAGE_INDEX = 1;
   let MAX_PAGE_NUM = 107;
   let MIN_PAGE_NUM = 1;
 
-  createRadioButtons(); // from common.js
+  [DATA_TYPE, CURRENT_PAGE_INDEX, MAX_PAGE_NUM, MIN_PAGE_NUM] = createRadioButtons(0); // from common.js
+
 
   const RUN_URL_SERVER = "https://zizi-app.onrender.com/";
   const RUN_URL_LOCAL = "http://localhost:8080/";
@@ -118,14 +119,43 @@ $(document).ready(function () {
     $(this).toggleClass("btn-danger btn-dark");
   });
 
+$('input[name="options"]').on("click", function () {
+    var selectedValue = $(this).val();
+    var currentPageIndex = $(this).data("current-page-index");
+    var maxPageNum = $(this).data("max-page-num");
+    var minPageNum = $(this).data("min-page-num");
+    if (selectedValue === "math_page") {
+      window.location.href = "math.html";
+    } else if (DATA_TYPE !== selectedValue) {
+      DATA_TYPE = selectedValue;
+      setPageInfo(DATA_TYPE, currentPageIndex, maxPageNum, minPageNum);
+      popDropdown(
+        $("#json-dropdown"),
+        "Page",
+        MIN_PAGE_NUM,
+        MAX_PAGE_NUM,
+        CURRENT_PAGE_INDEX
+      );
+      APP_DATA = null;
+      loadPage();
+      $("#settingsModal").modal("hide");
+    }
+  });  
+
+  function setPageInfo(dataType, currentPageIndex, maxPageNum, minPageNum) {
+    DATA_TYPE = dataType;
+    CURRENT_PAGE_INDEX = currentPageIndex;
+    MAX_PAGE_NUM = maxPageNum;
+    MIN_PAGE_NUM = minPageNum;
+  }  
+
   $("#id_ShowPanel").on("click", function () {
     let isAuto = !$(this).hasClass("btn-success");
     $(this).toggleClass("btn-success", isAuto).toggleClass("btn-dark", !isAuto);
     // toggle audio panel visibility
     if (isAuto)
-        window.AudioService.showPanel && window.AudioService.showPanel();
-    else 
-        window.AudioService.hidePanel && window.AudioService.hidePanel();
+      window.AudioService.showPanel && window.AudioService.showPanel();
+    else window.AudioService.hidePanel && window.AudioService.hidePanel();
     window.AudioService.setAutoShowPanel(isAuto);
   });
 
@@ -147,38 +177,50 @@ $(document).ready(function () {
     }
   });
 
- // zoom buttons -> delegate to CanvasManager (so logic sống ở canvas.js)
-  $('#zoom-in').off('click').on('click', function () {
-    // optionally zoom around stage center
-    CanvasManager.zoomIn();
-  });
+  // zoom buttons -> delegate to CanvasManager (so logic sống ở canvas.js)
+  $("#zoom-in")
+    .off("click")
+    .on("click", function () {
+      // optionally zoom around stage center
+      CanvasManager.zoomIn();
+    });
 
-  $('#zoom-out').off('click').on('click', function () {
-    CanvasManager.zoomOut();
-  });
+  $("#zoom-out")
+    .off("click")
+    .on("click", function () {
+      CanvasManager.zoomOut();
+    });
 
-  $('#reset-zoom').off('click').on('click', function () {
-    CanvasManager.resetZoom();
-  });
+  $("#reset-zoom")
+    .off("click")
+    .on("click", function () {
+      CanvasManager.resetZoom();
+    });
 
   // undo button
-  $('#undo-btn').off('click').on('click', function () {
-    const ok = CanvasManager.undoLastLine();
-    if (!ok) {
-      // optional feedback
-      showToast && showToast('Không có gì để undo', 'info');
-    }
-  });  
+  $("#undo-btn")
+    .off("click")
+    .on("click", function () {
+      const ok = CanvasManager.undoLastLine();
+      if (!ok) {
+        // optional feedback
+        showToast && showToast("Không có gì để undo", "info");
+      }
+    });
 
-$('#delete-line-btn').off('click').on('click', function () {
-    const ok = CanvasManager.deleteSelectedLine();   
-    if (!ok) {
-      // optional feedback
-      showToast && showToast('Đâu có chọn gì đâu mừ xóa.', 'info');
-    }
-  }); 
+  $("#delete-line-btn")
+    .off("click")
+    .on("click", function () {
+      const ok = CanvasManager.deleteSelectedLine();
+      if (!ok) {
+        // optional feedback
+        showToast && showToast("Đâu có chọn gì đâu mừ xóa.", "info");
+      }
+    });
 
- 
+  $("#id_line_stroke_width").on("change", function () {    
+    CanvasManager.setLineStrokeWidth($(this).val());
+  });
 
   // previous/next buttons
   previous_page.on("click", function () {
@@ -314,10 +356,8 @@ $('#delete-line-btn').off('click').on('click', function () {
     CanvasManager,
   };
 
-  document.addEventListener('coloris:pick', event => {
+  document.addEventListener("coloris:pick", (event) => {
     CanvasManager.setLineColor(event.detail.color);
-    // line_color = event.detail.color;
-    // console.log('New color', line_color);
   });
 
   // init UI: populate dropdowns and load initial page
@@ -339,5 +379,10 @@ $('#delete-line-btn').off('click').on('click', function () {
     getSoundStartEnd: getSoundStartEnd,
     global_const: global_const,
     autoShowPanel: true,
+    onClose: () => {
+        console.log("Closed panel!");        
+        $("#id_ShowPanel").toggleClass("btn-dark", true).toggleClass("btn-success", false);
+        window.AudioService.setAutoShowPanel(false);
+    },
   });
 });

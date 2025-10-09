@@ -1,17 +1,33 @@
-    function createRadioButtons() {
+    function createRadioButtons(defaultIndex  = 0) {
         const options = [
-            { id: 'radio_student_37_book', value: 'student37', label: 'Student book 37', checked: true, max: 107, min: 1, current: 2 },
-            { id: 'radio_work_37_book', value: 'work37', label: 'Work book 37' , max: 97, min: 1, current: '1' },
-            { id: 'radio_btbt_37_book', value: 'btbt37', label: 'BTBT 3' , max: 140, min: 1, current: '1' },
-            { id: 'radio_student_book', value: 'student', label: 'Student book 27' , max: 66, min: 1, current: 1 },
-            { id: 'radio_work_book', value: 'work', label: 'Workbook 27' , max: 65, min: 1, current: 1 },
-            { id: 'radio_dict_book', value: 'dict', label: 'Dictionary' , max: 87, min: 1, current: 2 },
-            { id: 'radio_math', value: 'math_page', label: 'Math Game' },
+            { id: 'radio_student_37_book', data_type: 'student37', label: 'Student book 37',  max: 107, min: 1, current: 2 }, // 0
+            { id: 'radio_work_37_book', data_type: 'work37', label: 'Work book 37' , max: 97, min: 1, current: '1' }, // 1
+            { id: 'radio_btbt_37_book', data_type: 'btbt37', label: 'BTBT 3' , max: 140, min: 1, current: '1' }, // 2
+            { id: 'radio_student_book', data_type: 'student', label: 'Student book 27' , max: 66, min: 1, current: 1 }, // 3
+            { id: 'radio_work_book', data_type: 'work', label: 'Workbook 27' , max: 65, min: 1, current: 1 }, // 4
+            { id: 'radio_dict_book', data_type: 'dict', label: 'Dictionary' , max: 87, min: 1, current: 2 }, // 5
+            { id: 'radio_math', data_type: 'math_page', label: 'Math Game' }, // 6
         ];
         
         const container = document.getElementById('radioContainer');
         
+        let idx = 0;
+        let data_type = "student37";
+        let current = 1;
+        let max = 107;
+        let min = 1;
+        let checkedVal = false;        
+
         options.forEach(option => {
+            if (defaultIndex == idx) {
+                data_type = option.data_type;
+                current = option.current;
+                max = option.max;
+                min = option.min;
+                checkedVal = true;
+            } else {
+                checkedVal = false;
+            }
             const divElement = document.createElement('div');
             divElement.className = 'form-check me-3';
             
@@ -20,13 +36,12 @@
             inputElement.type = 'radio';
             inputElement.name = 'options';
             inputElement.id = option.id + '_1';
-            inputElement.value = option.value;
+            inputElement.value = option.data_type;
+            inputElement.checked = checkedVal;
              // Adding custom attributes
             inputElement.setAttribute('data-current-page-index', option.current);
             inputElement.setAttribute('data-max-page-num',  option.max);
             inputElement.setAttribute('data-min-page-num', option.min);
-
-            if (option.checked) inputElement.checked = true;
             
             const labelElement = document.createElement('label');
             labelElement.className = 'form-check-label';
@@ -36,7 +51,10 @@
             divElement.appendChild(inputElement);
             divElement.appendChild(labelElement);
             container.appendChild(divElement);
+            idx = idx + 1 ;
         });
+
+        return [data_type, current, max, min];
     }
 
 
