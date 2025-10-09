@@ -101,43 +101,45 @@
     }
 
     // clamp position so backgroundImage stays visible (prevents panning too far)
-    function clampPositionForScale(desiredX, desiredY, scale) {
-      if (!backgroundImage) return { x: desiredX, y: desiredY };
+ function clampPositionForScale(desiredX, desiredY, scale) {
+  if (!backgroundImage) return { x: desiredX, y: desiredY };
 
-      const cw = stage.width();
-      const ch = stage.height();
+  const cw = stage.width();
+  const ch = stage.height();
 
-      const bgX = backgroundImage.x();
-      const bgY = backgroundImage.y();
-      const bgW = backgroundImage.width();
-      const bgH = backgroundImage.height();
+  const bgX = backgroundImage.x();
+  const bgY = backgroundImage.y();
+  const bgW = backgroundImage.width();
+  const bgH = backgroundImage.height();
 
-      const maxX = -bgX * scale;
-      const minX = cw - (bgX + bgW) * scale;
+  const maxX = -bgX * scale;
+  const minX = cw - (bgX + bgW) * scale;
 
-      const maxY = -bgY * scale;
-      const minY = ch - (bgY + bgH) * scale;
+  const maxY = -bgY * scale;
+  const minY = ch - (bgY + bgH) * scale;
 
-      let finalX = desiredX;
-      let finalY = desiredY;
+  let finalX = desiredX;
+  let finalY = desiredY;
 
-      if (minX > maxX) {
-        // content narrower than viewport at this scale -> center horizontally
-        const contentWidth = bgW * scale;
-        finalX = (cw - contentWidth) / 2 - bgX * scale;
-      } else {
-        finalX = Math.min(maxX, Math.max(minX, desiredX));
-      }
+  // Horizontal: nếu content hẹp hơn viewport → giữ center horizontally
+  if (minX > maxX) {
+    const contentWidth = bgW * scale;
+    finalX = (cw - contentWidth) / 2 - bgX * scale;
+  } else {
+    finalX = Math.min(maxX, Math.max(minX, desiredX));
+  }
 
-      if (minY > maxY) {
-        const contentHeight = bgH * scale;
-        finalY = (ch - contentHeight) / 2 - bgY * scale;
-      } else {
-        finalY = Math.min(maxY, Math.max(minY, desiredY));
-      }
+  // Vertical: nếu content ngắn hơn viewport → align TOP (không center)
+  if (minY > maxY) {
+    // align top: đặt y sao cho top của background trùng với top viewport (tính theo transform)
+    finalY = -bgY * scale;
+  } else {
+    finalY = Math.min(maxY, Math.max(minY, desiredY));
+  }
 
-      return { x: finalX, y: finalY };
-    }
+  return { x: finalX, y: finalY };
+}
+
     
     // --- chung: zoom tại vị trí client (mouse/touch double) ---
     function zoomAtClient(clientX, clientY, delta = zoomStep) {
@@ -357,53 +359,55 @@
     }
 
     function adjustBackgroundImage(imageObj) {
-      const imageWidth = imageObj.width;
-      const imageHeight = imageObj.height;
-      const stageWidth = stage.width();
-      const stageHeight = stage.height();
-      const aspectRatio = imageWidth / imageHeight;
-      let newWidth, newHeight;
-      if (stageWidth / stageHeight > aspectRatio) {
-        newWidth = stageHeight * aspectRatio;
-        newHeight = stageHeight;
-      } else {
-        newWidth = stageWidth;
-        newHeight = stageWidth / aspectRatio;
-      }
-      let x = 0,
-        y = 0;
-      if (
-        typeof cfg.isNotMobile === "function"
-          ? cfg.isNotMobile()
-          : window.innerWidth >= 768
-      ) {
-        x = (stageWidth - newWidth) / 2;
-        y = (stageHeight - newHeight) / 2;
-      }
-      backgroundImage = new Konva.Image({
-        x: x,
-        y: y,
-        image: imageObj,
-        width: newWidth,
-        height: newHeight,
-        id: "backgroundImage",
-      });
-      backgroundLayer.add(backgroundImage);
-      backgroundLayer.batchDraw();
-      // ensure other images moved to bottom
-      stage.find("Image").forEach((image) => {
-        image.moveToBottom();
-      });
+  const imageWidth = imageObj.width;
+  const imageHeight = imageObj.height;
+  const stageWidth = stage.width();
+  const stageHeight = stage.height();
+  const aspectRatio = imageWidth / imageHeight;
+  let newWidth, newHeight;
+  if (stageWidth / stageHeight > aspectRatio) {
+    newWidth = stageHeight * aspectRatio;
+    newHeight = stageHeight;
+  } else {
+    newWidth = stageWidth;
+    newHeight = stageWidth / aspectRatio;
+  }
+  let x = 0,
+    y = 0;
+  if (
+    typeof cfg.isNotMobile === "function"
+      ? cfg.isNotMobile()
+      : window.innerWidth >= 768
+  ) {
+    // keep horizontal center, but align to top (y = 0)
+    x = (stageWidth - newWidth) / 2;
+    y = 0;
+  }
+  backgroundImage = new Konva.Image({
+    x: x,
+    y: y,
+    image: imageObj,
+    width: newWidth,
+    height: newHeight,
+    id: "backgroundImage",
+  });
+  backgroundLayer.add(backgroundImage);
+  backgroundLayer.batchDraw();
+  // ensure other images moved to bottom
+  stage.find("Image").forEach((image) => {
+    image.moveToBottom();
+  });
 
-      // --- NEW: center stage immediately like resetZoom ---
-      fitStageIntoParentContainer(); // make sure stage dimensions updated
-      const clamped = clampPositionForScale(0, 0, 1);
-      // choose immediate placement (no animation)
-      stage.scale({ x: 1, y: 1 });
-      stage.position({ x: clamped.x, y: clamped.y });
-      zoomLevel = 1;
-      stage.batchDraw();
-    }
+  // --- NEW: center stage immediately like resetZoom ---
+  fitStageIntoParentContainer(); // make sure stage dimensions updated
+  const clamped = clampPositionForScale(0, 0, 1);
+  // choose immediate placement (no animation)
+  stage.scale({ x: 1, y: 1 });
+  stage.position({ x: clamped.x, y: clamped.y });
+  zoomLevel = 1;
+  stage.batchDraw();
+}
+
 
     function fitStageIntoParentContainer() {        
       stage.width(window.innerWidth);
@@ -532,9 +536,25 @@
         const stagePt = clientToStage(evt.clientX, evt.clientY);
         const hit = stage.getIntersection(stagePt);
 
-        if (evt.pointerType === "touch" && hitIsIcon) {
-        // Touch on an icon — let icon handlers manage it, do not start drawing.
-        return;
+        // start swipe only when:
+        //  touch
+        //  only 1 pointer
+        //  not pinching
+        //  not starting on icon
+        if (
+          evt.pointerType === "touch" &&
+          activePointers.size === 1 &&
+          !pinchState.isPinching &&
+          !(hit && hit.className === "Image")
+        ) {
+          swipeState.active = true;
+          swipeState.startX = evt.clientX;
+          swipeState.startY = evt.clientY;
+          swipeState.startTime = Date.now();
+          swipeState.fired = false;
+          cancelPendingDraw();
+          cancelActiveDrawing();
+          return; // don't start drawing
         }
 
         // otherwise handle drawing: for touch start with tiny delay; mouse/pen immediate
