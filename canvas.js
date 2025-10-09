@@ -217,6 +217,23 @@
       return ret;
     }
 
+    function changeLockIcon(isLock = true) {
+        // Khi bắt đầu pinch → đổi icon lock sang trạng thái khóa
+          const lockBtn = document.getElementById("lock");
+          const lockIcon = document.getElementById("lock-icon");
+          if (lockBtn && lockIcon) {
+            if (isLock) {
+                lockBtn.classList.remove("btn-warning");
+                lockBtn.classList.add("btn-success");
+                lockIcon.className = "bi bi-lock-fill";
+            } else {
+                lockBtn.classList.remove('btn-success');
+                lockBtn.classList.add('btn-warning');
+                lockIcon.className = 'bi bi-unlock-fill';
+            }
+          }
+    }
+
     // add play icon (Konva image node)
     function addPlayIcon(x, y, sound) {
       if (sound && sound.trim() === 'x') return;
@@ -433,45 +450,73 @@
 
       // pointerdown
       container.addEventListener('pointerdown', function (evt) {
-        try { container.setPointerCapture(evt.pointerId); } catch (e) {}
-        if (evt.pointerType === 'touch') evt.preventDefault();
+        try {
+          container.setPointerCapture(evt.pointerId);
+        } catch (e) {}
+        if (evt.pointerType === "touch") evt.preventDefault();
 
         // double-tap detection (touch)
-        if (evt.pointerType === 'touch') {
+        if (evt.pointerType === "touch") {
           const now = Date.now();
           const dx = evt.clientX - lastTapPos.x;
           const dy = evt.clientY - lastTapPos.y;
           const dist = Math.hypot(dx, dy);
-          if (now - lastTapTime <= DOUBLE_TAP_THRESHOLD && dist <= DOUBLE_TAP_DISTANCE) {
+          if (
+            now - lastTapTime <= DOUBLE_TAP_THRESHOLD &&
+            dist <= DOUBLE_TAP_DISTANCE
+          ) {
             // double tap -> zoom in around point
-            lastTapTime = 0; lastTapPos = { x: 0, y: 0 };
-            cancelPendingDraw(); cancelActiveDrawing();
+            lastTapTime = 0;
+            lastTapPos = { x: 0, y: 0 };
+            cancelPendingDraw();
+            cancelActiveDrawing();
             const oldScale = stage.scaleX();
             const newScale = Math.min(maxZoom, oldScale + zoomStep);
             zoomLevel = newScale;
             const pointer = { x: evt.clientX, y: evt.clientY };
-            const mousePointTo = { x: (pointer.x - stage.x()) / oldScale, y: (pointer.y - stage.y()) / oldScale };
-            const desiredPos = { x: pointer.x - mousePointTo.x * newScale, y: pointer.y - mousePointTo.y * newScale };
-            const clamped = clampPositionForScale(desiredPos.x, desiredPos.y, newScale);
+            const mousePointTo = {
+              x: (pointer.x - stage.x()) / oldScale,
+              y: (pointer.y - stage.y()) / oldScale,
+            };
+            const desiredPos = {
+              x: pointer.x - mousePointTo.x * newScale,
+              y: pointer.y - mousePointTo.y * newScale,
+            };
+            const clamped = clampPositionForScale(
+              desiredPos.x,
+              desiredPos.y,
+              newScale
+            );
             animateStageTo(newScale, clamped, 0.2);
             pinchState.isPinching = false;
             return;
           }
-          lastTapTime = now; lastTapPos = { x: evt.clientX, y: evt.clientY };
+          lastTapTime = now;
+          lastTapPos = { x: evt.clientX, y: evt.clientY };
         }
 
         // register pointer
-        activePointers.set(evt.pointerId, { x: evt.clientX, y: evt.clientY, type: evt.pointerType });
+        activePointers.set(evt.pointerId, {
+          x: evt.clientX,
+          y: evt.clientY,
+          type: evt.pointerType,
+        });
 
         // if multi-pointer -> pinch
         if (activePointers.size >= 2) {
+          changeLockIcon(true);
           pinchState.isPinching = true;
           const pts = Array.from(activePointers.values());
-          const p1 = pts[0], p2 = pts[1];
+          const p1 = pts[0],
+            p2 = pts[1];
           pinchState.startDist = Math.hypot(p2.x - p1.x, p2.y - p1.y);
           pinchState.startScale = stage.scaleX();
-          pinchState.startCenter = { x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2 };
-          cancelPendingDraw(); cancelActiveDrawing();
+          pinchState.startCenter = {
+            x: (p1.x + p2.x) / 2,
+            y: (p1.y + p2.y) / 2,
+          };
+          cancelPendingDraw();
+          cancelActiveDrawing();
           stage.draggable(false);
           swipeState.active = false;
           return;
@@ -489,15 +534,24 @@
         // - only 1 pointer
         // - not pinching
         // - not starting on icon
-        if (evt.pointerType === 'touch' && activePointers.size === 1 && !pinchState.isPinching && !(hit && hit.className === 'Image')) {
+        if (
+          evt.pointerType === "touch" &&
+          activePointers.size === 1 &&
+          !pinchState.isPinching &&
+          !(hit && hit.className === "Image")
+        ) {
           swipeState.active = true;
-          swipeState.startX = evt.clientX; swipeState.startY = evt.clientY; swipeState.startTime = Date.now(); swipeState.fired = false;
-          cancelPendingDraw(); cancelActiveDrawing();
+          swipeState.startX = evt.clientX;
+          swipeState.startY = evt.clientY;
+          swipeState.startTime = Date.now();
+          swipeState.fired = false;
+          cancelPendingDraw();
+          cancelActiveDrawing();
           return; // don't start drawing
         }
 
         // otherwise handle drawing: for touch start with tiny delay; mouse/pen immediate
-        if (evt.pointerType === 'touch') {
+        if (evt.pointerType === "touch") {
           cancelPendingDraw();
           touchDrawTimer = setTimeout(() => {
             touchDrawTimer = null;
@@ -509,11 +563,11 @@
             lastLine = new Konva.Line({
               stroke: line_color,
               strokeWidth: line_stroke_width,
-              globalCompositeOperation: 'source-over',
+              globalCompositeOperation: "source-over",
               points: [pt.x, pt.y],
-              lineCap: 'round',
-              lineJoin: 'round',
-              saved_stroke: line_color
+              lineCap: "round",
+              lineJoin: "round",
+              saved_stroke: line_color,
             });
             drawingLayer.add(lastLine);
             lines.push(lastLine);
@@ -528,11 +582,11 @@
           lastLine = new Konva.Line({
             stroke: line_color,
             strokeWidth: line_stroke_width,
-            globalCompositeOperation: 'source-over',
+            globalCompositeOperation: "source-over",
             points: [pt.x, pt.y],
-            lineCap: 'round',
-            lineJoin: 'round',
-            saved_stroke: line_color
+            lineCap: "round",
+            lineJoin: "round",
+            saved_stroke: line_color,
           });
           drawingLayer.add(lastLine);
           lines.push(lastLine);
@@ -638,7 +692,9 @@ stage.on('dblclick', function (e) {
         try { container.releasePointerCapture(evt.pointerId); } catch (e) {}
         activePointers.delete(evt.pointerId);
         if (activePointers.size < 2 && pinchState.isPinching) {
-          pinchState.isPinching = false; pinchState.startDist = 0;
+          pinchState.isPinching = false; 
+          pinchState.startDist = 0;
+          changeLockIcon(false);
         }
         cancelPendingDraw();
 
