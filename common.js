@@ -1,29 +1,3 @@
-
-// Cách 1: Sử dụng mảng dữ liệu đơn giản
-
-//   if ("student" == dataType) {
-//       CURRENT_PAGE_INDEX = 4;
-//       MAX_PAGE_NUM = 66;
-//       MIN_PAGE_NUM = 1;
-//     }else if ("work" == dataType) {
-//       CURRENT_PAGE_INDEX = 1;
-//       MAX_PAGE_NUM = 65;
-//       MIN_PAGE_NUM = 1;
-//     } else if ("dict" == dataType) {
-//       CURRENT_PAGE_INDEX = 2;
-//       MAX_PAGE_NUM = 87;
-//       MIN_PAGE_NUM = 1;
-//     } else if ("student37" == dataType) {
-//       CURRENT_PAGE_INDEX = 5;
-//       MAX_PAGE_NUM = 107;
-//       MIN_PAGE_NUM = 1;
-//     }
-//     else if ("work37" == dataType) {
-//       CURRENT_PAGE_INDEX = 1;
-//       MAX_PAGE_NUM = 97;
-//       MIN_PAGE_NUM = 1;
-//     }
-
     function createRadioButtons() {
         const options = [
             { id: 'radio_student_37_book', value: 'student37', label: 'Student book 37', checked: true, max: 107, min: 1, current: 2 },

@@ -18,18 +18,13 @@ Coloris({
   });
   
   Coloris.setInstance('.instance1', {
-    theme: 'pill',
-    themeMode: 'dark',
-    formatToggle: true,
+    // theme: 'pill',
+    // themeMode: 'dark',
+    // formatToggle: true,
     closeButton: true,
     clearButton: true,
     swatches: [
-      '#067bc2',
-      '#84bcda',
-      '#80e377',
-      '#ecc30b',
-      '#f37748',
-      '#d56062'
+'#00FFFF','#000000','#0000FF','#FF00FF','#808080','#008000','#00FF00','#800000','#000080','#808000','#800080','#FF0000','#C0C0C0','#008080','#FFFFFF','#FFFF00'
     ]
   });
   
@@ -40,9 +35,9 @@ Coloris({
     swatchesOnly: true
   });
 
-  document.addEventListener('coloris:pick', event => {
-    line_color = event.detail.color;
-    console.log('New color', line_color);
-  });
+  // document.addEventListener('coloris:pick', event => {
+  //   line_color = event.detail.color;
+  //   console.log('New color', line_color);
+  // });
 
 });
