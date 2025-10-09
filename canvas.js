@@ -340,7 +340,9 @@
     function loadJsonBackgroundAndIcons(page, data) {
       if (!data || !data.background) return;
       const imageObj = new Image();
+      showSpinner("#F54927");
       imageObj.onload = function () {
+        hideSpinner();
         if (backgroundImage) backgroundImage.destroy();
         adjustBackgroundImage(imageObj);
         // destroy icons

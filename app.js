@@ -149,6 +149,16 @@ $('input[name="options"]').on("click", function () {
     MIN_PAGE_NUM = minPageNum;
   }  
 
+  $("#setting").on("click", function () {
+    const controls = document.querySelector(".controls");
+    if (controls.style.display === "none") {
+      controls.style.display = "flex";
+    } else {
+      controls.style.display = "none";
+      toggleDrawIcon(true);
+    }
+  });  
+
   $("#id_ShowPanel").on("click", function () {
     let isAuto = !$(this).hasClass("btn-success");
     $(this).toggleClass("btn-success", isAuto).toggleClass("btn-dark", !isAuto);
