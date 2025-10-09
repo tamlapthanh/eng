@@ -319,14 +319,17 @@
 
     // load JSON (background + icons + lines)
     function loadAssetJson(page, url) {
+        showSpinner();
       fetch(url)
         .then(res => res.json())
         .then(data => {
+            hideSpinner();
           backgroundLayer.clear();
           iconLayer.clear();
           loadJsonBackgroundAndIcons(page, data);
         })
         .catch(err => {
+            hideSpinner();
           console.error('Error loading JSON:', err);
           if (typeof cfg.showToast === 'function') cfg.showToast('Error loading JSON', 'danger');
         });

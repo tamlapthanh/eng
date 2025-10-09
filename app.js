@@ -335,17 +335,17 @@ $('input[name="options"]').on("click", function () {
     }
   }
 
-  // other UI helpers (spinner, toast)
-  function showSpinner(color = "#007bff") {
-    const spinnerIcon = document.querySelector(".spinner-icon");
-    if (spinnerIcon) spinnerIcon.style.color = color;
-    const overlay = document.getElementById("spinnerOverlay");
-    if (overlay) overlay.style.display = "flex";
-  }
-  function hideSpinner() {
-    const overlay = document.getElementById("spinnerOverlay");
-    if (overlay) overlay.style.display = "none";
-  }
+//   // other UI helpers (spinner, toast)
+//   function showSpinner(color = "#007bff") {
+//     const spinnerIcon = document.querySelector(".spinner-icon");
+//     if (spinnerIcon) spinnerIcon.style.color = color;
+//     const overlay = document.getElementById("spinnerOverlay");
+//     if (overlay) overlay.style.display = "flex";
+//   }
+//   function hideSpinner() {
+//     const overlay = document.getElementById("spinnerOverlay");
+//     if (overlay) overlay.style.display = "none";
+//   }
 
   // expose some functions globally for console/testing if desired
   window.App = {
