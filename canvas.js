@@ -503,8 +503,7 @@
         });
 
         // if multi-pointer -> pinch
-        if (activePointers.size >= 2) {
-          changeLockIcon(true);
+        if (activePointers.size >= 2) {          
           pinchState.isPinching = true;
           const pts = Array.from(activePointers.values());
           const p1 = pts[0],
@@ -518,6 +517,7 @@
           cancelPendingDraw();
           cancelActiveDrawing();
           stage.draggable(false);
+          changeLockIcon(true);
           swipeState.active = false;
           return;
         }
@@ -693,8 +693,7 @@ stage.on('dblclick', function (e) {
         activePointers.delete(evt.pointerId);
         if (activePointers.size < 2 && pinchState.isPinching) {
           pinchState.isPinching = false; 
-          pinchState.startDist = 0;
-          changeLockIcon(false);
+          pinchState.startDist = 0;          
         }
         cancelPendingDraw();
 
