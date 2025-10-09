@@ -3,6 +3,7 @@ $(document).ready(function () {
     
 
     let PATH_ROOT = "assets/books/27/";
+    let is_move_icon = true;
         
     // let DATA_TYPE = "student"
     // let CURRENT_PAGE_INDEX = 4;
@@ -164,11 +165,17 @@ $(document).ready(function () {
             icon.draggable(true);
 
             function handleInteraction() {
+
+            // set selected visual
+            setSelectedIcon(icon);
+
                 currentIcon = icon;
                 iconSoundUrlInput.val(icon.getAttr('sound') || '');
                 iconXInput.val(icon.x());
                 iconYInput.val(icon.y());
-                $('#settingsModal').modal('show');
+                if (!is_move_icon) {
+                    $('#settingsModal').modal('show');
+                }                
             }
 
             icon.on('click', handleInteraction);
@@ -311,6 +318,168 @@ $(document).ready(function () {
         fitStageIntoParentContainer();
     }
 
+    /* ---------- Move selected icon to click / tap position ---------- */
+
+// helper: convert client coords -> stage coords (respect stage position & scale)
+function clientToStage(clientX, clientY) {
+  const rect = stage.container().getBoundingClientRect();
+  const x = clientX - rect.left;
+  const y = clientY - rect.top;
+  const transform = stage.getAbsoluteTransform().copy();
+  transform.invert();
+  return transform.point({ x, y });
+}
+
+// whether to animate the move (true = tween, false = immediate)
+const MOVE_WITH_ANIMATION = true;
+const MOVE_ANIM_DURATION = 0.18; // seconds
+
+// handle clicks on stage (desktop) and taps (mobile)
+// we use Konva stage 'contentClick' to catch clicks that are on the canvas content.
+// Alternatively stage.on('click', ...) works similarly.
+stage.on('contentClick contentTap click tap', function (e) {
+   
+  // if no selected icon -> nothing to do
+  if (!currentIcon) {
+    return;
+  }
+
+  // If clicked on an icon (or other node) we don't want to move the icon:
+  // e.target is the Konva node that received the click. If it's an Image (icon) -> ignore.
+  const clickedNode = e.target;
+    // If clicked on an Image node that is NOT the backgroundImage -> ignore (icon clicked)
+  if (clickedNode && clickedNode.className === 'Image' && clickedNode !== backgroundImage) {
+    return;
+  }
+
+  // get client coordinates (native event)
+  const nativeEvt = e && e.evt;
+  const clientX = nativeEvt && typeof nativeEvt.clientX !== 'undefined' ? nativeEvt.clientX : null;
+  const clientY = nativeEvt && typeof nativeEvt.clientY !== 'undefined' ? nativeEvt.clientY : null;
+
+  if (clientX === null || clientY === null) {
+    // fallback: use Konva pointer position (container coords) and convert
+    const p = stage.getPointerPosition();
+    if (!p) return;
+    // convert container coords -> client by rect left/top
+    const rect = stage.container().getBoundingClientRect();
+    return moveCurrentIconTo(clientToStage(rect.left + p.x, rect.top + p.y));
+  }
+
+  moveCurrentIconTo(clientToStage(clientX, clientY));
+});
+
+function moveCurrentIconTo(stagePos) {
+  if (!currentIcon || !stagePos) return;
+
+  // Optionally clamp target so icon center stays within background area.
+  // Here we compute icon half-size and keep the icon fully inside background.
+  let targetX = stagePos.x - 9;
+  let targetY = stagePos.y - 9;
+
+  try {
+    const w = (typeof currentIcon.width === 'function') ? currentIcon.width() : currentIcon.width;
+    const h = (typeof currentIcon.height === 'function') ? currentIcon.height() : currentIcon.height;
+    const halfW = (w || 0) / 2;
+    const halfH = (h || 0) / 2;
+
+    if (backgroundImage) {
+      const bgX = backgroundImage.x();
+      const bgY = backgroundImage.y();
+      const bgW = backgroundImage.width();
+      const bgH = backgroundImage.height();
+
+      // clamp so icon stays fully within background display rectangle
+      targetX = Math.max(bgX + halfW, Math.min(bgX + bgW - halfW, targetX));
+      targetY = Math.max(bgY + halfH, Math.min(bgY + bgH - halfH, targetY));
+    }
+  } catch (err) {
+    // ignore if dimensions not available
+  }
+
+  if (MOVE_WITH_ANIMATION && typeof Konva.Tween === 'function') {
+    // animate position
+    const tween = new Konva.Tween({
+      node: currentIcon,
+      duration: MOVE_ANIM_DURATION,
+      x: targetX,
+      y: targetY,
+      easing: Konva.Easings.EaseInOut
+    });
+    tween.play();
+    // ensure layer redraw after finish
+    tween.onFinish = function () {
+      try { tween.destroy(); } catch (e) {}
+      iconLayer.batchDraw();
+      // update inputs
+      updateIconInputs(currentIcon);
+    };
+  } else {
+    currentIcon.position({ x: targetX, y: targetY });
+    iconLayer.batchDraw();
+    updateIconInputs(currentIcon);
+  }
+}
+
+function updateIconInputs(icon) {
+  if (!icon) return;
+  // update the modal inputs (if present)
+  if (typeof iconXInput !== 'undefined' && typeof iconYInput !== 'undefined') {
+    iconXInput.val(icon.x());
+    iconYInput.val(icon.y());
+  }
+}
+
+// helper: set the visual of a single icon (uses your changeImageUrl function)
+function setIconImage(icon, url) {
+  if (!icon) return;
+  // If you already have changeImageUrl(iconUrl, icon) function, use it:
+  if (typeof changeImageUrl === 'function') {
+    changeImageUrl(url, icon);
+    return;
+  }
+  // fallback: manually replace image
+  const newImg = new Image();
+  newImg.onload = function () {
+    icon.image(newImg);
+    icon.getLayer() && icon.getLayer().batchDraw();
+  };
+  newImg.src = url;
+}
+
+// call this to change selection
+function setSelectedIcon(icon) {
+
+
+
+    let iconPathIdle = 'assets/play_icon.png';
+    let iconPathPlaying = 'assets/music_icon.svg';
+
+  // If same icon clicked -> toggle selection (optional)
+  if (currentIcon === icon) {
+    // if you want to deselect on second click, uncomment:
+    // setIconImage(currentIcon, iconPath_1);
+    // currentIcon = null;
+    // return;
+  }
+
+  // revert previous selected icon to idle
+  if (currentIcon && currentIcon !== icon) {
+    setIconImage(currentIcon, iconPathIdle);
+  }
+
+  // set new current
+  currentIcon = icon;
+
+  // change image of current to playing/selected
+  setIconImage(currentIcon, iconPathPlaying);
+
+  // update UI inputs if you keep modal/inputs
+  if (typeof updateIconInputs === 'function') updateIconInputs(currentIcon);
+}
+
+
+
     $('#json-dropdown').change(function () {
         loadPage();
     });
@@ -365,6 +534,7 @@ $(document).ready(function () {
         stage.batchDraw();
     }
 
+    
 
     // Thêm sự kiện beforeunload để hiển thị confirm khi reload hoặc rời khỏi trang
     window.addEventListener('beforeunload', function (event) {
@@ -386,6 +556,12 @@ $(document).ready(function () {
         }
 
     });    
+
+     $('#move-icon').on('click', function () {
+       is_move_icon = !is_move_icon;       
+       $(this).toggleClass("btn-success", is_move_icon).toggleClass("btn-dark", !is_move_icon);
+     });    
+    
 
     $('#delete-icon').on('click', function () {
         if (currentIcon) {
