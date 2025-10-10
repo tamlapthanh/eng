@@ -70,22 +70,9 @@
       getIconSize: null,
       showToast: null,
       AudioService: null,
+      onToggleLock:null,
       onPageChangeRequest: null, // callback(isNext) => boolean/void
     };
-
-    // --- thêm helper ở đầu file (gần phần util) ---
-    function notifyToggleLock(state) {
-      try {
-        if (typeof cfg.toggleLockIcon === "function") {
-          cfg.toggleLockIcon(!!state);
-        } else if (typeof window.toggleLockIcon === "function") {
-          // fallback nếu bạn export global function (không bắt buộc)
-          window.toggleLockIcon(!!state);
-        }
-      } catch (e) {
-        console.warn("notifyToggleLock error", e);
-      }
-    }
 
     // util
     function clientToStage(clientX, clientY) {
@@ -112,7 +99,7 @@
       }
 
       // ensure we inform app that zoom is in-progress
-      notifyToggleLock(true);
+      cfg.onToggleLock(true);
 
       const tween = new Konva.Tween({
         node: stage,
@@ -179,7 +166,7 @@
       if (!stage) return;
 
       // thông báo bắt đầu zoom (dự phòng)
-      notifyToggleLock(true);
+      cfg.onToggleLock(true);
 
       const oldScale = stage.scaleX();
       const newScale = Math.min(
@@ -274,22 +261,22 @@
       return ret;
     }
 
-    function changeLockIcon(isLock = true) {
-      // Khi bắt đầu pinch → đổi icon lock sang trạng thái khóa
-      const lockBtn = document.getElementById("lock");
-      const lockIcon = document.getElementById("lock-icon");
-      if (lockBtn && lockIcon) {
-        if (isLock) {
-          lockBtn.classList.remove("btn-warning");
-          lockBtn.classList.add("btn-success");
-          lockIcon.className = "bi bi-lock-fill";
-        } else {
-          lockBtn.classList.remove("btn-success");
-          lockBtn.classList.add("btn-warning");
-          lockIcon.className = "bi bi-unlock-fill";
-        }
-      }
-    }
+    // function changeLockIcon(isLock = true) {
+    //   // Khi bắt đầu pinch → đổi icon lock sang trạng thái khóa
+    //   const lockBtn = document.getElementById("lock");
+    //   const lockIcon = document.getElementById("lock-icon");
+    //   if (lockBtn && lockIcon) {
+    //     if (isLock) {
+    //       lockBtn.classList.remove("btn-warning");
+    //       lockBtn.classList.add("btn-success");
+    //       lockIcon.className = "bi bi-lock-fill";
+    //     } else {
+    //       lockBtn.classList.remove("btn-success");
+    //       lockBtn.classList.add("btn-warning");
+    //       lockIcon.className = "bi bi-unlock-fill";
+    //     }
+    //   }
+    // }
 
     // add play icon (Konva image node)
     function addPlayIcon(x, y, sound) {
@@ -680,7 +667,7 @@
             // changeLockIcon(true);
 
             // báo cho app rằng zoom/pinch bắt đầu (kêu app.toggleLockIcon(true))
-            notifyToggleLock(true);
+            cfg.onToggleLock(true);
 
             swipeState.active = false;
             return;
@@ -777,6 +764,7 @@
 
       // ----------------- also register Konva dblclick if you prefer -----------------
       stage.on("dblclick", function (e) {
+        
         // Konva event e has .evt (native event) — prefer using native client coords if present
         const native = e && e.evt;
         if (native && typeof native.clientX !== "undefined") {

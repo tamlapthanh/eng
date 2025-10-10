@@ -69,6 +69,9 @@ $(document).ready(function () {
     getIconSize: getIconSize,
     showToast: showToast,
     AudioService: window.AudioService,
+    onToggleLock:function (isLock) {
+      toggleLockIcon(isLock);
+    },
     onLoadLines: function (page) {
       // called by CanvasManager after background+icons loaded
       listDrawingPagesDetailed(String(page));
@@ -169,10 +172,10 @@ $(document).ready(function () {
     window.AudioService.setAutoShowPanel(isAuto);
   });
 
-  $("#lock").on("click", function () {
+  function toggleLockIcon(isLock = true) {
     // replicate original toggleLockIcon behavior
     const icon = document.getElementById("lock").querySelector("i");
-    if (icon.classList.contains("bi-lock-fill")) {
+    if (!isLock) {
       icon.classList.remove("bi-lock-fill");
       icon.classList.add("bi-unlock-fill");
       // unlock -> stage draggable true
@@ -184,6 +187,16 @@ $(document).ready(function () {
       icon.classList.add("bi-lock-fill");
       const st = CanvasManager.getState().stage;
       st && st.draggable(false);
+    }
+  }
+
+  $("#lock").on("click", function () {
+    // replicate original toggleLockIcon behavior
+    const icon = document.getElementById("lock").querySelector("i");
+    if (icon.classList.contains("bi-lock-fill")) {
+      toggleLockIcon(false);
+    } else {
+      toggleLockIcon(true);
     }
   });
 
@@ -395,17 +408,6 @@ $(document).ready(function () {
         .toggleClass("btn-dark", true)
         .toggleClass("btn-success", false);
       window.AudioService.setAutoShowPanel(false);
-    },
-    toggleLockIcon: function (isLocked) {
-      toggleLockIcon(isLocked);
-      // phía app: thay đổi UI, lock/unlock controls, v.v.
-      // vd:
-      // if (isLocked) {
-      //   // disable pan controls / show lock        
-      // } else {
-      //   // enable pan controls
-      //   alert(isLocked);
-      // }
-    },
+    }
   });
 });
