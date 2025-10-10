@@ -396,7 +396,7 @@ function resetIcons() {
 
     // --- chỉnh sửa loadAssetJson: không clear layer ngay lập tức ---
     function loadAssetJson(page, url) {
-      showSpinner();
+      // showSpinner();
       fetch(url)
         .then(res => { if(!res.ok) throw new Error(res.statusText); return res.json(); })
         .then((data) => {
@@ -404,7 +404,7 @@ function resetIcons() {
           loadJsonBackgroundAndIcons(page, data);
         })
         .catch((err) => {
-          hideSpinner();
+          // hideSpinner();
           console.error("Error loading JSON:", err);
           if (typeof cfg.showToast === "function")
             cfg.showToast("Error loading JSON", "danger");
@@ -414,13 +414,13 @@ function resetIcons() {
     // --- load và swap an toàn (với fade-in) ---
     function loadJsonBackgroundAndIcons(page, data) {
       if (!data || !data.background) {
-        hideSpinner();
+        // hideSpinner();
         return;
       }
 
       const imageObj = new Image();
       const oldBackground = backgroundImage; // giữ ref ảnh cũ (có thể null)
-      showSpinner("#F54927");
+      // showSpinner("#F54927");
 
       imageObj.onload = function () {
         try {
@@ -490,7 +490,7 @@ function resetIcons() {
             if (typeof cfg.onLoadLines === "function") cfg.onLoadLines(page);
           };
         } finally {
-          hideSpinner();
+          // hideSpinner();
           // không reset toàn bộ stage ở đây — chỉ cập nhật view nếu cần
           // nếu bạn muốn reset zoom mỗi lần load trang mới, gọi resetZoom() từ caller thay vì tự động ở đây.
         }
