@@ -12,8 +12,8 @@ $(document).ready(function () {
   let MAX_PAGE_NUM = 107;
   let MIN_PAGE_NUM = 1;
 
-  [DATA_TYPE, CURRENT_PAGE_INDEX, MAX_PAGE_NUM, MIN_PAGE_NUM] = createRadioButtons(0); // from common.js
-
+  [DATA_TYPE, CURRENT_PAGE_INDEX, MAX_PAGE_NUM, MIN_PAGE_NUM] =
+    createRadioButtons(0); // from common.js
 
   const RUN_URL_SERVER = "https://zizi-app.onrender.com/";
   const RUN_URL_LOCAL = "http://localhost:8080/";
@@ -119,7 +119,7 @@ $(document).ready(function () {
     $(this).toggleClass("btn-danger btn-dark");
   });
 
-$('input[name="options"]').on("click", function () {
+  $('input[name="options"]').on("click", function () {
     var selectedValue = $(this).val();
     var currentPageIndex = $(this).data("current-page-index");
     var maxPageNum = $(this).data("max-page-num");
@@ -140,14 +140,14 @@ $('input[name="options"]').on("click", function () {
       loadPage();
       $("#settingsModal").modal("hide");
     }
-  });  
+  });
 
   function setPageInfo(dataType, currentPageIndex, maxPageNum, minPageNum) {
     DATA_TYPE = dataType;
     CURRENT_PAGE_INDEX = currentPageIndex;
     MAX_PAGE_NUM = maxPageNum;
     MIN_PAGE_NUM = minPageNum;
-  }  
+  }
 
   $("#setting").on("click", function () {
     const controls = document.querySelector(".controls");
@@ -157,7 +157,7 @@ $('input[name="options"]').on("click", function () {
       controls.style.display = "none";
       toggleDrawIcon(true);
     }
-  });  
+  });
 
   $("#id_ShowPanel").on("click", function () {
     let isAuto = !$(this).hasClass("btn-success");
@@ -228,7 +228,7 @@ $('input[name="options"]').on("click", function () {
       }
     });
 
-  $("#id_line_stroke_width").on("change", function () {    
+  $("#id_line_stroke_width").on("change", function () {
     CanvasManager.setLineStrokeWidth($(this).val());
   });
 
@@ -345,17 +345,17 @@ $('input[name="options"]').on("click", function () {
     }
   }
 
-//   // other UI helpers (spinner, toast)
-//   function showSpinner(color = "#007bff") {
-//     const spinnerIcon = document.querySelector(".spinner-icon");
-//     if (spinnerIcon) spinnerIcon.style.color = color;
-//     const overlay = document.getElementById("spinnerOverlay");
-//     if (overlay) overlay.style.display = "flex";
-//   }
-//   function hideSpinner() {
-//     const overlay = document.getElementById("spinnerOverlay");
-//     if (overlay) overlay.style.display = "none";
-//   }
+  //   // other UI helpers (spinner, toast)
+  //   function showSpinner(color = "#007bff") {
+  //     const spinnerIcon = document.querySelector(".spinner-icon");
+  //     if (spinnerIcon) spinnerIcon.style.color = color;
+  //     const overlay = document.getElementById("spinnerOverlay");
+  //     if (overlay) overlay.style.display = "flex";
+  //   }
+  //   function hideSpinner() {
+  //     const overlay = document.getElementById("spinnerOverlay");
+  //     if (overlay) overlay.style.display = "none";
+  //   }
 
   // expose some functions globally for console/testing if desired
   window.App = {
@@ -390,9 +390,22 @@ $('input[name="options"]').on("click", function () {
     global_const: global_const,
     autoShowPanel: true,
     onClose: () => {
-        console.log("Closed panel!");        
-        $("#id_ShowPanel").toggleClass("btn-dark", true).toggleClass("btn-success", false);
-        window.AudioService.setAutoShowPanel(false);
+      console.log("Closed panel!");
+      $("#id_ShowPanel")
+        .toggleClass("btn-dark", true)
+        .toggleClass("btn-success", false);
+      window.AudioService.setAutoShowPanel(false);
+    },
+    toggleLockIcon: function (isLocked) {
+      toggleLockIcon(isLocked);
+      // phía app: thay đổi UI, lock/unlock controls, v.v.
+      // vd:
+      // if (isLocked) {
+      //   // disable pan controls / show lock        
+      // } else {
+      //   // enable pan controls
+      //   alert(isLocked);
+      // }
     },
   });
 });

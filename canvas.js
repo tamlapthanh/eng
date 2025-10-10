@@ -73,6 +73,20 @@
       onPageChangeRequest: null, // callback(isNext) => boolean/void
     };
 
+    // --- thêm helper ở đầu file (gần phần util) ---
+    function notifyToggleLock(state) {
+      try {
+        if (typeof cfg.toggleLockIcon === "function") {
+          cfg.toggleLockIcon(!!state);
+        } else if (typeof window.toggleLockIcon === "function") {
+          // fallback nếu bạn export global function (không bắt buộc)
+          window.toggleLockIcon(!!state);
+        }
+      } catch (e) {
+        console.warn("notifyToggleLock error", e);
+      }
+    }
+
     // util
     function clientToStage(clientX, clientY) {
       const rect = stage.container().getBoundingClientRect();
@@ -96,6 +110,10 @@
         } catch (e) {}
         stage._activeTween = null;
       }
+
+      // ensure we inform app that zoom is in-progress
+      notifyToggleLock(true);
+
       const tween = new Konva.Tween({
         node: stage,
         duration: duration,
@@ -159,6 +177,10 @@
     // --- chung: zoom tại vị trí client (mouse/touch double) ---
     function zoomAtClient(clientX, clientY, delta = zoomStep) {
       if (!stage) return;
+
+      // thông báo bắt đầu zoom (dự phòng)
+      notifyToggleLock(true);
+
       const oldScale = stage.scaleX();
       const newScale = Math.min(
         maxZoom,
@@ -656,6 +678,10 @@
             cancelActiveDrawing();
             stage.draggable(false);
             changeLockIcon(true);
+
+            // báo cho app rằng zoom/pinch bắt đầu (kêu app.toggleLockIcon(true))
+            notifyToggleLock(true);
+
             swipeState.active = false;
             return;
           }
@@ -869,12 +895,23 @@
         try {
           container.releasePointerCapture(evt.pointerId);
         } catch (e) {}
+
+        // 👉 thêm dòng này để nhớ trạng thái pinch trước khi thay đổi
+        const prevPinching = pinchState.isPinching;
+
         activePointers.delete(evt.pointerId);
         if (activePointers.size < 2 && pinchState.isPinching) {
           pinchState.isPinching = false;
           pinchState.startDist = 0;
         }
         cancelPendingDraw();
+
+        // nếu trước đó đang pinch và bây giờ hết pointer -> báo unlock
+        if (prevPinching && !pinchState.isPinching) {
+          // restore draggable hoặc gọi unlock ở app
+          notifyToggleLock(false);
+          changeLockIcon(false); // bạn vẫn giữ thay đổi icon local nếu muốn
+        }        
 
         // cancel swipe if short
         if (swipeState.active) {
