@@ -343,7 +343,7 @@
       showSpinner("#F54927");
       imageObj.onload = function () {
         hideSpinner();
-        if (backgroundImage) backgroundImage.destroy();
+        // if (backgroundImage) backgroundImage.destroy();
         adjustBackgroundImage(imageObj);
         // destroy icons
         playIcons.forEach(i => i.destroy());
