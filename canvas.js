@@ -30,6 +30,15 @@
     let iconPathIdle = "assets/play_icon.png";
     let iconPathPlaying = "assets/music_icon.svg";
 
+    // 🔹 Cache ảnh idle để tránh tạo nhiều lần
+    let _idleImageCache = null;
+    function preloadIdleIcon() {
+      if (_idleImageCache) return; // đã cache rồi thì bỏ qua
+      _idleImageCache = new Image();
+      _idleImageCache.src = iconPathIdle;
+    }
+
+
     // zoom/pinch state
     let zoomLevel = 1;
     const zoomStep = 0.2;
@@ -338,23 +347,30 @@
     }
 
     // reset icons images (calls external resetIcons if provided, else revert to idle)
-    function resetIcons() {
-      if (typeof cfg.resetIcons === "function") {
-        cfg.resetIcons();
-        return;
+function resetIcons() {
+  if (typeof cfg.resetIcons === "function") {
+    cfg.resetIcons();
+    return;
+  }
+  const imageList = iconLayer.find("Image");
+  imageList.forEach(function (icon) {
+    if (currentIcon !== icon) {
+      if (_idleImageCache && _idleImageCache.complete) {
+        // ✅ dùng ảnh cache
+        icon.image(_idleImageCache);
+        iconLayer.batchDraw();
+      } else {
+        // fallback: nếu cache chưa sẵn sàng (rất hiếm)
+        const newImage = new Image();
+        newImage.onload = function () {
+          icon.image(newImage);
+          iconLayer.batchDraw();
+        };
+        newImage.src = iconPathIdle;
       }
-      const imageList = iconLayer.find("Image");
-      imageList.forEach(function (icon) {
-        if (currentIcon !== icon) {
-          const newImage = new Image();
-          newImage.onload = function () {
-            icon.image(newImage);
-            iconLayer.batchDraw();
-          };
-          newImage.src = iconPathIdle;
-        }
-      });
     }
+  });
+}
 
     // change icon image URL (uses external changeImageUrl if provided)
     function changeImageUrl(newUrl, icon) {
@@ -382,7 +398,7 @@
     function loadAssetJson(page, url) {
       showSpinner();
       fetch(url)
-        .then((res) => res.json())
+        .then(res => { if(!res.ok) throw new Error(res.statusText); return res.json(); })
         .then((data) => {
           // don't clear background/icon here — wait until new image loaded successfully
           loadJsonBackgroundAndIcons(page, data);
@@ -557,10 +573,10 @@
       stage.add(drawingLayer);
       // ensure container touch-action none recommended in CSS: #canvas { touch-action: none; }
       setupPointerHandlers();
+      let _resizeTimer = null;
       window.addEventListener("resize", () => {
-        setTimeout(() => {
-          fitStageIntoParentContainer();
-        }, 100);
+          clearTimeout(_resizeTimer);
+          _resizeTimer = setTimeout(() => fitStageIntoParentContainer(), 120);
       });
 
       window.addEventListener("beforeunload", function () {
@@ -922,9 +938,11 @@
       cfg = Object.assign(cfg, options || {});
       ICON_SIZE = options.iconSize || ICON_SIZE;
       iconPathIdle = options.iconPathIdle ? options.iconPathIdle : iconPathIdle;
-      iconPathPlaying = options.iconPathPlaying
-        ? options.iconPathPlaying
-        : iconPathPlaying;
+      iconPathPlaying = options.iconPathPlaying ? options.iconPathPlaying : iconPathPlaying;
+
+      // ✅ preload ảnh icon để tránh lag
+      preloadIdleIcon();
+
       // use provided min/max zoom if given
       minZoom = typeof options.minZoom === "number" ? options.minZoom : minZoom;
       maxZoom = typeof options.maxZoom === "number" ? options.maxZoom : maxZoom;
