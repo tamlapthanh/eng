@@ -677,7 +677,7 @@
             cancelPendingDraw();
             cancelActiveDrawing();
             stage.draggable(false);
-            changeLockIcon(true);
+            // changeLockIcon(true);
 
             // báo cho app rằng zoom/pinch bắt đầu (kêu app.toggleLockIcon(true))
             notifyToggleLock(true);
@@ -896,22 +896,12 @@
           container.releasePointerCapture(evt.pointerId);
         } catch (e) {}
 
-        // 👉 thêm dòng này để nhớ trạng thái pinch trước khi thay đổi
-        const prevPinching = pinchState.isPinching;
-
         activePointers.delete(evt.pointerId);
         if (activePointers.size < 2 && pinchState.isPinching) {
           pinchState.isPinching = false;
           pinchState.startDist = 0;
         }
         cancelPendingDraw();
-
-        // nếu trước đó đang pinch và bây giờ hết pointer -> báo unlock
-        if (prevPinching && !pinchState.isPinching) {
-          // restore draggable hoặc gọi unlock ở app
-          notifyToggleLock(false);
-          changeLockIcon(false); // bạn vẫn giữ thay đổi icon local nếu muốn
-        }        
 
         // cancel swipe if short
         if (swipeState.active) {
