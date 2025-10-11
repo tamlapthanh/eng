@@ -3,53 +3,7 @@
 // Must be loaded after common.js, audioService.js, canvas.js, konva, jquery, bootstrap, etc.
 
 $(document).ready(function () {
-  // basic app config mirrored from your original index.js
-  const ASSETS_URL ="https://tamlapthanh.github.io/store_images/";
-  const PATH_ROOT = "assets/books/27/";
-  let APP_DATA = null;
-
-  let DATA_TYPE = "student37";
-  let CURRENT_PAGE_INDEX = 1;
-  let MAX_PAGE_NUM = 107;
-  let MIN_PAGE_NUM = 1;
-
-  [DATA_TYPE, CURRENT_PAGE_INDEX, MAX_PAGE_NUM, MIN_PAGE_NUM] =
-    createRadioButtons(0); // from common.js
-
-  const RUN_URL_SERVER = "https://zizi-app.onrender.com/";
-  const RUN_URL_LOCAL = "http://localhost:8080/";
-  const API_METHOD = "api/sheets/line_by_key";
-  const API_ALL_METHOD = "api/sheets/line_all";
-
-  const global_const = {
-    get PATH_ASSETS_IMG() {
-      return PATH_ROOT + DATA_TYPE + "/img/";
-    },
-    get PATH_IMG() {
-      return PATH_ROOT + DATA_TYPE + "/img/";
-    },
-    get PATH_SOUND() {
-      return PATH_ROOT + DATA_TYPE + "/sound/";
-    },
-    get PATH_VIDEO() {
-      return ASSETS_URL + PATH_ROOT + DATA_TYPE + "/video/";
-    },    
-    get PATH_JSON() {
-      return PATH_ROOT + DATA_TYPE + "/data/X.json";
-    },
-    get SERVER_API_ALL_METHOD() {
-      const hostname = window.location.hostname;
-      return hostname === "localhost" || hostname === "127.0.0.1"
-        ? RUN_URL_LOCAL + API_ALL_METHOD
-        : RUN_URL_SERVER + API_ALL_METHOD;
-    },
-    get SERVER_URL() {
-      const hostname = window.location.hostname;
-      return hostname === "localhost" || hostname === "127.0.0.1"
-        ? RUN_URL_LOCAL + API_METHOD
-        : RUN_URL_SERVER + API_METHOD;
-    },
-  };
+  
 
   // UI inputs references
   const iconSoundUrlInput = $("#icon-sound-url");
@@ -94,12 +48,13 @@ $(document).ready(function () {
     // app-level reset (keeps same behaviour)
     const imageList = CanvasManager.getState().iconLayer.find("Image");
     imageList.forEach(function (icon) {
+      const srcIcon = getAssetPath(icon.getAttr('sound'));
       const newImage = new Image();
       newImage.onload = function () {
         icon.image(newImage);
         CanvasManager.getState().iconLayer.batchDraw();
       };
-      newImage.src = ICON_AUDIO; // "assets/play_icon.png";
+      newImage.src = srcIcon; // "assets/play_icon.png";
     });
   }
 
@@ -112,11 +67,7 @@ $(document).ready(function () {
     newImage.src = newUrl;
   }
 
-  function getSoundStartEnd(fileName) {
-    if (!fileName) return [];
-    const arr = fileName.split("/");
-    return arr;
-  }
+
 
   // ---- non-canvas UI handlers ----
 

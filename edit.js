@@ -210,7 +210,7 @@ $(document).ready(function () {
         // Kiểm tra tất cả icon trong playIcons và thay đổi hình ảnh nếu sound rỗng
         playIcons.forEach((icon, index) => {
             const sound = icon.getAttr('sound') || '';
-            const imageUrl = (!sound || sound.trim() === '') ? 'assets/music_icon.svg' : 'assets/play_icon.png';
+            const imageUrl = (!sound || sound.trim() === '') ? ICON_PLAYING : ICON_AUDIO;
 
             // Nếu cần thay đổi icon
             if (imageUrl !== icon.image().src) {

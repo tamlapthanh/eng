@@ -3,6 +3,53 @@
     let ICON_AUDIO         = "assets/audio_icon.png";
     let ICON_PLAYING       = "assets/playing_icon.svg";
 
+    // basic app config mirrored from your original index.js
+  const ASSETS_URL ="https://tamlapthanh.github.io/store_images/";
+  const PATH_ROOT = "assets/books/27/";
+  let APP_DATA = null;
+
+  let DATA_TYPE = "student37";
+  let CURRENT_PAGE_INDEX = 1;
+  let MAX_PAGE_NUM = 107;
+  let MIN_PAGE_NUM = 1;
+
+  [DATA_TYPE, CURRENT_PAGE_INDEX, MAX_PAGE_NUM, MIN_PAGE_NUM] = createRadioButtons(0); // from common.js
+
+  const RUN_URL_SERVER = "https://zizi-app.onrender.com/";
+  const RUN_URL_LOCAL = "http://localhost:8080/";
+  const API_METHOD = "api/sheets/line_by_key";
+  const API_ALL_METHOD = "api/sheets/line_all";
+
+  const global_const = {
+    get PATH_ASSETS_IMG() {
+      return PATH_ROOT + DATA_TYPE + "/img/";
+    },
+    get PATH_IMG() {
+      return PATH_ROOT + DATA_TYPE + "/img/";
+    },
+    get PATH_SOUND() {
+      return PATH_ROOT + DATA_TYPE + "/sound/";
+    },
+    get PATH_VIDEO() {
+      return ASSETS_URL + PATH_ROOT + DATA_TYPE + "/video/";
+    },    
+    get PATH_JSON() {
+      return PATH_ROOT + DATA_TYPE + "/data/X.json";
+    },
+    get SERVER_API_ALL_METHOD() {
+      const hostname = window.location.hostname;
+      return hostname === "localhost" || hostname === "127.0.0.1"
+        ? RUN_URL_LOCAL + API_ALL_METHOD
+        : RUN_URL_SERVER + API_ALL_METHOD;
+    },
+    get SERVER_URL() {
+      const hostname = window.location.hostname;
+      return hostname === "localhost" || hostname === "127.0.0.1"
+        ? RUN_URL_LOCAL + API_METHOD
+        : RUN_URL_SERVER + API_METHOD;
+    },
+  };
+
 
     function createRadioButtons(defaultIndex  = 0) {
         const options = [
@@ -139,7 +186,7 @@
         const userAgent = navigator.userAgent.toLowerCase();
 
         if (width < 768 || /mobile|android|iphone|ipod|blackberry|iemobile|opera mini/i.test(userAgent)) {
-            icon_size = 11;
+            icon_size = 15;
         } else if ((width >= 768 && width <= 1024) || /tablet|ipad|playbook|silk/i.test(userAgent)) {
             icon_size = ICON_SIZE;
         } else {
@@ -164,6 +211,29 @@
     if (overlay) overlay.style.display = "none";
   }
 
+  function getSoundStartEnd(fileName) {
+    if (!fileName) return [];
+    const arr = fileName.split("/");
+    return arr;
+  }
+
+  function getAssetPath(soundFileName) {
+    try {
+      const parts = getSoundStartEnd(soundFileName);
+
+      const fileName = parts[0];
+      // ✅ Xác định xem có phải video không
+      const isVideo =
+        fileName.endsWith(".mp4") ||
+        fileName.endsWith(".mov") ||
+        fileName.endsWith(".mkv") ||
+        fileName.endsWith(".webm");
+
+      return isVideo ? ICON_VIDEO : ICON_AUDIO;
+    } catch (error) {}
+
+      return ICON_AUDIO;
+  }
   
 
 

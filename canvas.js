@@ -279,7 +279,9 @@
           ? cfg.getIconSize(ICON_SIZE)
           : ICON_SIZE;
 
-      Konva.Image.fromURL(iconPathIdle, function (icon) {
+      var iconPathFile = getAssetPath(sound) ;// iconPathIdle;
+
+      Konva.Image.fromURL(iconPathFile, function (icon) {
         icon.setAttrs({
           x: typeof x === "number" ? x : Math.random() * (stage.width() - 50),
           y: typeof y === "number" ? y : Math.random() * (stage.height() - 50),
@@ -379,7 +381,7 @@ function resetIcons() {
 
     // --- chỉnh sửa loadAssetJson: không clear layer ngay lập tức ---
     function loadAssetJson(page, url) {
-      // showSpinner();
+      showSpinner();
       fetch(url)
         .then(res => { if(!res.ok) throw new Error(res.statusText); return res.json(); })
         .then((data) => {
@@ -387,11 +389,11 @@ function resetIcons() {
           loadJsonBackgroundAndIcons(page, data);
         })
         .catch((err) => {
-          // hideSpinner();
           console.error("Error loading JSON:", err);
           if (typeof cfg.showToast === "function")
             cfg.showToast("Error loading JSON", "danger");
-        });
+        })
+        .finally(() => hideSpinner());
     }
 
     // --- load và swap an toàn (với fade-in) ---
