@@ -603,8 +603,6 @@ $(document).ready(function () {
   let backgroundImage = null;
   let playIcons = [];
   let currentIcon = null;
-  let iconPath_1 = "assets/play_icon.png";
-  let iconPath_2 = "assets/music_icon.svg";
 
   function resetIcons() {
     const imageList = iconLayer.find("Image");
@@ -615,7 +613,7 @@ $(document).ready(function () {
           icon.image(newImage);
           iconLayer.batchDraw();
         };
-        newImage.src = iconPath_1;
+        newImage.src = ICON_AUDIO;
       }
     });
   }
@@ -638,7 +636,7 @@ $(document).ready(function () {
   function addPlayIcon(x, y, sound) {
     if (sound && "x" == sound.trim()) return;
     const icon_size = getIconSize(ICON_SIZE);
-    Konva.Image.fromURL(iconPath_1, function (icon) {
+    Konva.Image.fromURL(ICON_AUDIO, function (icon) {
       icon.setAttrs({
         x: x || Math.random() * (stage.width() - 50),
         y: y || Math.random() * (stage.height() - 50),
@@ -1238,8 +1236,8 @@ $(document).ready(function () {
 
   // init audio service
   AudioService.init({
-    iconPathPlaying: iconPath_2,
-    iconPathIdle: iconPath_1,
+    iconPathPlaying: ICON_PLAYING,
+    iconPathIdle: ICON_AUDIO,
     resetIcons: resetIcons,
     changeImageUrl: changeImageUrl,
     getSoundStartEnd: getSoundStartEnd,

@@ -1,3 +1,9 @@
+
+    let ICON_VIDEO         = "assets/video_icon.png";
+    let ICON_AUDIO         = "assets/audio_icon.png";
+    let ICON_PLAYING       = "assets/playing_icon.svg";
+
+
     function createRadioButtons(defaultIndex  = 0) {
         const options = [
             { id: 'radio_student_37_book', data_type: 'student37', label: 'Student book 37',  max: 107, min: 1, current: 2 }, // 0
@@ -157,5 +163,7 @@
     const overlay = document.getElementById("spinnerOverlay");
     if (overlay) overlay.style.display = "none";
   }
+
+  
 
 

@@ -11,8 +11,8 @@
   
     // config
     const cfg = {
-      iconPathPlaying: 'assets/music_icon.svg',
-      iconPathIdle: 'assets/play_icon.png',
+      iconPathPlaying: ICON_PLAYING, //'assets/music_icon.svg'
+      iconPathIdle: ICON_AUDIO, // 'assets/audio_play_icon.png'
       resetIcons: null,
       changeImageUrl: null,
       getSoundStartEnd: null,
@@ -352,16 +352,26 @@
     function init(options = {}) {
       cfg.iconPathPlaying = options.iconPathPlaying || cfg.iconPathPlaying;
       cfg.iconPathIdle = options.iconPathIdle || cfg.iconPathIdle;
-      cfg.resetIcons = typeof options.resetIcons === 'function' ? options.resetIcons : null;
-      cfg.changeImageUrl = typeof options.changeImageUrl === 'function' ? options.changeImageUrl : null;
-      cfg.getSoundStartEnd = typeof options.getSoundStartEnd === 'function' ? options.getSoundStartEnd : null;
+      cfg.resetIcons =
+        typeof options.resetIcons === "function" ? options.resetIcons : null;
+      cfg.changeImageUrl =
+        typeof options.changeImageUrl === "function"
+          ? options.changeImageUrl
+          : null;
+      cfg.getSoundStartEnd =
+        typeof options.getSoundStartEnd === "function"
+          ? options.getSoundStartEnd
+          : null;
       cfg.global_const = options.global_const || null;
-      if (typeof options.autoShowPanel !== 'undefined') cfg.autoShowPanel = !!options.autoShowPanel;
-      if (typeof options.defaultPlaybackRate !== 'undefined') cfg.defaultPlaybackRate = parseFloat(options.defaultPlaybackRate) || 1;
+      if (typeof options.autoShowPanel !== "undefined")
+        cfg.autoShowPanel = !!options.autoShowPanel;
+      if (typeof options.defaultPlaybackRate !== "undefined")
+        cfg.defaultPlaybackRate = parseFloat(options.defaultPlaybackRate) || 1;
 
       // <-- add this line:
-      cfg.onClose = typeof options.onClose === 'function' ? options.onClose : null;
-  
+      cfg.onClose =
+        typeof options.onClose === "function" ? options.onClose : null;
+
       ensurePanel();
       setupPanelEvents();
 
@@ -369,7 +379,9 @@
       const e = panelEls();
       if (e && e.speed) {
         e.speed.value = (cfg.defaultPlaybackRate || 1).toString();
-        if (e.speedLabel) e.speedLabel.textContent = (cfg.defaultPlaybackRate || 1).toFixed(2) + 'x';
+        if (e.speedLabel)
+          e.speedLabel.textContent =
+            (cfg.defaultPlaybackRate || 1).toFixed(2) + "x";
       }
 
       // ensure loop UI reflects default
@@ -377,59 +389,88 @@
     }
 
     // Public: play one media (audio or video)
+    // Public: play one media (audio or video)
     function playSound(soundFileName, iconNode) {
-      if (typeof cfg.resetIcons === 'function') cfg.resetIcons();
+      if (typeof cfg.resetIcons === "function") cfg.resetIcons();
 
-      if (!soundFileName || soundFileName.trim() === 'x') return;
+      if (!soundFileName || soundFileName.trim() === "x") return;
 
-      const parts = (typeof cfg.getSoundStartEnd === 'function')
-        ? cfg.getSoundStartEnd(soundFileName)
-        : (function (s) { return s.split('/'); })(soundFileName);
+      const parts =
+        typeof cfg.getSoundStartEnd === "function"
+          ? cfg.getSoundStartEnd(soundFileName)
+          : (function (s) {
+              return s.split("/");
+            })(soundFileName);
 
       const fileName = parts[0];
-      const start = (parts.length > 1) ? parseFloat(parts[1]) : null;
-      const end = (parts.length > 2) ? parseFloat(parts[2]) : null;
+      const start = parts.length > 1 ? parseFloat(parts[1]) : null;
+      const end = parts.length > 2 ? parseFloat(parts[2]) : null;
 
-      const pathPrefix = (cfg.global_const && cfg.global_const.PATH_SOUND) ? cfg.global_const.PATH_SOUND : '';
-      const url = pathPrefix + fileName + (fileName.endsWith('.mp3') || fileName.endsWith('.mp4') ? '' : '.mp3');
+      // ✅ Xác định xem có phải video không
+      const isVideo =
+        fileName.endsWith(".mp4") ||
+        fileName.endsWith(".mov") ||
+        fileName.endsWith(".mkv") ||
+        fileName.endsWith(".webm");
+
+      // ✅ Chọn đúng đường dẫn theo loại file
+      const basePath = cfg.global_const
+        ? isVideo
+          ? cfg.global_const.PATH_VIDEO
+          : cfg.global_const.PATH_SOUND
+        : "";
+
+      // ✅ Nếu không có đuôi file → luôn mặc định thêm .mp3
+      let url = basePath + fileName;
+      if (!/\.(mp3|mp4|mov|mkv|webm)$/i.test(fileName)) {
+        url += ".mp3";
+      }
 
       stopAudio();
 
       currentIcon = iconNode;
 
-      // create media element (video if mp4)
+      // tạo media element (video nếu là mp4,…)
       createMediaElement(url);
 
-      // show panel if allowed
-      if (cfg.autoShowPanel) showPanel(cfg.iconPathPlaying, fileName);
-      else if (typeof cfg.changeImageUrl === 'function') cfg.changeImageUrl(cfg.iconPathPlaying, iconNode);
+      // hiển thị panel nếu bật auto
+      if (cfg.autoShowPanel) {
+        showPanel(cfg.iconPathPlaying, fileName);
+      } else if (typeof cfg.changeImageUrl === "function") {
+        cfg.changeImageUrl(cfg.iconPathPlaying, iconNode);
+      }
 
-      // set start time if provided (some browsers may not allow until metadata loaded)
+      // đặt thời điểm bắt đầu nếu có
       if (start && mediaEl) {
-        try { mediaEl.currentTime = start; } catch (e) {
-          // ignore, will set later when metadata loaded
+        try {
+          mediaEl.currentTime = start;
+        } catch (e) {
+          // ignore, set sau khi metadata load
         }
       }
 
       attachMediaUI(iconNode, start, end);
 
       const e = panelEls();
-      const icon = e.playpauseBtn && e.playpauseBtn.querySelector('i');
-      if (icon) icon.className = 'bi bi-pause-fill';
+      const icon = e.playpauseBtn && e.playpauseBtn.querySelector("i");
+      if (icon) icon.className = "bi bi-pause-fill";
 
-      // ensure play attempt after metadata if needed
-      mediaEl.play().catch(err => {
+      // đảm bảo play sau khi metadata load
+      mediaEl.play().catch((err) => {
         if (mediaEl && !mediaEl._loadedHandlerAttached) {
           mediaEl._loadedHandlerAttached = true;
           const onMeta = function () {
-            try { mediaEl.play().catch(() => { }); } catch (e) { }
-            mediaEl.removeEventListener('loadedmetadata', onMeta);
+            try {
+              mediaEl.play().catch(() => {});
+            } catch (e) {}
+            mediaEl.removeEventListener("loadedmetadata", onMeta);
             mediaEl._loadedHandlerAttached = false;
           };
-          mediaEl.addEventListener('loadedmetadata', onMeta);
+          mediaEl.addEventListener("loadedmetadata", onMeta);
         }
       });
     }
+
     
 
     // Public API additions for playback rate

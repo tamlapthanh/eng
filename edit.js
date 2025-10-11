@@ -152,8 +152,8 @@ $(document).ready(function () {
     }
 
     function addPlayIcon(x, y, sound) {
-        icon_size = getIconSize(18);;
-        Konva.Image.fromURL('assets/play_icon.png', function (icon) {
+        icon_size = getIconSize(19);
+        Konva.Image.fromURL(ICON_AUDIO, function (icon) {
             icon.setAttrs({
                 x: x || (stage.width() - 150),
                 y: y || Math.random() * (stage.height() - 50),
@@ -450,10 +450,8 @@ function setIconImage(icon, url) {
 // call this to change selection
 function setSelectedIcon(icon) {
 
-
-
-    let iconPathIdle = 'assets/play_icon.png';
-    let iconPathPlaying = 'assets/music_icon.svg';
+    let iconPathIdle = ICON_AUDIO; // 'assets/play_icon.png';
+    let iconPathPlaying = ICON_PLAYING;// 'assets/music_icon.svg';
 
   // If same icon clicked -> toggle selection (optional)
   if (currentIcon === icon) {
@@ -577,7 +575,7 @@ function setSelectedIcon(icon) {
             iconSoundUrlInput.val('');
             currentIcon = null;
 
-            //$('#settingsModal').modal('hide');
+            $('#settingsModal').modal('hide');
         }
     });
 

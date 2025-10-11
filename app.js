@@ -4,6 +4,7 @@
 
 $(document).ready(function () {
   // basic app config mirrored from your original index.js
+  const ASSETS_URL ="https://tamlapthanh.github.io/store_images/";
   const PATH_ROOT = "assets/books/27/";
   let APP_DATA = null;
 
@@ -30,6 +31,9 @@ $(document).ready(function () {
     get PATH_SOUND() {
       return PATH_ROOT + DATA_TYPE + "/sound/";
     },
+    get PATH_VIDEO() {
+      return ASSETS_URL + PATH_ROOT + DATA_TYPE + "/video/";
+    },    
     get PATH_JSON() {
       return PATH_ROOT + DATA_TYPE + "/data/X.json";
     },
@@ -81,8 +85,8 @@ $(document).ready(function () {
       processNextPrePage(isNext);
     },
     isNotMobile: isNotMobile,
-    iconPathIdle: "assets/play_icon.png",
-    iconPathPlaying: "assets/music_icon.svg",
+    iconPathIdle: ICON_AUDIO,
+    iconPathPlaying: ICON_PLAYING,
   });
 
   // --- helper wrappers used by CanvasManager ---
@@ -95,7 +99,7 @@ $(document).ready(function () {
         icon.image(newImage);
         CanvasManager.getState().iconLayer.batchDraw();
       };
-      newImage.src = "assets/play_icon.png";
+      newImage.src = ICON_AUDIO; // "assets/play_icon.png";
     });
   }
 
@@ -395,8 +399,8 @@ $(document).ready(function () {
 
   // init AudioService
   AudioService.init({
-    iconPathPlaying: "assets/music_icon.svg",
-    iconPathIdle: "assets/play_icon.png",
+    iconPathPlaying: ICON_PLAYING, // "assets/music_icon.svg"
+    iconPathIdle: ICON_AUDIO, // "assets/play_icon.png"
     resetIcons: resetIcons,
     changeImageUrl: changeImageUrl,
     getSoundStartEnd: getSoundStartEnd,

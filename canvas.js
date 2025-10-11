@@ -27,8 +27,8 @@
     let playIcons = [];
     let currentIcon = null;
     let ICON_SIZE = 18;
-    let iconPathIdle = "assets/play_icon.png";
-    let iconPathPlaying = "assets/music_icon.svg";
+    let iconPathIdle = ICON_AUDIO; // "assets/play_icon.png";
+    let iconPathPlaying = ICON_PLAYING; //"assets/music_icon.svg";
 
     // 🔹 Cache ảnh idle để tránh tạo nhiều lần
     let _idleImageCache = null;
@@ -269,23 +269,6 @@
       }
       return ret;
     }
-
-    // function changeLockIcon(isLock = true) {
-    //   // Khi bắt đầu pinch → đổi icon lock sang trạng thái khóa
-    //   const lockBtn = document.getElementById("lock");
-    //   const lockIcon = document.getElementById("lock-icon");
-    //   if (lockBtn && lockIcon) {
-    //     if (isLock) {
-    //       lockBtn.classList.remove("btn-warning");
-    //       lockBtn.classList.add("btn-success");
-    //       lockIcon.className = "bi bi-lock-fill";
-    //     } else {
-    //       lockBtn.classList.remove("btn-success");
-    //       lockBtn.classList.add("btn-warning");
-    //       lockIcon.className = "bi bi-unlock-fill";
-    //     }
-    //   }
-    // }
 
     // add play icon (Konva image node)
     function addPlayIcon(x, y, sound) {
