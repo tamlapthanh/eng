@@ -515,15 +515,20 @@ function resetIcons() {
 
       let x = 0,
         y = 0;
-      if (
-        typeof cfg.isNotMobile === "function"
-          ? cfg.isNotMobile()
-          : window.innerWidth >= 768
-      ) {
-        // keep horizontal center, align top
-        x = (stageWidth - newWidth) / 2;
-        y = 0;
-      }
+      // if (
+      //   typeof cfg.isNotMobile === "function"
+      //     ? cfg.isNotMobile()
+      //     : window.innerWidth >= 768
+      // ) {
+      //   // keep horizontal center, center vertically as well for large screens
+      //   x = (stageWidth - newWidth) / 2;
+      //   y = (stageHeight - newHeight) / 2; // <-- center vertically
+        
+      // }
+
+      x = (stageWidth - newWidth) / 2;
+      y = 0;
+      // y = (stageHeight - newHeight) / 2; // <-- center vertically
 
       konvaImageNode.width(newWidth);
       konvaImageNode.height(newHeight);
@@ -541,8 +546,8 @@ function resetIcons() {
     function fitStageIntoParentContainer() {
       stage.width(window.innerWidth);
       stage.height(window.innerHeight);
-      stage.batchDraw();
       resetZoom();
+      stage.batchDraw();     
     }
 
     // Build stage + layers + pointer handlers
@@ -957,7 +962,7 @@ function resetIcons() {
       cfg.AudioService && cfg.AudioService.stopAudio();
       clearCanvas();
       loadAssetJson(page, jsonUrl);
-      fitStageIntoParentContainer();
+      fitStageIntoParentContainer();    
       stage.draggable(false);
     }
 
