@@ -359,10 +359,10 @@ $(document).ready(function () {
     autoShowPanel: true,
     onClose: () => {
       console.log("Closed panel!");
-      $("#id_ShowPanel")
-        .toggleClass("btn-dark", true)
-        .toggleClass("btn-success", false);
-      window.AudioService.setAutoShowPanel(false);
+      // $("#id_ShowPanel")
+      //   .toggleClass("btn-dark", true)
+      //   .toggleClass("btn-success", false);
+      // window.AudioService.setAutoShowPanel(false);
     }
   });
 });

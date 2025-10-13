@@ -233,7 +233,31 @@
         e.speed.value = (cfg.defaultPlaybackRate || 1).toString();
         e.speedLabel.textContent = (cfg.defaultPlaybackRate || 1).toFixed(2) + 'x';
       }
+
+        // ✅ Ẩn panel khi click hoặc touch ra ngoài
+  document.addEventListener("mousedown", function (ev) {
+    const panel = e.panel;
+    if (!panel || panel.style.display === "none") return;
+    if (!panel.contains(ev.target)) {
+      hidePanel();
+      if (typeof cfg.onClose === "function") cfg.onClose();
     }
+  });
+
+  document.addEventListener("touchstart", function (ev) {
+    const panel = e.panel;
+    if (!panel || panel.style.display === "none") return;
+    if (!panel.contains(ev.target)) {
+      hidePanel();
+      if (typeof cfg.onClose === "function") cfg.onClose();
+    }
+  });
+  
+    }
+
+
+
+
 
     // attach handlers to current mediaEl
     function attachMediaUI(iconNode, start, end) {
