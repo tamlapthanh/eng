@@ -433,11 +433,11 @@
       // tạo media element (video nếu là mp4,…)
       createMediaElement(url);
 
+      cfg.changeImageUrl(cfg.iconPathPlaying, iconNode);
+
       // hiển thị panel nếu bật auto
       if (cfg.autoShowPanel) {
         showPanel(cfg.iconPathPlaying, fileName);
-      } else if (typeof cfg.changeImageUrl === "function") {
-        cfg.changeImageUrl(cfg.iconPathPlaying, iconNode);
       }
 
       // đặt thời điểm bắt đầu nếu có

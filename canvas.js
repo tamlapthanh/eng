@@ -575,6 +575,8 @@ function resetIcons() {
       });
     }
 
+    
+
     // pointer handlers: handle pointerdown/move/up with pinch detection, swipe, drawing (see earlier conversation)
     function setupPointerHandlers() {
       const container = stage.container();
