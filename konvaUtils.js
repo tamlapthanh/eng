@@ -64,10 +64,13 @@ function generateTextNode(t, idx, backgroundImage, isDraggable) {
 
     const x = bgX + (Number(t.xNorm) || 0) * bgW;
     let y = bgY + (Number(t.yNorm) || 0) * bgH;
-    if (isMobile()) y -= 10;
+    if (isMobile()) {
+      y -= 2;
+      t.fontSize = 14;
+    }
 
     const w = (Number(t.widthNorm) || 0) * bgW;
-    const fontSize = Number(t.fontSize) || 16;
+    const fontSize = Number(t.fontSize) || 15; 
 
     const textNode = new Konva.Text({
       x: Math.round(x),
@@ -94,7 +97,14 @@ function generateTextNode(t, idx, backgroundImage, isDraggable) {
       delete safeAttrs.height;
       delete safeAttrs.id;
       delete safeAttrs.rotation;
-      textNode.setAttrs(safeAttrs);
+
+        // IMPORTANT: prevent overriding of fontSize / scale
+  // delete safeAttrs.fontSize;
+  // delete safeAttrs.scaleX;
+  // delete safeAttrs.scaleY;
+  delete safeAttrs.fontSize; // bảo mật kép
+  textNode.setAttrs(safeAttrs);
+
     }
 
     iconLayer.add(textNode);
