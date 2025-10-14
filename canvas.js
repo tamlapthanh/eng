@@ -395,13 +395,13 @@ function resetIcons() {
     // --- load và swap an toàn (với fade-in) ---
     function loadJsonBackgroundAndIcons(page, data) {
       if (!data || !data.background) {
-        // hideSpinner();
+        hideSpinner();
         return;
       }
 
       const imageObj = new Image();
       const oldBackground = backgroundImage; // giữ ref ảnh cũ (có thể null)
-      // showSpinner("#F54927");
+       showSpinner("#F54927");
 
       imageObj.onload = function () {
         try {
@@ -471,7 +471,7 @@ function resetIcons() {
             if (typeof cfg.onLoadLines === "function") cfg.onLoadLines(page);
           };
         } finally {
-          // hideSpinner();
+          hideSpinner();
           // không reset toàn bộ stage ở đây — chỉ cập nhật view nếu cần
           // nếu bạn muốn reset zoom mỗi lần load trang mới, gọi resetZoom() từ caller thay vì tự động ở đây.
         }
@@ -996,16 +996,14 @@ function clearAllTextsInLayer() {
   iconLayer.batchDraw();
 }
 
-function clearAllTextNodesAndTransformers() {
-  const allNodes = iconLayer.find(node => {
-    return node.getClassName && (
-      node.getClassName() === 'Text' || 
-      node.getClassName() === 'Transformer'
-    );
-  });
-  allNodes.forEach(n => n.destroy());
-  iconLayer.batchDraw();
-}    
+    function clearAllTextNodesAndTransformers() {
+      const allNodes = iconLayer.find(node =>
+        ['Text', 'Transformer'].includes(node.getClassName())
+      );
+
+      allNodes.forEach(n => n.destroy());
+      iconLayer.batchDraw(); // redraw sau khi xóa
+    }
 
     // Load background+icons from URL; caller should pass url and page
     function loadPage(page, jsonUrl) {
