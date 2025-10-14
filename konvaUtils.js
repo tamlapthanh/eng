@@ -121,7 +121,8 @@ function generateTextNode(t, idx, backgroundImage, isDraggable) {
       },
       anchorFill: "#fff",
       anchorStroke: "#444",
-      anchorSize: 8,
+      anchorSize: 5,
+      borderStrokeWidth: 0.5,
     });
 
     textNode.on("transform", function () {

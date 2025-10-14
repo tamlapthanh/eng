@@ -38,13 +38,13 @@
     },
     get SERVER_API_ALL_METHOD() {
       const hostname = window.location.hostname;
-      return hostname === "localhost" || hostname === "127.0.0.1"
+      return hostname === "localhost" || hostname === "xx127.0.0.1"
         ? RUN_URL_LOCAL + API_ALL_METHOD
         : RUN_URL_SERVER + API_ALL_METHOD;
     },
     get SERVER_URL() {
       const hostname = window.location.hostname;
-      return hostname === "localhost" || hostname === "127.0.0.1"
+      return hostname === "localhost" || hostname === "xx127.0.0.1"
         ? RUN_URL_LOCAL + API_METHOD
         : RUN_URL_SERVER + API_METHOD;
     },
