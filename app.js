@@ -71,6 +71,10 @@ $(document).ready(function () {
 
   // ---- non-canvas UI handlers ----
 
+  $("#add-text-btn").on("click", function () {
+    CanvasManager.addText();
+  });
+
   // Zoom & draw & lock buttons (some are still in CanvasManager but UI toggles here)
   $("#draw").on("click", function () {
     CanvasManager.toggleDrawing();
@@ -294,9 +298,14 @@ $(document).ready(function () {
           } catch (e) {
             parsed = null;
           }
-          const linesArr =
-            parsed && Array.isArray(parsed.lines) ? parsed.lines : [];
+          const linesArr = parsed && Array.isArray(parsed.lines) ? parsed.lines : [];
+
           CanvasManager.loadLinesByDraw(page, linesArr);
+
+          const textArr = parsed && Array.isArray(parsed.texts) ? parsed.texts : [];
+
+          CanvasManager.loadTextsFromExport(textArr);
+
         })
         .catch((err) => console.error("Fetch error", err));
     } else {
@@ -307,9 +316,11 @@ $(document).ready(function () {
       } catch (e) {
         parsed = null;
       }
-      const linesArr =
-        parsed && Array.isArray(parsed.lines) ? parsed.lines : [];
+      const linesArr = parsed && Array.isArray(parsed.lines) ? parsed.lines : [];
       CanvasManager.loadLinesByDraw(page, linesArr);
+
+      const textArr = parsed && Array.isArray(parsed.texts) ? parsed.texts : [];
+      CanvasManager.loadTextsFromExport(textArr);      
     }
   }
 

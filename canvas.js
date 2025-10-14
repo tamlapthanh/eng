@@ -4,17 +4,13 @@
 
 (function (global) {
   const CanvasManager = (function () {
+
     let line_color = " #ff6347"; // Tomato
     let line_stroke_width = 3;
     // const selected_color = "black";
     let is_auto_ShowPanel = true;
 
-    // internal vars (kept private inside module)
-    let stage = null;
-    let backgroundLayer = null;
-    let iconLayer = null;
-    let drawingLayer = null;
-    let backgroundImage = null;
+
 
     // drawing state
     let isDrawingMode = false;
@@ -552,6 +548,7 @@ function resetIcons() {
 
     // Build stage + layers + pointer handlers
     function createStage(containerId, stageCfg) {
+      Konva._fixTextRendering = true;
       stage = new Konva.Stage(
         Object.assign({ container: containerId }, stageCfg || {})
       );
@@ -561,6 +558,8 @@ function resetIcons() {
       stage.add(backgroundLayer);
       stage.add(iconLayer);
       stage.add(drawingLayer);
+
+
       // ensure container touch-action none recommended in CSS: #canvas { touch-action: none; }
       setupPointerHandlers();
       let _resizeTimer = null;
@@ -575,7 +574,7 @@ function resetIcons() {
       });
     }
 
-    
+   
 
     // pointer handlers: handle pointerdown/move/up with pinch detection, swipe, drawing (see earlier conversation)
     function setupPointerHandlers() {
@@ -611,20 +610,44 @@ function resetIcons() {
           if (evt.pointerType === "touch") evt.preventDefault();
 
           // double-tap detection (touch)
+          // double-tap detection (touch) — REPLACEMENT BLOCK
           if (evt.pointerType === "touch") {
             const now = Date.now();
             const dx = evt.clientX - lastTapPos.x;
             const dy = evt.clientY - lastTapPos.y;
             const dist = Math.hypot(dx, dy);
+
+            // compute hit: nếu double-tap trên Text -> ignore zoom (để text nhận dbltap)
+            let hitForTap = null;
+            try {
+              const stagePtForHit = clientToStage(evt.clientX, evt.clientY);
+              hitForTap = stage.getIntersection(stagePtForHit);
+            } catch (err) {
+              hitForTap = null;
+            }
+
             if (
               now - lastTapTime <= DOUBLE_TAP_THRESHOLD &&
               dist <= DOUBLE_TAP_DISTANCE
             ) {
-              // double tap -> zoom in around point
+              // detected a double-tap
               lastTapTime = 0;
               lastTapPos = { x: 0, y: 0 };
               cancelPendingDraw();
               cancelActiveDrawing();
+
+              // nếu là Text node thì KHÔNG zoom — để Text xử lý dbltap
+              if (
+                hitForTap &&
+                (hitForTap.className === "Text" ||
+                  (hitForTap.getAttr && hitForTap.getAttr("isEditable")))
+              ) {
+                // stop further double-tap handling here
+                pinchState.isPinching = false;
+                return;
+              }
+
+              // normal double-tap zoom (when not on Text)
               const oldScale = stage.scaleX();
               const newScale = Math.min(maxZoom, oldScale + zoomStep);
               zoomLevel = newScale;
@@ -646,6 +669,8 @@ function resetIcons() {
               pinchState.isPinching = false;
               return;
             }
+
+            // not a double-tap yet — store last tap info
             lastTapTime = now;
             lastTapPos = { x: evt.clientX, y: evt.clientY };
           }
@@ -755,23 +780,28 @@ function resetIcons() {
       );
 
       // ----------------- register mouse dblclick on container -----------------
-      // Some browsers fire native dblclick reliably on desktop — listen on container
-      container.addEventListener(
-        "dblclick",
-        function (ev) {
-          // ignore touch-generated dblclick (we already handle double-tap explicitly)
-          // In most browsers touch dblclick has pointerType not present here, so we guard by checking ev.detail
-          // Only handle desktop-like double-click
-          try {
-            ev.preventDefault();
-          } catch (e) {}
-          zoomAtClient(ev.clientX, ev.clientY, zoomStep);
-        },
-        { passive: false }
-      );
+        // Some browsers fire native dblclick reliably on desktop — listen on container
+      container.addEventListener('dblclick', function (ev) {
+        const rect = stage.container().getBoundingClientRect();
+        const stagePt = { x: ev.clientX - rect.left, y: ev.clientY - rect.top };
+        const hit = stage.getIntersection(stagePt);
+        if (hit && hit.className === 'Text') {
+          // nếu target là Text, không chạy zoom
+          return;
+        }
+        try { ev.preventDefault(); } catch (e) {}
+        zoomAtClient(ev.clientX, ev.clientY, zoomStep);
+      }, { passive: false });
 
       // ----------------- also register Konva dblclick if you prefer -----------------
       stage.on("dblclick", function (e) {
+
+        // nếu người dùng double click lên một Text (hoặc node con của text), đừng xử lý zoom ở đây
+        const target = e && e.target;
+        if (target && (target.className === 'Text' || target.getAttr && target.getAttr('isEditable'))) {
+          // allow text handler to run
+          return;
+        }        
         
         // Konva event e has .evt (native event) — prefer using native client coords if present
         const native = e && e.evt;
@@ -943,8 +973,10 @@ function resetIcons() {
       // expose some convenience globals
       // NOTE: external code can call CanvasManager.addPlayIcon(...) etc.
     }
-
     function clearCanvas() {
+    // Clear text
+    clearAllTextNodesAndTransformers();
+      
       if (cfg.AudioService) cfg.AudioService.stopAudio();
       playIcons.forEach((icon) => icon.destroy());
       playIcons = [];
@@ -956,7 +988,24 @@ function resetIcons() {
       fitStageIntoParentContainer();
       lines = [];
       selectedLine = null;
+
     }
+
+function clearAllTextsInLayer() {
+  iconLayer.destroyChildren(); // xóa toàn bộ node con trong layer
+  iconLayer.batchDraw();
+}
+
+function clearAllTextNodesAndTransformers() {
+  const allNodes = iconLayer.find(node => {
+    return node.getClassName && (
+      node.getClassName() === 'Text' || 
+      node.getClassName() === 'Transformer'
+    );
+  });
+  allNodes.forEach(n => n.destroy());
+  iconLayer.batchDraw();
+}    
 
     // Load background+icons from URL; caller should pass url and page
     function loadPage(page, jsonUrl) {
@@ -967,6 +1016,9 @@ function resetIcons() {
       fitStageIntoParentContainer();    
       stage.draggable(false);
     }
+
+
+
 
     // load lines (normalized display coords) — caller passes APP_DATA map or raw parsed
     function loadLinesByDraw(page, rawLinesArray, tries = 0) {
@@ -1017,12 +1069,15 @@ function resetIcons() {
     // export current drawn lines normalized relative to background display box
     function exportDrawnLines() {
       if (!backgroundImage) return null;
+
       const bgDisplay = {
         x: backgroundImage.x(),
         y: backgroundImage.y(),
         width: backgroundImage.width(),
         height: backgroundImage.height(),
       };
+
+      // export lines (existing logic, unchanged except rounding helper)
       const drawnLines = lines.map((line) => {
         const pts = line.points();
         const norm = [];
@@ -1045,8 +1100,65 @@ function resetIcons() {
         };
       });
 
+      // export Text nodes on iconLayer (if any)
+      const textNodes = [];
+      try {
+        const texts = iconLayer ? iconLayer.find("Text") : [];
+        texts.forEach((tn) => {
+          const absX = tn.x();
+          const absY = tn.y();
+          const w = tn.width();
+          const h = tn.height();
+          const nx = bgDisplay.width
+            ? (absX - bgDisplay.x) / bgDisplay.width
+            : 0;
+          const ny = bgDisplay.height
+            ? (absY - bgDisplay.y) / bgDisplay.height
+            : 0;
+          const nw = bgDisplay.width ? w / bgDisplay.width : 0;
+          const nh = bgDisplay.height ? h / bgDisplay.height : 0;
+
+          // Lấy attrs nhưng lọc ra các trường đã lưu riêng (tránh duplicate)
+          let savedAttrs = {};
+          try {
+            const allAttrs = tn.getAttrs ? tn.getAttrs() : {};
+            // copy selective attrs (or remove keys you don't want)
+            savedAttrs = Object.assign({}, allAttrs);
+            // remove duplicates / positional / dimensional props
+            delete savedAttrs.text;
+            delete savedAttrs.x;
+            delete savedAttrs.y;
+            delete savedAttrs.width;
+            delete savedAttrs.height;
+            delete savedAttrs.id; // nếu bạn không muốn ghi id vào attrs nữa
+          } catch (err) {
+            savedAttrs = null;
+          }
+
+          textNodes.push({
+            text: tn.text(),
+            fontSize: tn.fontSize(),
+            fontFamily: tn.fontFamily ? tn.fontFamily() : undefined,
+            fill: tn.fill ? tn.fill() : undefined,
+            align: tn.align ? tn.align() : undefined,
+            lineHeight: tn.lineHeight ? tn.lineHeight() : undefined,
+            widthNorm: formatNumber(nw),
+            heightNorm: formatNumber(nh),
+            xNorm: formatNumber(nx),
+            yNorm: formatNumber(ny),
+            rotation: tn.rotation ? tn.rotation() : 0,
+            draggable: !!tn.draggable(),
+            id: tn.id() || null,
+            attrs: savedAttrs,
+          });
+        });
+      } catch (err) {
+        console.warn("exportDrawnLines: error enumerating Text nodes", err);
+      }
+
       return {
         lines: drawnLines,
+        texts: textNodes,
         meta: {
           savedAtDisplay: {
             x: bgDisplay.x,
@@ -1058,6 +1170,7 @@ function resetIcons() {
         },
       };
     }
+
 
     // navigation helper (can be used by UI or swipe)
     function processNextPrePage(isNext = true) {
@@ -1126,6 +1239,14 @@ function resetIcons() {
       return true;
     }
 
+    function addText() {
+
+      createText();
+
+
+
+    }
+
     // public API
     return {
       init,
@@ -1135,6 +1256,7 @@ function resetIcons() {
       changeImageUrl,
       getSoundStartEnd,
       loadLinesByDraw,
+      loadTextsFromExport,
       exportDrawnLines,
       clearCanvas,
       deleteSelectedLine,
@@ -1168,6 +1290,7 @@ function resetIcons() {
       resetZoom,
       setZoomAt,
       undoLastLine,
+      addText,
       setLineColor: function (value) {
         line_color = value;
       },
