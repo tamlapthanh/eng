@@ -6,10 +6,15 @@ let drawingLayer = null;
 let backgroundImage = null;
 
 function createText() {
+
+  const bgX = backgroundImage.x();
+  const bgY = backgroundImage.y();
+
   const textNode = new Konva.Text({
-    text: "Some text here",
-    x: 50,
-    y: 80,
+    text: "....",
+    x: bgX,
+    y: bgY,
+    // fill: "red",
     fontSize: 20,
     draggable: true,
     width: 200,
@@ -19,6 +24,8 @@ function createText() {
 
   const tr = new Konva.Transformer({
     node: textNode,
+    // anchorFill: "blue" ,
+    // borderStroke : "black" ,
     enabledAnchors: ["middle-left", "middle-right"],    
     boundBoxFunc: function (oldBox, newBox) {
       newBox.width = Math.max(30, newBox.width);
@@ -74,7 +81,7 @@ function createText() {
     textarea.style.fontFamily = textNode.fontFamily();
     textarea.style.transformOrigin = "left top";
     textarea.style.textAlign = textNode.align ? textNode.align() : "left";
-    textarea.style.color = textNode.fill ? textNode.fill().toString() : "#000";
+    textarea.style.color =  "#000";
 
     const rotation = textNode.rotation ? textNode.rotation() : 0;
     let transform = "";
@@ -320,15 +327,19 @@ function loadTextsFromExport(textsArray, options = {}) {
       iconLayer.add(textNode);
 
       // transformer: allow only width adjustment (no rotation control)
-      const tr = new Konva.Transformer({
+   const tr = new Konva.Transformer({
         node: textNode,
-        enabledAnchors: ["middle-left", "middle-right"],
-        rotateEnabled: false, // không hiển thị icon xoay
-        // ensure rotation handles are not present (Konva transformer won't show rotate handle without rotation anchor)
+        enabledAnchors: ["middle-left", "middle-right", "rotater"], // include rotate handle
+        rotateEnabled: true,
         boundBoxFunc: function (oldBox, newBox) {
           newBox.width = Math.max(30, newBox.width);
+          // keep rotation 0 during boundBox (we prevent real rotate)
+          newBox.rotation = 0;
           return newBox;
         },
+        anchorFill: "#fff",
+        anchorStroke: "#444",
+        anchorSize: 8,
       });
 
       textNode.on("transform", function () {
@@ -340,6 +351,22 @@ function loadTextsFromExport(textsArray, options = {}) {
         });
       });
       iconLayer.add(tr);
+
+// prevent actual rotation by intercepting pointer down on rotate anchor
+// inside tr.on('mousedown touchstart', function(evt) { ... })
+tr.on('mousedown touchstart', function (evt) {
+const target = evt.target;
+  const isRotater =
+    (typeof target.name === 'function' && target.name() === 'rotater') ||
+    (typeof target.hasName === 'function' && target.hasName && target.hasName('rotater'));
+
+  if (isRotater) {
+    evt.cancelBubble = true;
+    evt.evt?.preventDefault?.();
+    showColorisPopup(textNode);
+  }
+});
+ 
 
       // cursor feedback
       textNode.on("mouseover", () => {

@@ -234,6 +234,75 @@
 
       return ICON_AUDIO;
   }
-  
 
+  function showColorisPopup(textNode) {
+  // remove old popup if exists
+  const old = document.getElementById('coloris-popup');
+  if (old) old.remove();
 
+  const wrapper = document.createElement('div');
+  wrapper.id = 'coloris-popup';
+  wrapper.style.position = 'fixed';
+  wrapper.style.left = '50%';
+  wrapper.style.top = '50%';
+  wrapper.style.transform = 'translate(-50%, -50%)';
+  wrapper.style.background = '#fff';
+  wrapper.style.padding = '16px';
+  wrapper.style.borderRadius = '8px';
+  wrapper.style.boxShadow = '0 4px 20px rgba(0,0,0,0.2)';
+  wrapper.style.zIndex = 0;
+  wrapper.style.display = 'flex';
+  wrapper.style.flexDirection = 'column';
+  wrapper.style.alignItems = 'center';
+  wrapper.style.gap = '10px';
+
+  const label = document.createElement('label');
+  label.textContent = 'Select Color:';
+  label.style.fontWeight = '600';
+  wrapper.appendChild(label);
+
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.className = 'coloris instance1';
+  input.value = textNode.fill() || '#000000';
+  input.style.width = '120px';
+  wrapper.appendChild(input);
+
+  const closeBtn = document.createElement('button');
+  closeBtn.textContent = 'Close';
+  closeBtn.style.padding = '6px 12px';
+  closeBtn.style.border = '1px solid #ddd';
+  closeBtn.style.background = '#f5f5f5';
+  closeBtn.style.cursor = 'pointer';
+  closeBtn.addEventListener('click', () => wrapper.remove());
+  wrapper.appendChild(closeBtn);
+
+  document.body.appendChild(wrapper);
+
+  // initialize Coloris
+  Coloris({
+    el: '.coloris.instance1',
+    themeMode: 'light',
+    swatches: [
+      '#000000', '#444444', '#7f8c8d', '#c0392b', '#e74c3c', '#ff6b6b',
+      '#f39c12', '#f1c40f', '#27ae60', '#2ecc71', '#2980b9', '#3498db',
+      '#8e44ad', '#9b59b6', '#ffffff'
+    ],
+    onChange: (color) => {
+      textNode.fill(color);
+      iconLayer.batchDraw();
+    }
+  });
+
+  // ép popup vào giữa khi Coloris mở
+// document.addEventListener('coloris:open', () => {
+//   const picker = document.querySelector('.clr-picker');
+//   if (picker) {
+//     picker.style.position = 'fixed';
+//     picker.style.top = '50%';
+//     picker.style.left = '50%';
+//     picker.style.transform = 'translate(-50%, -50%)';
+//     picker.style.zIndex = '2147483647';
+//   }
+// });
+}
