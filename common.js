@@ -156,7 +156,10 @@
         });
     }
 
-
+    function isMobile() {
+      const ret = isNotMobile() 
+      return !ret;
+    }
     function isNotMobile() {
         const width = window.innerWidth;
         const userAgent = navigator.userAgent.toLowerCase();
@@ -250,7 +253,7 @@
   wrapper.style.padding = '16px';
   wrapper.style.borderRadius = '8px';
   wrapper.style.boxShadow = '0 4px 20px rgba(0,0,0,0.2)';
-  wrapper.style.zIndex = 0;
+  // wrapper.style.zIndex = '2147483647';
   wrapper.style.display = 'flex';
   wrapper.style.flexDirection = 'column';
   wrapper.style.alignItems = 'center';
@@ -264,18 +267,79 @@
   const input = document.createElement('input');
   input.type = 'text';
   input.className = 'coloris instance1';
-  input.value = textNode.fill() || '#000000';
+  input.value = textNode.fill ? (textNode.fill().toString() || '#000000') : '#000000';
   input.style.width = '120px';
   wrapper.appendChild(input);
 
-  const closeBtn = document.createElement('button');
-  closeBtn.textContent = 'Close';
+  const row = document.createElement('div');
+  row.style.display = 'flex';
+  row.style.gap = '8px';
+  row.style.marginTop = '6px';
+  wrapper.appendChild(row);
+
+ 
+
+
+const deleteBtn = document.createElement('button');
+deleteBtn.innerHTML = `<i class="bi bi-trash3"></i> Delete`; // thêm icon
+deleteBtn.style.display = 'flex';
+deleteBtn.style.alignItems = 'center';
+deleteBtn.style.gap = '6px';
+deleteBtn.style.padding = '6px 12px';
+deleteBtn.style.border = '1px solid #d9534f';
+deleteBtn.style.background = '#d9534f';
+deleteBtn.style.color = '#fff';
+deleteBtn.style.cursor = 'pointer';
+deleteBtn.style.borderRadius = '6px';
+deleteBtn.addEventListener('click', (ev) => {
+    ev.stopPropagation();    
+    try {
+      // remove any Transformer nodes attached to this textNode
+      try {
+        const transformers = iconLayer.find('Transformer');
+        transformers.forEach(tr => {
+          try {
+            if (tr.node && tr.node() === textNode) {
+              tr.destroy();
+            }
+          } catch (e) {}
+        });
+      } catch (e) {}
+
+      // remove container dblclick handler if attached
+      try {
+        if (textNode._containerDbl && stage && stage.container) {
+          try { stage.container().removeEventListener('dblclick', textNode._containerDbl, true); } catch(e) {}
+        }
+      } catch (e) {}
+
+      // destroy the text node
+      try { textNode.destroy(); } catch (e) { console.warn('destroy textNode err', e); }
+
+      // redraw layer
+      try { iconLayer.batchDraw(); } catch (e) {}
+
+    } catch (err) {
+      console.warn('Failed to delete textNode', err);
+    } finally {
+      // close popup
+      wrapper.remove();
+    }
+  }, { passive: false });
+  row.appendChild(deleteBtn);
+
+   const closeBtn = document.createElement('button');
+  closeBtn.innerHTML = `<i class="bi bi-x-circle"></i> Close`; // thêm icon
+  closeBtn.style.display = 'flex';
+  closeBtn.style.alignItems = 'center';
+  closeBtn.style.gap = '6px';
   closeBtn.style.padding = '6px 12px';
   closeBtn.style.border = '1px solid #ddd';
   closeBtn.style.background = '#f5f5f5';
   closeBtn.style.cursor = 'pointer';
-  closeBtn.addEventListener('click', () => wrapper.remove());
-  wrapper.appendChild(closeBtn);
+  closeBtn.style.borderRadius = '6px';
+  closeBtn.addEventListener('click', () => wrapper.remove(), { passive: false });
+  row.appendChild(closeBtn);
 
   document.body.appendChild(wrapper);
 
@@ -289,20 +353,30 @@
       '#8e44ad', '#9b59b6', '#ffffff'
     ],
     onChange: (color) => {
-      textNode.fill(color);
-      iconLayer.batchDraw();
+      try {
+        textNode.fill(color);
+        iconLayer.batchDraw();
+      } catch (err) {
+        console.warn('Failed to set color', err);
+      }
     }
   });
 
-  // ép popup vào giữa khi Coloris mở
-// document.addEventListener('coloris:open', () => {
-//   const picker = document.querySelector('.clr-picker');
-//   if (picker) {
-//     picker.style.position = 'fixed';
-//     picker.style.top = '50%';
-//     picker.style.left = '50%';
-//     picker.style.transform = 'translate(-50%, -50%)';
-//     picker.style.zIndex = '2147483647';
-//   }
-// });
+  // make sure the Coloris picker appears centered (Coloris might position it below input)
+  // listen once for the open event and force center
+  function onOpenOnce() {
+    const picker = document.querySelector('.clr-picker');
+    if (picker) {
+      picker.style.position = 'fixed';
+      picker.style.top = '50%';
+      picker.style.left = '50%';
+      picker.style.transform = 'translate(-50%, -50%)';
+      picker.style.zIndex = '2147483648';
+    }
+    document.removeEventListener('coloris:open', onOpenOnce);
+  }
+  document.addEventListener('coloris:open', onOpenOnce);
+
+  return wrapper;
 }
+

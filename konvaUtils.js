@@ -284,8 +284,15 @@ function loadTextsFromExport(textsArray, options = {}) {
 
   textsArray.forEach((t, idx) => {
     try {
-      const x = bgX + (Number(t.xNorm) || 0) * bgW;
-      const y = bgY + (Number(t.yNorm) || 0) * bgH;
+
+
+      const x = bgX + (Number(t.xNorm) || 0) * bgW ;
+      let y = bgY + (Number(t.yNorm) || 0) * bgH;
+
+      if (isMobile()) {
+          y = y - 10;
+      }      
+
       const w = (Number(t.widthNorm) || 0) * bgW;
       const fontSize = Number(t.fontSize) || 16;
 
@@ -366,6 +373,16 @@ const target = evt.target;
     showColorisPopup(textNode);
   }
 });
+
+    // cursor feedback
+    tr.on("mouseover", () => {
+    stage.container().style.cursor = "pointer";
+    });
+    tr.on("mouseout", () => {
+      stage && stage.container() && (stage.container().style.cursor = "default");
+    });
+
+
  
 
       // cursor feedback

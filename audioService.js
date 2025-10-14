@@ -146,7 +146,7 @@
       _timeUpdateHandler = null;
       _endedHandler = null;
       currentIcon = null;
-      hidePanel();
+      hidePanel(); 
       if (typeof cfg.resetIcons === 'function') cfg.resetIcons();
       const e = panelEls();
       if (e && e.videoWrap) e.videoWrap.style.display = 'none';
@@ -232,32 +232,8 @@
       if (e.speed && e.speedLabel) {
         e.speed.value = (cfg.defaultPlaybackRate || 1).toString();
         e.speedLabel.textContent = (cfg.defaultPlaybackRate || 1).toFixed(2) + 'x';
-      }
-
-        // ✅ Ẩn panel khi click hoặc touch ra ngoài
-  document.addEventListener("mousedown", function (ev) {
-    const panel = e.panel;
-    if (!panel || panel.style.display === "none") return;
-    if (!panel.contains(ev.target)) {
-      hidePanel();
-      if (typeof cfg.onClose === "function") cfg.onClose();
+      }  
     }
-  });
-
-  document.addEventListener("touchstart", function (ev) {
-    const panel = e.panel;
-    if (!panel || panel.style.display === "none") return;
-    if (!panel.contains(ev.target)) {
-      hidePanel();
-      if (typeof cfg.onClose === "function") cfg.onClose();
-    }
-  });
-  
-    }
-
-
-
-
 
     // attach handlers to current mediaEl
     function attachMediaUI(iconNode, start, end) {
@@ -393,8 +369,7 @@
         cfg.defaultPlaybackRate = parseFloat(options.defaultPlaybackRate) || 1;
 
       // <-- add this line:
-      cfg.onClose =
-        typeof options.onClose === "function" ? options.onClose : null;
+      cfg.onClose = typeof options.onClose === "function" ? options.onClose : null;
 
       ensurePanel();
       setupPanelEvents();

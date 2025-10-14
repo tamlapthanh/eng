@@ -368,12 +368,12 @@ $(document).ready(function () {
     getSoundStartEnd: getSoundStartEnd,
     global_const: global_const,
     autoShowPanel: true,
-    onClose: () => {
-      console.log("Closed panel!");
-      // $("#id_ShowPanel")
-      //   .toggleClass("btn-dark", true)
-      //   .toggleClass("btn-success", false);
-      // window.AudioService.setAutoShowPanel(false);
-    }
+  //   onClose: () => {
+  //     console.log("Closed panel!");
+  //     // $("#id_ShowPanel")
+  //     //   .toggleClass("btn-dark", true)
+  //     //   .toggleClass("btn-success", false);
+  //     // window.AudioService.setAutoShowPanel(false);
+  //   }
   });
 });
