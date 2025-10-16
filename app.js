@@ -237,7 +237,7 @@ $(document).ready(function () {
   }
 
   // load page: asks CanvasManager to load JSON
-  function loadPage() {
+  function loadPage() {    
     const page = parseInt($("#json-dropdown").val(), 10);
     CURRENT_PAGE_INDEX = page;
     $("#settingsModal").modal("hide");
@@ -280,6 +280,7 @@ $(document).ready(function () {
 
   // load lines list (uses APP_DATA and CanvasManager.loadLinesByDraw)
   function listDrawingPagesDetailed(page = null) {
+    IS_EANBLE_SWIPE = true;
     if (APP_DATA == null) {
       const dataToSend = { sheet_name: DATA_TYPE };
       fetch(global_const.SERVER_API_ALL_METHOD, {

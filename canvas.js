@@ -874,7 +874,7 @@ function resetIcons() {
           }
 
           // single pointer: handle swipe if active
-          if (swipeState.active) {
+          if (IS_EANBLE_SWIPE && swipeState.active) {
             const dx = evt.clientX - swipeState.startX;
             const dy = evt.clientY - swipeState.startY;
             if (Math.abs(dy) > SWIPE_MAX_VERTICAL) {
@@ -1007,6 +1007,7 @@ function clearAllTextsInLayer() {
 
     // Load background+icons from URL; caller should pass url and page
     function loadPage(page, jsonUrl) {
+      IS_EANBLE_SWIPE = true;
       if (!page || !jsonUrl) return;
       cfg.AudioService && cfg.AudioService.stopAudio();
       clearCanvas();
@@ -1134,7 +1135,7 @@ function clearAllTextsInLayer() {
             delete savedAttrs.id; // nếu bạn không muốn ghi id vào attrs nữa
             delete savedAttrs.isShowText;
             delete savedAttrs.isShowBorder;
-            delete savedAttrs.readOny;
+            delete savedAttrs.readOny;    
           } catch (err) {
             savedAttrs = null;
           }

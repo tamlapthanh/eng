@@ -5,6 +5,9 @@ let iconLayer = null;
 let drawingLayer = null;
 let backgroundImage = null;
 
+let RECT_TEXT_DEFAULT_COLOR = "#000000";
+let RECT_TEXT_MOVED_COLOR = "blue";
+
 function createRect() {
   const t = {
     text: "",
@@ -13,13 +16,12 @@ function createRect() {
     widthNorm: 0.3, // chiều rộng tương đối
     fontSize: 20,
     fontFamily: "Arial",
-    fill: "blue",
+    fill: RECT_TEXT_MOVED_COLOR,
     align: "left",
     lineHeight: 1,
     attrs: {}, // có thể để trống
   };
   createText(t);
-
 }
 
 function createText(obj = null) {
@@ -34,15 +36,29 @@ function createText(obj = null) {
     return;
   }
 
-  const t = obj || {
+  // const t = obj || {
+  //   text: ".....",
+  //   xNorm: 0.1, // vị trí X tương đối (0.0–1.0)
+  //   yNorm: 0.2, // vị trí Y tương đối
+  //   widthNorm: 0.3, // chiều rộng tương đối
+  //   fontSize: 20,
+  //   fontFamily: "Arial",
+  //   fill: RECT_TEXT_DEFAULT_COLOR,
+  //   align: "center",
+  //   lineHeight: 1,
+  //   attrs: {}, // có thể để trống
+  // };
+
+   const t = obj || {
     text: ".....",
-    xNorm: 0.1, // vị trí X tương đối (0.0–1.0)
-    yNorm: 0.2, // vị trí Y tương đối
+    // đặt mặc định ở góc phải dưới (relative to background)
+    xNorm: 0.95,   // X tương đối: gần cạnh phải
+    yNorm: 0.85,   // Y tương đối: gần cạnh dưới
     widthNorm: 0.3, // chiều rộng tương đối
     fontSize: 20,
     fontFamily: "Arial",
-    fill: "#000000",
-    align: "left",
+    fill: RECT_TEXT_DEFAULT_COLOR,
+    align: "center", // căn phải cho phù hợp với vị trí góc phải
     lineHeight: 1,
     attrs: {}, // có thể để trống
   };
@@ -67,27 +83,12 @@ function loadTexts(textsArray, options = {}) {
   }
 
   textsArray.forEach((t, idx) => {
+    IS_EANBLE_SWIPE = false;
     generateTextNode(t, idx, backgroundImage, true, true, false, true);
   });
 
   // redraw once
   iconLayer.batchDraw();
-}
-
-function getNormPos(backgroundImage, xNorm, yNorm) {
-  const bgX = backgroundImage.x();
-  const bgY = backgroundImage.y();
-  const bgW = backgroundImage.width();
-  const bgH = backgroundImage.height();
-
-  const x = bgX + (xNorm || 0) * bgW;
-  let y = bgY + (yNorm|| 0) * bgH;
-  if (isMobile()) {
-    y -= 2;
-    t.fontSize = 14;
-  }
-
-  return [x, y];
 }
 
 function generateTextNode(
@@ -100,8 +101,6 @@ function generateTextNode(
   readOny = false
 ) {
   try {
-    console.log(t);
-
     const bgX = backgroundImage.x();
     const bgY = backgroundImage.y();
     const bgW = backgroundImage.width();
@@ -111,23 +110,24 @@ function generateTextNode(
     let y = bgY + (t.yNorm || 0) * bgH;
     if (isMobile()) {
       y -= 2;
-      t.fontSize = 15;
+      t.fontSize = 12;
     }
 
     const w = (Number(t.widthNorm) || 0) * bgW;
     const fontSize = Number(t.fontSize) || 15;
+    var orgX = t.attrs.originX || t.xNorm;
+    var orgY = t.attrs.originY || t.yNorm;    
 
-   // ✅ Tạo background rectangle
-    const bgRect = new Konva.Rect({
-      x: Math.round(x),
-      y: Math.round(y),
-      width: Math.max(10, Math.round(w || fontSize * 4)),
-      height: fontSize * 1.5, // Điều chỉnh chiều cao
-      fill: t.backgroundColor || "transparent", // ← Màu nền
-      opacity: t.backgroundOpacity || 0.3,
-      cornerRadius: t.cornerRadius || 0, // Bo góc nếu muốn
-    });
-
+    var isChangedPos = t.attrs.isChangedPos || false;
+    if (!readOny) {
+      orgX = t.xNorm;
+      orgY = t.yNorm;
+    }
+    if (!isShowBorder && isChangedPos == false) {
+      isShowText = false;            
+    } else if (isChangedPos) {
+      t.fill = RECT_TEXT_MOVED_COLOR;
+    }
 
     const textNode = new Konva.Text({
       x: Math.round(x),
@@ -135,11 +135,11 @@ function generateTextNode(
       text: typeof t.text === "string" ? t.text : "",
       fontSize,
       fontFamily: t.fontFamily || "Arial",
-      fill: t.fill || "blue",
+      fill: t.fill ||  "blue",
       width: Math.max(10, Math.round(w || fontSize * 4)),
       draggable: false,
       rotation: 0,
-      align: t.align || "left",
+      align: t.align || "center",
       lineHeight: t.lineHeight || 1,
       id: t.id || undefined,
     });
@@ -163,22 +163,14 @@ function generateTextNode(
       textNode.setAttrs(safeAttrs);
     }
 
-    var orgX = t.attrs.originX || t.xNorm;
-    var orgY = t.attrs.originY || t.yNorm;    
-    var isChangedPos = t.attrs.isChangedPos || false;
-    if (!readOny) {
-      orgX = t.xNorm;
-      orgY = t.yNorm;
-    }
-
-    textNode.setAttr("originX", Number(orgX));
-    textNode.setAttr("originY", Number(orgY));   
-    textNode.setAttr("isShowText",  isShowText);
-    textNode.setAttr("isShowBorder", isShowBorder);
-    textNode.setAttr("readOny",  readOny);
+   
+    textNode.fill(t.fill); 
     textNode.setAttr("isChangedPos",  isChangedPos);
-    
-
+    textNode.setAttr("originX", Number(orgX));
+    textNode.setAttr("originY", Number(orgY));           
+    textNode.setAttr("isShowText",  isShowText);
+    textNode.setAttr("isShowBorder", isShowBorder);    
+    textNode.setAttr("readOny",  readOny);
     iconLayer.add(textNode);
 
     // --- Transformer (no rotation) ---
@@ -233,15 +225,18 @@ function generateTextNode(
       // trở về vị trí ban đâu, chưa di chuyển
       textNode.setAttr("isChangedPos",  false);
 
-      const isShowText = textNode.getAttr("isShowText");
+      var isShowText = true; // textNode.getAttr("isShowText");      
       const isShowBorder = textNode.getAttr("isShowBorder");
 
-      const orgX = textNode.getAttr("originX") || 0;
-      const orgY = textNode.getAttr("originY") || 0;
-
+      if (!isShowBorder) {
+        isShowText = false;            
+      }      
+      textNode.fill(RECT_TEXT_DEFAULT_COLOR);
       showText(isShowText);
       showBorder(isShowBorder);
 
+      const orgX = textNode.getAttr("originX") || 0;
+      const orgY = textNode.getAttr("originY") || 0;      
       const bgX = backgroundImage.x();
       const bgY = backgroundImage.y();
       const bgW = backgroundImage.width();
@@ -253,75 +248,16 @@ function generateTextNode(
         yNorm -= 2;
         // nếu muốn thay fontSize thực tế trên textNode khi mobile:
         try {
-          textNode.fontSize(15);
+          textNode.fontSize(12);
         } catch (e) {}
       }
-
-      // --- nếu đang có tween đang chạy, huỷ nó trước ---
-      if (textNode._moveTween) {
-        try {
-          textNode._moveTween.pause();
-          textNode._moveTween.destroy();
-        } catch (e) {}
-        textNode._moveTween = null;
-      }
-
-      // Nếu muốn nhảy thẳng (không animation) khi khoảng cách quá nhỏ, có thể check:
-      const dx = Math.abs(textNode.x() - xNormm);
-      const dy = Math.abs(textNode.y() - yNorm);
-      const dist = Math.hypot(dx, dy);
-
-      // Nếu gần như cùng vị trí thì just set và refresh
-      if (dist < 1) {
-        textNode.position({ x: xNormm, y: yNorm });
-        try {
-          tr.forceUpdate();
-        } catch (e) {}
-        iconLayer.batchDraw();
-        return;
-      }
-
-      // Tạo tween để di chuyển mượt
-      const duration = 0.35; // giây, chỉnh tuỳ ý
+      
+      textNode.position({ x: xNormm, y: yNorm });
       try {
-        const tween = new Konva.Tween({
-          node: textNode,
-          duration: duration,
-          x: xNormm,
-          y: yNorm,
-          // optional: easing nếu bạn muốn (bỏ nếu không chắc)
-          // easing: Konva.Easings.EaseInOut,
-          onFinish: function () {
-            // đảm bảo node tới đúng toạ độ cuối cùng
-            textNode.position({ x: xNormm, y: yNorm });
-            try {
-              tr.forceUpdate();
-            } catch (e) {}
-            iconLayer.batchDraw();
+        tr.forceUpdate();
+      } catch (e) {}
+      iconLayer.batchDraw();
 
-            // destroy tween reference
-            try {
-              tween.destroy();
-            } catch (e) {}
-            textNode._moveTween = null;
-          },
-        });
-
-        // lưu reference để có thể huỷ nếu cần
-        textNode._moveTween = tween;
-        tween.play();
-      } catch (err) {
-        // fallback: nếu không hỗ trợ tween, set trực tiếp
-        console.warn(
-          "resetToInitialPosition: tween failed, set position directly",
-          err
-        );
-        textNode.position({ x: xNormm, y: yNorm });
-        try {
-          tr.forceUpdate();
-        } catch (e) {}
-        iconLayer.batchDraw();
-      }
     };
 
 
@@ -369,6 +305,7 @@ function generateTextNode(
       } 
 
       if (!isShowBorder) {
+        textNode.fill(RECT_TEXT_MOVED_COLOR);
         textNode.setAttr("isChangedPos",  true);
       }
 

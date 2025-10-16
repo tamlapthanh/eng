@@ -1,12 +1,14 @@
 
-    let ICON_VIDEO         = "assets/video_icon.png";
-    let ICON_AUDIO         = "assets/audio_icon.png";
-    let ICON_PLAYING       = "assets/playing_icon.svg";
+  let ICON_VIDEO         = "assets/video_icon.png";
+  let ICON_AUDIO         = "assets/audio_icon.png";
+  let ICON_PLAYING       = "assets/playing_icon.svg";
 
     // basic app config mirrored from your original index.js
   const ASSETS_URL ="https://tamlapthanh.github.io/store_images/";
   const PATH_ROOT = "assets/books/27/";
   let APP_DATA = null;
+  let IS_EANBLE_SWIPE = true;
+  Konva.showWarnings = false;
 
   let DATA_TYPE = "student37";
   let CURRENT_PAGE_INDEX = 1;
@@ -19,6 +21,7 @@
   const RUN_URL_LOCAL = "http://localhost:8080/";
   const API_METHOD = "api/sheets/line_by_key";
   const API_ALL_METHOD = "api/sheets/line_all";
+  
 
   const global_const = {
     get PATH_ASSETS_IMG() {
