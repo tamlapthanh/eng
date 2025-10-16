@@ -67,16 +67,18 @@ $(document).ready(function () {
     newImage.src = newUrl;
   }
 
-
-
   // ---- non-canvas UI handlers ----
 
   $("#add-text-btn").on("click", function () {
     CanvasManager.addText();
   });
 
+  $("#add-rect-btn").on("click", function () {
+    CanvasManager.addRect();
+  });  
+
   // Zoom & draw & lock buttons (some are still in CanvasManager but UI toggles here)
-  $("#draw").on("click", function () {
+  $("#draw-btn").on("click", function () {
     CanvasManager.toggleDrawing();
     $(this).toggleClass("btn-danger btn-dark");
   });
@@ -286,7 +288,7 @@ $(document).ready(function () {
         body: JSON.stringify(dataToSend),
       })
         .then(async (res) => {
-          if (!res.ok) throw new Error("HTTP " + res.status);
+          if (res & !res.ok) throw new Error("HTTP " + res.status);
           return res.json();
         })
         .then((data) => {
@@ -324,18 +326,6 @@ $(document).ready(function () {
     }
   }
 
-  //   // other UI helpers (spinner, toast)
-  //   function showSpinner(color = "#007bff") {
-  //     const spinnerIcon = document.querySelector(".spinner-icon");
-  //     if (spinnerIcon) spinnerIcon.style.color = color;
-  //     const overlay = document.getElementById("spinnerOverlay");
-  //     if (overlay) overlay.style.display = "flex";
-  //   }
-  //   function hideSpinner() {
-  //     const overlay = document.getElementById("spinnerOverlay");
-  //     if (overlay) overlay.style.display = "none";
-  //   }
-
   // expose some functions globally for console/testing if desired
   window.App = {
     global_const,
@@ -345,9 +335,25 @@ $(document).ready(function () {
     CanvasManager,
   };
 
-  document.addEventListener("coloris:pick", (event) => {
-    CanvasManager.setLineColor(event.detail.color);
+
+  Coloris({
+    onChange: (color, inputEl) => {
+      if (!inputEl) return;
+
+      // lấy data-target từ input
+      const target = inputEl.dataset.target;
+    
+      if (target === "window") {
+        console.log("Đang chọn màu cho:", target, "=>", color);
+        CanvasManager.setLineColor(color);
+      } 
+
+      // đóng popup Coloris sau khi chọn
+      Coloris.close();
+
+    },
   });
+
 
   // init UI: populate dropdowns and load initial page
   popDropdown(

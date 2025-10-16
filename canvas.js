@@ -974,8 +974,8 @@ function resetIcons() {
       // NOTE: external code can call CanvasManager.addPlayIcon(...) etc.
     }
     function clearCanvas() {
-    // Clear text
-    clearAllTextNodesAndTransformers();
+      // Clear text
+      clearAllTextNodesAndTransformers();
       
       if (cfg.AudioService) cfg.AudioService.stopAudio();
       playIcons.forEach((icon) => icon.destroy());
@@ -1015,7 +1015,10 @@ function clearAllTextsInLayer() {
       stage.draggable(false);
     }
 
-
+    function loadTextsFromExport(textsArray) {
+      clearAllTextNodesAndTransformers();
+      loadTexts(textsArray);
+    }
 
 
     // load lines (normalized display coords) — caller passes APP_DATA map or raw parsed
@@ -1129,6 +1132,9 @@ function clearAllTextsInLayer() {
             delete savedAttrs.width;
             delete savedAttrs.height;
             delete savedAttrs.id; // nếu bạn không muốn ghi id vào attrs nữa
+            delete savedAttrs.isShowText;
+            delete savedAttrs.isShowBorder;
+            delete savedAttrs.readOny;
           } catch (err) {
             savedAttrs = null;
           }
@@ -1238,12 +1244,12 @@ function clearAllTextsInLayer() {
     }
 
     function addText() {
-
       createText();
-
-
-
     }
+
+    function addRect() {
+      createRect();
+    }    
 
     // public API
     return {
@@ -1289,6 +1295,7 @@ function clearAllTextsInLayer() {
       setZoomAt,
       undoLastLine,
       addText,
+      addRect,
       setLineColor: function (value) {
         line_color = value;
       },

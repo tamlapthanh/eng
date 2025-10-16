@@ -91,6 +91,15 @@
         z-index: 10;
       }
 
+      .start-btn {
+        position: absolute;
+        bottom:  10px;
+        right: 5px;
+        z-index: 10;
+      }
+
+      
+
       .controls {
         position: absolute;
         top: 42px;
@@ -267,25 +276,28 @@
 
       <div id="canvas"></div>
 
+      <!-- <button id="start-btn" class="btn btn-success start-btn btn-sm">
+        <i class="bi bi-star"></i>
+      </button> -->
+
       <button id="setting" class="btn btn-primary setting-btn btn-sm">
         <i class="bi bi-gear"></i>
       </button>
 
       <div id="id_controls" class="controls">
-        <button
-          class="btn btn-success btn-sm"
-          data-bs-toggle="modal"
-          data-bs-target="#settingsModal"
-        >
+        <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#settingsModal">
           <i class="bi bi-list-ol"></i>
         </button>
-
         
         <button id="add-text-btn" class="btn btn-success btn-sm-2">
           <i class="bi bi-bounding-box"></i>
         </button>
 
-        <button id="draw" class="btn btn-dark btn-sm-2">
+        <button id="add-rect-btn" class="btn btn-primary btn-sm-2">
+          <i class="bi bi-bounding-box"></i>
+        </button>        
+
+        <button id="draw-btn" class="btn btn-dark btn-sm-2">
           <i class="bi bi-brush-fill"></i>
         </button>
 
@@ -367,11 +379,6 @@
               <select id="json-dropdown" class="form-select"></select>
             </div>
 
-            <!-- <hr class="my-4 border border-primary">
-          <div class="input-group flex-nowrap">
-            <input type="text" id="jump-to-index-jso" class="form-control" placeholder="Jump to which page?" />
-          </div> -->
-
             <!-- <hr class="my-4 border border-primary" /> -->
             <div class="range-container">
               <label for="range2" class="form-label">Stroke Width</label>
@@ -400,7 +407,7 @@
             <!-- <hr class="my-4 border border-primary" /> -->
             <div class="range-container">
               <label for="select_color" class="form-label">Select Color: </label>
-              <input type="text" class="coloris instance1" value="Tomato" />
+              <input type="text" class="coloris instance1" value="Tomato"  data-target="window" />
             </div>
 
             <br />

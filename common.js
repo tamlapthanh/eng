@@ -13,7 +13,7 @@
   let MAX_PAGE_NUM = 107;
   let MIN_PAGE_NUM = 1;
 
-  [DATA_TYPE, CURRENT_PAGE_INDEX, MAX_PAGE_NUM, MIN_PAGE_NUM] = createRadioButtons(0); // from common.js
+  [DATA_TYPE, CURRENT_PAGE_INDEX, MAX_PAGE_NUM, MIN_PAGE_NUM] = createRadioButtons(6); // from common.js
 
   const RUN_URL_SERVER = "https://zizi-app.onrender.com/";
   const RUN_URL_LOCAL = "http://localhost:8080/";
@@ -59,7 +59,8 @@
             { id: 'radio_student_book', data_type: 'student', label: 'Student book 27' , max: 66, min: 1, current: 1 }, // 3
             { id: 'radio_work_book', data_type: 'work', label: 'Workbook 27' , max: 65, min: 1, current: 1 }, // 4
             { id: 'radio_dict_book', data_type: 'dict', label: 'Dictionary' , max: 87, min: 1, current: 2 }, // 5
-            { id: 'radio_math', data_type: 'math_page', label: 'Math Game' }, // 6
+            { id: 'radio_first_work_sheet', data_type: 'first_work_sheet', label: 'Vocabulary Work Sheet' , max: 14, min: 1, current: 2 }, // 6
+            { id: 'radio_math', data_type: 'math_page', label: 'Math Game' }, // 7
         ];
         
         const container = document.getElementById('radioContainer');
@@ -269,6 +270,7 @@
   input.className = 'coloris instance1';
   input.value = textNode.fill ? (textNode.fill().toString() || '#000000') : '#000000';
   input.style.width = '120px';
+  input.dataset.target = "app";
   wrapper.appendChild(input);
 
   const row = document.createElement('div');
@@ -352,14 +354,22 @@ deleteBtn.addEventListener('click', (ev) => {
       '#f39c12', '#f1c40f', '#27ae60', '#2ecc71', '#2980b9', '#3498db',
       '#8e44ad', '#9b59b6', '#ffffff'
     ],
-    onChange: (color) => {
-      try {
+    onChange: (color, inputEl) => {
+      if (!inputEl) return;
+
+      // lấy data-target từ input
+      const target = inputEl.dataset.target;
+    
+      if (target === "app") {
+       console.log("Chọn màu cho:", target, "=>", color);
         textNode.fill(color);
         iconLayer.batchDraw();
-      } catch (err) {
-        console.warn('Failed to set color', err);
-      }
-    }
+      } 
+
+      // đóng popup Coloris sau khi chọn
+      Coloris.close();      
+      wrapper.remove();
+    },    
   });
 
   // make sure the Coloris picker appears centered (Coloris might position it below input)
@@ -378,5 +388,10 @@ deleteBtn.addEventListener('click', (ev) => {
   document.addEventListener('coloris:open', onOpenOnce);
 
   return wrapper;
+}
+
+function isDebugMode() {
+  const hostname = window.location.hostname;
+  return hostname === "localhost" || hostname === "127.0.0.1"  ? true : false;
 }
 
