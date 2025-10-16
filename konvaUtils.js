@@ -101,6 +101,9 @@ function generateTextNode(
   readOny = false
 ) {
   try {
+
+    const htmlTooltip = document.getElementById("tooltip");
+
     const bgX = backgroundImage.x();
     const bgY = backgroundImage.y();
     const bgW = backgroundImage.width();
@@ -260,6 +263,23 @@ function generateTextNode(
 
     };
 
+
+    
+
+      textNode.on("mousemove", (e) => {
+        const stage = e.target.getStage();
+        const pointer = stage.getPointerPosition();
+        htmlTooltip.style.left = pointer.x + 10 + "px";
+        htmlTooltip.style.top = pointer.y + 10 + "px";
+        htmlTooltip.textContent = textNode.text();// "Tooltip HTML nè 😄";
+        htmlTooltip.style.display = "block";
+        htmlTooltip.style.opacity = '1';        
+      });
+
+      textNode.on("mouseout", () => {
+        htmlTooltip.style.opacity = '0';
+        setTimeout(() => htmlTooltip.style.display = 'none', 150);
+    });
 
     // Sự kiện khi bắt đầu kéo
     textNode.on("dragstart", () => {
@@ -441,12 +461,28 @@ function generateTextNode(
         window.addEventListener("touchstart", handleOutsideClick);
       }, 0);
 
-      textarea.addEventListener("keydown", (ev) => {
-        if (ev.key === "Enter" && !ev.shiftKey) {
-          textNode.text(textarea.value);
-          removeTextarea();
-        } else if (ev.key === "Escape") removeTextarea();
-      });
+    textarea.addEventListener("keydown", (ev) => {
+      if (ev.key === "Enter" && !ev.shiftKey) {
+        ev.preventDefault();
+
+        // Cập nhật text vào node
+        textNode.text(textarea.value);
+
+        // --- Đo width tự động vừa nội dung ---
+        const lines = textarea.value.split("\n");
+        const ctx = document.createElement("canvas").getContext("2d");
+        ctx.font = textNode.fontSize() + "px " + textNode.fontFamily();
+
+        // Lấy độ rộng lớn nhất trong các dòng
+        const maxWidth = Math.max(...lines.map(line => ctx.measureText(line).width));
+        const padding = 10; // chừa khoảng cách nhỏ
+        textNode.width(maxWidth + padding);
+
+        removeTextarea();
+      } else if (ev.key === "Escape") {
+        removeTextarea();
+      }
+    });
 
       textarea.addEventListener("input", function () {
         const scale = textNode.getAbsoluteScale()?.x || 1;
