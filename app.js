@@ -282,6 +282,7 @@ $(document).ready(function () {
   function listDrawingPagesDetailed(page = null) {
     IS_EANBLE_SWIPE = true;
     if (APP_DATA == null) {
+      showSpinner("#FFC0CB", "spinnerOverlay_async_id");
       const dataToSend = { sheet_name: DATA_TYPE };
       fetch(global_const.SERVER_API_ALL_METHOD, {
         method: "POST",
@@ -302,15 +303,14 @@ $(document).ready(function () {
             parsed = null;
           }
           const linesArr = parsed && Array.isArray(parsed.lines) ? parsed.lines : [];
-
           CanvasManager.loadLinesByDraw(page, linesArr);
 
           const textArr = parsed && Array.isArray(parsed.texts) ? parsed.texts : [];
-
           CanvasManager.loadTextsFromExport(textArr);
 
         })
-        .catch((err) => console.error("Fetch error", err));
+        .catch((err) => console.error("Fetch error", err))
+        .finally(() => hideSpinner("spinnerOverlay_async_id"));
     } else {
       const raw = APP_DATA.get(String(page));
       let parsed = null;

@@ -206,17 +206,21 @@
         return arr.filter(item => item !== element);
     }
 
-      // other UI helpers (spinner, toast)
-  function showSpinner(color = "#007bff") {
-    const spinnerIcon = document.querySelector(".spinner-icon");
-    if (spinnerIcon) spinnerIcon.style.color = color;
-    const overlay = document.getElementById("spinnerOverlay");
-    if (overlay) overlay.style.display = "flex";
-  }
-  function hideSpinner() {
-    const overlay = document.getElementById("spinnerOverlay");
-    if (overlay) overlay.style.display = "none";
-  }
+function showSpinner(id = "spinnerOverlay", color = "#007bff") {
+  const overlay = document.getElementById(id);
+  if (!overlay) return;
+
+  const icon = overlay.querySelector(".spinner-icon");
+  if (icon) icon.style.color = color;
+
+  overlay.style.display = "flex"; // Hiện và căn giữa
+}
+
+function hideSpinner(id = "spinnerOverlay") {
+  const overlay = document.getElementById(id);
+  if (overlay) overlay.style.display = "none";
+}
+  
 
   function getSoundStartEnd(fileName) {
     if (!fileName) return [];

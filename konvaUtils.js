@@ -31,8 +31,8 @@ function createText(obj = null) {
     return;
   }
 
-  if (!iconLayer) {
-    console.warn("createText: iconLayer missing.");
+  if (!drawingLayer) {
+    console.warn("createText: drawingLayer missing.");
     return;
   }
 
@@ -64,7 +64,7 @@ function createText(obj = null) {
   };
   
   generateTextNode(t, -1, backgroundImage, true, true, true,false);
-  iconLayer.batchDraw();
+  drawingLayer.batchDraw();
 }
 
 // thêm vào trong CanvasManager (canvas.js)
@@ -77,8 +77,8 @@ function loadTexts(textsArray, options = {}) {
     return;
   }
 
-  if (!iconLayer) {
-    console.warn("loadTexts: iconLayer missing.");
+  if (!drawingLayer) {
+    console.warn("loadTexts: drawingLayer missing.");
     return;
   }
 
@@ -88,7 +88,7 @@ function loadTexts(textsArray, options = {}) {
   });
 
   // redraw once
-  iconLayer.batchDraw();
+  drawingLayer.batchDraw();
 }
 
 function generateTextNode(
@@ -174,7 +174,7 @@ function generateTextNode(
     textNode.setAttr("isShowText",  isShowText);
     textNode.setAttr("isShowBorder", isShowBorder);    
     textNode.setAttr("readOny",  readOny);
-    iconLayer.add(textNode);
+    drawingLayer.add(textNode);
 
     // --- Transformer (no rotation) ---
     const tr = new Konva.Transformer({
@@ -218,7 +218,7 @@ function generateTextNode(
       textNode.width(textNode.width() * textNode.scaleX());
       textNode.scaleX(1);
 
-      iconLayer.batchDraw();
+      drawingLayer.batchDraw();
     });
 
 
@@ -259,7 +259,7 @@ function generateTextNode(
       try {
         tr.forceUpdate();
       } catch (e) {}
-      iconLayer.batchDraw();
+      drawingLayer.batchDraw();
 
     };
 
@@ -338,7 +338,7 @@ function generateTextNode(
     showBorder(isShowBorder);
     textNode.draggable(isDraggable);
     tr.draggable(isDraggable); // rất quan trọng
-    iconLayer.add(tr);
+    drawingLayer.add(tr);
 
     // --- Rotate icon opens color popup ---
     tr.on("mousedown touchstart", function (evt) {
@@ -374,7 +374,7 @@ function generateTextNode(
 
       // update transformer node and redraw
       tr.forceUpdate();
-      iconLayer.batchDraw();
+      drawingLayer.batchDraw();
     }
 
     // --- Editor logic ---
@@ -388,7 +388,7 @@ function generateTextNode(
 
       // update transformer node and redraw
       tr.forceUpdate();
-      iconLayer.batchDraw();
+      drawingLayer.batchDraw();
     }
 
 
@@ -447,7 +447,7 @@ function generateTextNode(
         textNode.show();
         tr.show();
         tr.forceUpdate();
-        iconLayer.batchDraw();
+        drawingLayer.batchDraw();
       }
 
       function handleOutsideClick(ev) {
