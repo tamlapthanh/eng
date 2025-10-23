@@ -2,6 +2,10 @@
 // Application-level initialization and UI glue.
 // Must be loaded after common.js, audioService.js, canvas.js, konva, jquery, bootstrap, etc.
 
+// Thêm vào đầu app.js, TRƯỚC $(document).ready
+// Kiểm tra authentication
+AuthService.requireAuth();
+
 $(document).ready(function () {
   
 
@@ -263,14 +267,15 @@ $(document).ready(function () {
     showSpinner("#F54927");
     fetch(global_const.SERVER_URL, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: AuthService.getAuthHeaders(), // ← Thay đổi này
+      // headers: { "Content-Type": "application/json" },
       body: JSON.stringify(dataToSend),
     })
       .then((resp) => resp)
       .then((d) => {
         showToast("Lưu bài làm thành công!");
         APP_DATA = null;
-        listDrawingPagesDetailed(page.toString());
+        listDrawingPagesDetailed(page.toString(), true);
       })
       .catch((err) => {
         showToast("Lỗi khi lưu", "danger");
@@ -279,14 +284,15 @@ $(document).ready(function () {
   });
 
   // load lines list (uses APP_DATA and CanvasManager.loadLinesByDraw)
-  function listDrawingPagesDetailed(page = null) {
+  function listDrawingPagesDetailed(page = null, isClearCache = false) {
     IS_EANBLE_SWIPE = true;
     if (APP_DATA == null) {
       showSpinner("#FFC0CB", "spinnerOverlay_async_id");
-      const dataToSend = { sheet_name: DATA_TYPE };
+      const dataToSend = { sheet_name: DATA_TYPE, clear_cache: isClearCache };
       fetch(global_const.SERVER_API_ALL_METHOD, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        // headers: { "Content-Type": "application/json" },
+        headers: AuthService.getAuthHeaders(), // ← Thay đổi này
         body: JSON.stringify(dataToSend),
       })
         .then(async (res) => {
@@ -383,4 +389,22 @@ $(document).ready(function () {
   //     // window.AudioService.setAutoShowPanel(false);
   //   }
   });
+
+    // Thêm logout button vào controls
+  // const logoutBtn = $('<button>')
+  //   .attr('id', 'logout-btn')
+  //   .addClass('btn btn-secondary btn-sm-2')
+  //   .html('<i class="bi bi-box-arrow-right"></i>')
+  //   .on('click', function() {
+  //     if (confirm('Bạn có muốn đăng xuất?')) {
+  //       AuthService.logout();
+  //     }
+  //   });
+  
+$('#logout').on('click', function() {
+  if (confirm('Are you sure you want to logout?')) {
+     AuthService.logout();
+  }
+});
+
 });

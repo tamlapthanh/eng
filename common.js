@@ -17,11 +17,14 @@
 
   [DATA_TYPE, CURRENT_PAGE_INDEX, MAX_PAGE_NUM, MIN_PAGE_NUM] = createRadioButtons(6); // from common.js
 
-  const RUN_URL_SERVER = "https://zizi-app.onrender.com/";
-  const RUN_URL_LOCAL = "http://localhost:8080/";
-  const API_METHOD = "api/sheets/line_by_key";
-  const API_ALL_METHOD = "api/sheets/line_all";
+  // const RUN_URL_SERVER = "https://zizi-app.onrender.com/";                          
+  const RUN_URL_SERVER = "https://zizi-app-render.onrender.com/api";                          
+  const RUN_URL_LOCAL = "http://localhost:8080/api";
+  const API_METHOD = "/sheets/line_by_key";
+  const API_ALL_METHOD = "/sheets/line_all";
   
+  const LOCAL_IP = "xx.127.0.0.1";
+  // const LOCAL_IP = "127.0.0.1";
 
   const global_const = {
     get PATH_ASSETS_IMG() {
@@ -41,13 +44,13 @@
     },
     get SERVER_API_ALL_METHOD() {
       const hostname = window.location.hostname;
-      return hostname === "localhost" || hostname === "xx127.0.0.1"
+      return hostname === "localhost" || hostname === LOCAL_IP
         ? RUN_URL_LOCAL + API_ALL_METHOD
         : RUN_URL_SERVER + API_ALL_METHOD;
     },
     get SERVER_URL() {
       const hostname = window.location.hostname;
-      return hostname === "localhost" || hostname === "xx127.0.0.1"
+      return hostname === "localhost" || hostname === LOCAL_IP
         ? RUN_URL_LOCAL + API_METHOD
         : RUN_URL_SERVER + API_METHOD;
     },
