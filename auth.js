@@ -1,9 +1,8 @@
 // auth.js
 
 const AuthService = {
-    API_BASE_URL: 'https://zizi-app-render.onrender.com/api', 
-    // API_BASE_URL: 'http://localhost:8080/api',
-    
+    API_BASE_URL: global_const.RUN_URL_SERVER,   
+
     // Lưu token vào localStorage
     setToken(token) {
         localStorage.setItem('jwt_token', token);

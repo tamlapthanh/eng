@@ -265,7 +265,7 @@ $(document).ready(function () {
       json: JSON.stringify(jsonData),
     };
     showSpinner("#F54927");
-    fetch(global_const.SERVER_URL, {
+    fetch(global_const.API_LINE_KEY_METHOD, {
       method: "POST",
       headers: AuthService.getAuthHeaders(), // ← Thay đổi này
       // headers: { "Content-Type": "application/json" },

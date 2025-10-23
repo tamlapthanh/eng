@@ -1105,7 +1105,7 @@ function clearAllTextsInLayer() {
       // export Text nodes on iconLayer (if any)
       const textNodes = [];
       try {
-        const texts = iconLayer ? iconLayer.find("Text") : [];
+        const texts = drawingLayer ? drawingLayer.find("Text") : [];
         texts.forEach((tn) => {
           const absX = tn.x();
           const absY = tn.y();
