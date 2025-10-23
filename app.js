@@ -115,6 +115,7 @@ $(document).ready(function () {
     CURRENT_PAGE_INDEX = currentPageIndex;
     MAX_PAGE_NUM = maxPageNum;
     MIN_PAGE_NUM = minPageNum;
+    ASSETS_URL = getLinkByType(dataType);
   }
 
   $("#setting").on("click", function () {

@@ -484,10 +484,17 @@ function resetIcons() {
           cfg.showToast("Error loading background image", "danger");
       };
 
-      imageObj.src =
+      // imageObj.src =
+      //   (cfg.global_const && cfg.global_const.PATH_ASSETS_IMG
+      //     ? cfg.global_const.PATH_ASSETS_IMG
+      //     : "") + data.background;
+
+      imageObj.src = `${
         (cfg.global_const && cfg.global_const.PATH_ASSETS_IMG
           ? cfg.global_const.PATH_ASSETS_IMG
-          : "") + data.background;
+          : "") + data.background
+      }?t=${new Date().getTime()}`;
+
     }
 
     // --- điều chỉnh kích thước + vị trí cho 1 Konva.Image node (KHÔNG reset stage) ---
