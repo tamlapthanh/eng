@@ -1,21 +1,62 @@
-name: Ping my server every 13 minutes (06:00–23:00 VN)
+name: Conditional ping / wake Render (only when sleeping)
 
 on:
   schedule:
-    # VN 06:00–06:59 → UTC 23:00–23:59
-    - cron: '*/13 23 * * *'
-    # VN 07:00–22:59 → UTC 00:00–15:59
-    - cron: '*/13 0-15 * * *'
-    # VN 23:00 → UTC 16:00 (chạy 1 lần cuối cùng trong ngày)
-    - cron: '0 16 * * *'
+    - cron: '*/13 23 * * *'   # VN 06:00–06:59
+    - cron: '*/13 0-15 * * *' # VN 07:00–22:59
+    - cron: '0 16 * * *'      # VN 23:00 single run
   workflow_dispatch:
 
 jobs:
-  ping:
+  wake-if-sleeping:
     runs-on: ubuntu-latest
     steps:
-      - name: Ping Render server
+      - name: Conditional ping & wake
         run: |
-          echo "Pinging at $(date -u '+%Y-%m-%d %H:%M:%S') UTC"
-          curl -sSf --max-time 30 "https://zizi-app-render.onrender.com/api/ping/method?from=github" \
-            || echo "⚠️ Ping failed, server may be sleeping"
+          set -euo pipefail
+
+          # CONFIG
+          URL="https://zizi-app-render.onrender.com/api/ping/method?from=github"
+          # Quick probe timeout (seconds). Very short to detect awake fast.
+          PROBE_TIMEOUT=2
+          # Wake attempt timeout (seconds) — each wake curl can take more (start + boot)
+          WAKE_TIMEOUT=30
+          # Number of wake attempts
+          MAX_WAKE_ATTEMPTS=6
+          # Sleep between wake attempts (seconds)
+          SLEEP_BETWEEN=8
+
+          echo "=== Conditional ping/wake job started at $(date -u '+%Y-%m-%d %H:%M:%S') UTC ==="
+          echo "Probe URL: $URL"
+
+          # 1) Quick probe: if server already awake -> do nothing
+          echo "Probing quickly (timeout ${PROBE_TIMEOUT}s)..."
+          if curl --silent --show-error --fail --max-time ${PROBE_TIMEOUT} "$URL" >/dev/null 2>&1; then
+            echo "Server is awake — nothing to do."
+            exit 0
+          else
+            echo "Quick probe failed — server may be sleeping or unreachable. Proceeding to wake attempts..."
+          fi
+
+          # 2) Wake loop: retry until success or attempts exhausted
+          attempt=1
+          while [ $attempt -le $MAX_WAKE_ATTEMPTS ]; do
+            echo "Wake attempt #$attempt (timeout ${WAKE_TIMEOUT}s)... $(date -u '+%Y-%m-%d %H:%M:%S') UTC"
+            if curl --show-error --fail --max-time ${WAKE_TIMEOUT} "$URL"; then
+              echo "✅ Wake successful on attempt #$attempt at $(date -u '+%Y-%m-%d %H:%M:%S') UTC"
+              exit 0
+            else
+              echo "Attempt #$attempt failed. Waiting ${SLEEP_BETWEEN}s before next try..."
+              sleep ${SLEEP_BETWEEN}
+            fi
+            attempt=$((attempt+1))
+          done
+
+          echo "⚠️ All wake attempts failed after ${MAX_WAKE_ATTEMPTS} attempts."
+          echo "This likely means server didn't come up in expected time, or network/CORS issues."
+          # Do not fail the workflow — comment out next line if you want job to fail:
+          exit 0
+
+          # If you prefer the job to fail when wake fails, replace the above with:
+          # echo "Failing workflow because wake attempts exhausted"
+          # exit 1
