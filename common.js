@@ -1,6 +1,6 @@
 
 
-    [DATA_TYPE, CURRENT_PAGE_INDEX, MAX_PAGE_NUM, MIN_PAGE_NUM, ASSETS_URL] = createRadioButtons(); // from common.js
+    
 
     function createRadioButtons(defaultIndex  = 0) {
         // const options = [

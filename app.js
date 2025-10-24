@@ -1,13 +1,9 @@
-// app.js
-// Application-level initialization and UI glue.
-// Must be loaded after common.js, audioService.js, canvas.js, konva, jquery, bootstrap, etc.
-
-// Thêm vào đầu app.js, TRƯỚC $(document).ready
 // Kiểm tra authentication
 AuthService.requireAuth();
 
 $(document).ready(function () {
   
+  [DATA_TYPE, CURRENT_PAGE_INDEX, MAX_PAGE_NUM, MIN_PAGE_NUM, ASSETS_URL] = createRadioButtons(); // from common.js
 
   // UI inputs references
   const iconSoundUrlInput = $("#icon-sound-url");
@@ -390,22 +386,11 @@ $(document).ready(function () {
   //     // window.AudioService.setAutoShowPanel(false);
   //   }
   });
-
-    // Thêm logout button vào controls
-  // const logoutBtn = $('<button>')
-  //   .attr('id', 'logout-btn')
-  //   .addClass('btn btn-secondary btn-sm-2')
-  //   .html('<i class="bi bi-box-arrow-right"></i>')
-  //   .on('click', function() {
-  //     if (confirm('Bạn có muốn đăng xuất?')) {
-  //       AuthService.logout();
-  //     }
-  //   });
   
-$('#logout').on('click', function() {
-  if (confirm('Are you sure you want to logout?')) {
-     AuthService.logout();
-  }
-});
+    $('#logout').on('click', function() {
+      if (confirm('Are you sure you want to logout?')) {
+        AuthService.logout();
+      }
+    });
 
 });

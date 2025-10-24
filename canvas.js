@@ -401,7 +401,7 @@ function resetIcons() {
 
       const imageObj = new Image();
       const oldBackground = backgroundImage; // giữ ref ảnh cũ (có thể null)
-       showSpinner("#F54927");
+      showSpinner("#F54927");
 
       imageObj.onload = function () {
         try {

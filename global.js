@@ -35,8 +35,8 @@ const ASSET_URL_ARRAY = [
   const API_LINE_KEY_METHOD = "/sheets/line_by_key";
   const API_LINE_ALL_METHOD = "/sheets/line_all";
   
-//   const LOCAL_IP = "xx.127.0.0.1";
-  const LOCAL_IP = "127.0.0.1";
+  const LOCAL_IP = "xx.127.0.0.1";
+  // const LOCAL_IP = "127.0.0.1";
 
   const global_const = {
     get PATH_ASSETS_IMG() {

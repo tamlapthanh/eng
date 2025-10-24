@@ -168,39 +168,48 @@ $(document).ready(function () {
 
       errorMsg.addClass("d-none");
 
-      const result = await AuthService.login(email, password);
+      // 🌀 Hiện spinner
+      showSpinner();
 
-      if (result.success) {
-        window.location.href = "index.html";
-      } else {
-        const errorMsg = $("#errorMessage");
-        errorMsg.removeClass("d-none");
 
+    try {
+        const result = await AuthService.login(email, password);
+
+        if (result.success) {
+          // hide trước khi chuyển trang để tránh flash overlay
+          hideSpinner();
+          window.location.href = 'index.html';
+          return;
+        }
+
+        // nếu không thành công, hiện lỗi
+        errorMsg.removeClass('d-none');
         switch (result.type) {
-          case "invalid_credentials":
-            errorMsg.text("Email hoặc mật khẩu không đúng. Vui lòng kiểm tra.");
+          case 'invalid_credentials':
+            errorMsg.text('Email hoặc mật khẩu không đúng. Vui lòng kiểm tra.');
             break;
-          case "validation_error":
-            errorMsg.text(result.message || "Dữ liệu nhập không hợp lệ.");
+          case 'validation_error':
+            errorMsg.text(result.message || 'Dữ liệu nhập không hợp lệ.');
             break;
-          case "timeout":
-            errorMsg.text("Máy chủ không phản hồi. Vui lòng thử lại sau.");
+          case 'timeout':
+            errorMsg.text('Máy chủ không phản hồi. Vui lòng thử lại sau.');
             break;
-          case "network":
-            // Có thể là CORS / DNS / không thể kết nối
-            errorMsg.text(
-              "Không thể kết nối tới server. Kiểm tra kết nối hoặc cấu hình CORS."
-            );
-            console.error("Network/CORS error:", result.message);
+          case 'network':
+            errorMsg.text('Không thể kết nối tới server. Kiểm tra kết nối hoặc CORS.');
+            console.error('Network/CORS error:', result.message);
             break;
-          case "server_error":
+          case 'server_error':
           default:
-            errorMsg.text(
-              result.message || "Lỗi máy chủ. Vui lòng thử lại sau."
-            );
-            console.error("Server error:", result);
+            errorMsg.text(result.message || 'Lỗi máy chủ. Vui lòng thử lại sau.');
+            console.error('Server error:', result);
             break;
         }
+      } catch (ex) {
+        console.error('Unexpected error during login', ex);
+        $('#errorMessage').removeClass('d-none').text('Lỗi không xác định. Vui lòng thử lại.');
+      } finally {
+        // luôn ẩn overlay ở cuối
+        hideSpinner();
       }
 
     });
