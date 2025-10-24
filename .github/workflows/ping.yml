@@ -1,11 +1,11 @@
-name: Ping my server every 59 minutes (06:00–23:00 VN)
+name: Ping my server every 13 minutes (06:00–23:00 VN)
 
 on:
   schedule:
     # VN 06:00–06:59 → UTC 23:00–23:59
-    - cron: '*/59 23 * * *'
+    - cron: '*/13 23 * * *'
     # VN 07:00–22:59 → UTC 00:00–15:59
-    - cron: '*/59 0-15 * * *'
+    - cron: '*/13 0-15 * * *'
     # VN 23:00 → UTC 16:00 (chạy 1 lần cuối cùng trong ngày)
     - cron: '0 16 * * *'
   workflow_dispatch:
