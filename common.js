@@ -1,19 +1,4 @@
-
-
-    
-
     function createRadioButtons(defaultIndex  = 0) {
-        // const options = [
-        //     { id: 'radio_student_37_book', data_type: 'student37', label: 'Student book 37',  max: 107, min: 1, current: 2 }, // 0
-        //     { id: 'radio_work_37_book', data_type: 'work37', label: 'Work book 37' , max: 97, min: 1, current: '1' }, // 1
-        //     { id: 'radio_btbt_37_book', data_type: 'btbt37', label: 'BTBT 3' , max: 140, min: 1, current: '1' }, // 2
-        //     { id: 'radio_student_book', data_type: 'student', label: 'Student book 27' , max: 66, min: 1, current: 1 }, // 3
-        //     { id: 'radio_work_book', data_type: 'work', label: 'Workbook 27' , max: 65, min: 1, current: 1 }, // 4
-        //     { id: 'radio_dict_book', data_type: 'dict', label: 'Dictionary' , max: 87, min: 1, current: 2 }, // 5
-        //     { id: 'radio_first_work_sheet', data_type: 'first_work_sheet', label: 'Vocabulary Work Sheet' , max: 14, min: 1, current: 2 }, // 6
-        //     { id: 'radio_math', data_type: 'math_page', label: 'Math Game' }, // 7
-        // ];
-        
         const container = document.getElementById('radioContainer');
         
         let idx = 0;
@@ -23,6 +8,7 @@
         let min = 1;
         let checkedVal = false;        
         let assetUrl = "";
+        let fetchInfo = false;
 
         OPTIONS_ARRAY.forEach(option => {
             if (defaultIndex == idx) {
@@ -30,6 +16,7 @@
                 current = option.current;
                 max = option.max;
                 min = option.min;
+                fetchInfo = option.fetch ? true : false;
                 checkedVal = true;
                 assetUrl = getLinkByType(data_type);
             } else {
@@ -49,6 +36,7 @@
             inputElement.setAttribute('data-current-page-index', option.current);
             inputElement.setAttribute('data-max-page-num',  option.max);
             inputElement.setAttribute('data-min-page-num', option.min);
+            inputElement.setAttribute('data-fetch', option.fetch ? true : false);
             
             const labelElement = document.createElement('label');
             labelElement.className = 'form-check-label';
@@ -61,7 +49,7 @@
             idx = idx + 1 ;
         });
 
-        return [data_type, current, max, min, assetUrl];
+        return [data_type, current, max, min, assetUrl, fetchInfo];
     }
 
 
@@ -358,3 +346,7 @@ function getLinkByType(data_type) {
   return item ? item.link : "";
 }
 
+$(document).on("click", ".group-controls .toggle-btn", function () {
+  const $group = $(this).closest(".group-controls");
+  $group.find(".btn").not(this).fadeToggle(200);
+});

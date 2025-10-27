@@ -3,7 +3,7 @@ AuthService.requireAuth();
 
 $(document).ready(function () {
   
-  [DATA_TYPE, CURRENT_PAGE_INDEX, MAX_PAGE_NUM, MIN_PAGE_NUM, ASSETS_URL] = createRadioButtons(); // from common.js
+  [DATA_TYPE, CURRENT_PAGE_INDEX, MAX_PAGE_NUM, MIN_PAGE_NUM, ASSETS_URL, FETCH_DRAW_INFO] = createRadioButtons(); // from common.js
 
   // UI inputs references
   const iconSoundUrlInput = $("#icon-sound-url");
@@ -77,6 +77,12 @@ $(document).ready(function () {
     CanvasManager.addRect();
   });  
 
+  $("#toggle-zoom-btn").on("click", function () {
+    toggleButtons("zoom-controls-btn", "toggle-zoom-btn");
+  });
+
+  
+
   // Zoom & draw & lock buttons (some are still in CanvasManager but UI toggles here)
   $("#draw-btn").on("click", function () {
     CanvasManager.toggleDrawing();
@@ -88,11 +94,12 @@ $(document).ready(function () {
     var currentPageIndex = $(this).data("current-page-index");
     var maxPageNum = $(this).data("max-page-num");
     var minPageNum = $(this).data("min-page-num");
+    var fetchInfo      = $(this).data("fetch") ? true : false;
     if (selectedValue === "math_page") {
       window.location.href = "math.html";
     } else if (DATA_TYPE !== selectedValue) {
       DATA_TYPE = selectedValue;
-      setPageInfo(DATA_TYPE, currentPageIndex, maxPageNum, minPageNum);
+      setPageInfo(DATA_TYPE, currentPageIndex, maxPageNum, minPageNum, fetchInfo);
       popDropdown(
         $("#json-dropdown"),
         "Page",
@@ -106,11 +113,12 @@ $(document).ready(function () {
     }
   });
 
-  function setPageInfo(dataType, currentPageIndex, maxPageNum, minPageNum) {
+  function setPageInfo(dataType, currentPageIndex, maxPageNum, minPageNum, fetchInfo) {
     DATA_TYPE = dataType;
     CURRENT_PAGE_INDEX = currentPageIndex;
     MAX_PAGE_NUM = maxPageNum;
     MIN_PAGE_NUM = minPageNum;
+    FETCH_DRAW_INFO = fetchInfo;
     ASSETS_URL = getLinkByType(dataType);
   }
 
@@ -136,7 +144,7 @@ $(document).ready(function () {
 
   function toggleLockIcon(isLock = true) {
     // replicate original toggleLockIcon behavior
-    const icon = document.getElementById("lock").querySelector("i");
+    const icon = document.getElementById("lock-btn").querySelector("i");
     if (!isLock) {
       icon.classList.remove("bi-lock-fill");
       icon.classList.add("bi-unlock-fill");
@@ -152,9 +160,35 @@ $(document).ready(function () {
     }
   }
 
-  $("#lock").on("click", function () {
+  let autoPlayInterval = null;
+  $("#auto-play-btn").on("click", function () {
+    const $icon = $(this).find("i");
+
+    if ($icon.hasClass("bi-play-btn")) {
+      // 👉 Chuyển sang chế độ Auto Play
+      $(this).removeClass("btn-success").addClass("btn-danger");      
+      $icon.removeClass("bi-play-btn").addClass("bi-pause-btn");
+
+      // ⏱ Lần đầu chờ 2 giây rồi gọi
+        setTimeout(() => {
+          processNextPrePage(true);
+        }, 2000);
+
+      // Gọi lại mỗi 5 giây
+      autoPlayInterval = setInterval(() => {
+        processNextPrePage(true);
+      }, AUTO_PLAY_TIME*1000);
+    } else {
+      // 👉 Dừng Auto Play
+      $(this).removeClass("btn-danger").addClass("btn-success");            
+      $icon.removeClass("bi-pause-btn").addClass("bi-play-btn");
+      clearInterval(autoPlayInterval);
+    }
+  });
+
+  $("#lock-btn").on("click", function () {
     // replicate original toggleLockIcon behavior
-    const icon = document.getElementById("lock").querySelector("i");
+    const icon = document.getElementById("lock-btn").querySelector("i");
     if (icon.classList.contains("bi-lock-fill")) {
       toggleLockIcon(false);
     } else {
@@ -283,6 +317,13 @@ $(document).ready(function () {
   // load lines list (uses APP_DATA and CanvasManager.loadLinesByDraw)
   function listDrawingPagesDetailed(page = null, isClearCache = false) {
     IS_EANBLE_SWIPE = true;
+
+    if (typeof FETCH_DRAW_INFO === "undefined" || FETCH_DRAW_INFO === false) {
+      // không cần phải load cho loại data type này vì nó không có draw gì cả. 
+      console.log(" không cần phải load cho loại data type này vì nó không có draw gì cả. ");
+      return ;
+    }
+
     if (APP_DATA == null) {
       showSpinner("#FFC0CB", "spinnerOverlay_async_id");
       const dataToSend = { sheet_name: DATA_TYPE, clear_cache: isClearCache };
