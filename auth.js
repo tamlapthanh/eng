@@ -176,7 +176,7 @@ $(document).ready(function () {
         const result = await AuthService.login(email, password);
 
         if (result.success) {
-          // hide trước khi chuyển trang để tránh flash overlay
+          // hide trước khi chuyển trang để tránh flash overlay          
           hideSpinner();
           window.location.href = 'index.html';
           return;

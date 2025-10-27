@@ -23,6 +23,7 @@
       href="https://cdn.jsdelivr.net/npm/bootstrap-colorpicker@2.5.3/dist/css/bootstrap-colorpicker.min.css"
     />
     <link rel="stylesheet" type="text/css" href="assets/coloris.min.css" />
+    <link rel="stylesheet" href="assets/styles.css">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <!-- <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script> -->
     <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js"></script>
@@ -30,232 +31,7 @@
     <script src="https://cdn.jsdelivr.net/npm/interactjs@1.10.11/dist/interact.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap-colorpicker@2.5.3/dist/js/bootstrap-colorpicker.min.js"></script>
     <script src="assets/coloris.min.js"></script>
-    <style>
-      body {
-        font-family: Arial, sans-serif;
-        margin: 0;
-        overflow: hidden;
-      }
-
-      /* Overlay che toàn màn hình - blocking */
-
-      .overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        align-items: center;
-        justify-content: center;
-        z-index: 9999;
-        /* High z-index to cover all content */
-        display: none;
-        /* Hidden by default */
-      }
-
-      /* Overlay không chặn thao tác (async) */
-      .overlay-async {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        display: none;
-        justify-content: center;
-        align-items: center;
-        background: transparent;
-        z-index: 9998;
-        pointer-events: none; /* cho phép thao tác xuyên qua */
-      }
-
-      /* Icon loading */
-      .spinner-icon {
-        font-size: 3rem;
-        color: #007bff;
-        animation: spin 1.2s linear infinite;
-        pointer-events: none;
-      }
-
-      /* Animation xoay vòng */
-      @keyframes spin {
-        to {
-          transform: rotate(360deg);
-        }
-      }
-
-      #canvas-container {
-        position: relative;
-        width: 100vw;
-        height: 100vh;
-      }
-
-      #canvas {
-        width: 100%;
-        height: 100%;
-      }
-
-      .play-icon {
-        cursor: pointer;
-      }
-
-      .setting-btn {
-        position: absolute;
-        top: 10px;
-        right: 5px;
-        z-index: 10;
-      }
-
-      .logout-btn {
-        position: absolute;
-        top: 10px;
-        left: 5px;
-        z-index: 10;
-      }
-
-      .start-btn {
-        position: absolute;
-        bottom: 10px;
-        right: 5px;
-        z-index: 10;
-      }
-
-      .controls {
-        position: absolute;
-        top: 35px;
-        /* Adjust this value to position it below the setting button */
-        right: 5px;
-        z-index: 10;
-        display: flex;
-        flex-direction: column;
-        /* Arrange buttons in a column */
-        gap: 3px;
-      }
-
-      .group-controls {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-      }
-
-      /* Ẩn các nút con ban đầu */
-      .group-controls .btn:not(.toggle-btn) {
-        display: none;
-        margin-left: 15px; /* Lùi vào một chút */
-      }
-
-      .btn-sm {
-        width: 23px;
-        /* Adjust width for smaller button */
-        height: 23px;
-        /* Adjust height for smaller button */
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 0;
-        /* Adjust font size for smaller icon */
-      }
-
-      /* Buttons positioned on the sides */
-      .side-btn {
-        position: absolute;
-        top: 50%;
-        transform: translateY(-50%);
-        z-index: 10;
-        /* Smaller icon size */
-        width: 23px;
-        /* Smaller button size */
-        height: 23px;
-        /* Smaller button size */
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 0;
-        /* Remove padding */
-      }
-
-      .side-bottom-btn {
-        position: absolute;
-        bottom: 15px; /* cách mép dưới 15px, bạn có thể tăng/giảm */
-        z-index: 10;
-        width: 23px;
-        height: 23px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 0;
-      }
-
-      .left-btn {
-        left: 10px;
-      }
-
-      .right-btn {
-        right: 10px;
-      }
-
-      /* Hiệu ứng hover cho label */
-      .form-check-label:hover {
-        background-color: #f0f8ff;
-        /* Thay đổi màu nền khi hover */
-        cursor: pointer;
-        /* Thay đổi con trỏ chuột */
-      }
-
-      /* Tùy chọn khi radio button được chọn */
-      .form-check-input:checked + .form-check-label {
-        background-color: #d1e7dd;
-        /* Thay đổi màu nền khi đã chọn */
-      }
-
-      .math {
-        position: absolute;
-        top: 5px;
-        left: 5px;
-        z-index: 10;
-      }
-
-      .clr-picker {
-        z-index: 1055;
-        /* Đảm bảo lớn hơn z-index của modal (Bootstrap modal là 1050) */
-      }
-
-      .toast-container {
-        z-index: 1055;
-        /* Đảm bảo hiển thị trên cùng, nếu cần */
-      }
-
-      .range-container {
-        position: relative;
-        padding: 20px 0;
-      }
-
-      .range-labels {
-        display: flex;
-        justify-content: space-between;
-        position: relative;
-        margin-top: 10px;
-      }
-
-      .range-labels span {
-        font-size: 14px;
-        color: #666;
-        font-weight: 500;
-      }
-
-      #canvas {
-        touch-action: none;
-      }
-
-      #audio-control-panel i {
-        font-size: 1.2rem;
-      }
-
-      #speedValue {
-        min-width: 36px;
-        text-align: right;
-        font-weight: 500;
-      }
-    </style>
+    
   </head>
 
   <body>
@@ -273,6 +49,8 @@
       <div class="overlay-async" id="spinnerOverlay_async_id">
         <i class="fas fa-spinner spinner-icon"></i>
       </div>
+
+      <div id="countdown-overlay"></div>
 
       <div id="canvas"></div>
 
@@ -340,18 +118,24 @@
           </button>
         </div>
         <!-- Zoom control end -->
+      <div class="group-controls">
+            <button class="btn btn-info btn-sm toggle-btn">
+              <i class="bi bi-play-btn"></i>
+            </button>
 
-        <button id="id_ShowPanel" class="btn btn-success btn-sm">
-          <i class="bi bi-music-player-fill"></i>
-        </button>
+          <button id="id_ShowPanel" class="btn btn-success btn-sm">
+            <i class="bi bi-music-player-fill"></i>
+          </button>
+
+          <button id="auto-play-btn" class="btn btn-success btn-sm">
+            <i class="bi bi-play-btn"></i>
+          </button>        
+        </div>
 
         <button id="lock-btn" class="btn btn-warning btn-sm">
           <i id="lock-icon" class="bi bi-lock-fill"></i>
         </button>
 
-        <button id="auto-play-btn" class="btn btn-success btn-sm">
-          <i class="bi bi-play-btn"></i>
-        </button>        
 
       </div>
     </div>

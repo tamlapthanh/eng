@@ -350,3 +350,90 @@ $(document).on("click", ".group-controls .toggle-btn", function () {
   const $group = $(this).closest(".group-controls");
   $group.find(".btn").not(this).fadeToggle(200);
 });
+
+function startCountdownHTML(seconds) {
+  stopCountdownHTML();
+
+  const overlay = document.getElementById('countdown-overlay');
+  if (!overlay) return;
+
+  let timeLeft = seconds - 1;
+  overlay.textContent = timeLeft;
+  overlay.classList.add('show');
+  overlay.classList.remove('vibrate');
+
+  const update = () => {
+    timeLeft--;
+
+    if (timeLeft <= 0) {
+      overlay.classList.remove('show', 'vibrate');
+      setTimeout(() => {
+        overlay.textContent = '';
+      }, 300);
+      processNextPrePage(true);
+      return;
+    }
+
+    overlay.textContent = timeLeft;
+    overlay.style.opacity = Math.max(0.6, timeLeft / 3);  
+
+    // THÊM HIỆU ỨNG RUNG + VIBRATE KHI CÒN 1 GIÂY
+    if (timeLeft < 3) {
+      overlay.classList.add('vibrate');
+        // playTickSound(); // gọi hàm
+        // if (navigator.vibrate) {
+        //   navigator.vibrate([200, 100, 200]);
+        // }
+    } else {
+      overlay.classList.remove('vibrate');
+    }
+
+    countdownTimeout = setTimeout(update, 1000);
+  };
+
+  countdownTimeout = setTimeout(update, 1000);
+}
+
+function stopCountdownHTML() {
+  if (countdownTimeout) {
+    clearTimeout(countdownTimeout);
+    countdownTimeout = null;
+  }
+  const overlay = document.getElementById('countdown-overlay');
+  if (overlay) {
+    overlay.classList.remove('show', 'vibrate');
+    setTimeout(() => {
+      overlay.textContent = '';
+    }, 300);
+  }
+}
+
+  function processNextPrePage(isNext = true) {
+    window.AudioService && window.AudioService.stopAudio();
+    if (isNext) {
+      CURRENT_PAGE_INDEX = CURRENT_PAGE_INDEX + 1;
+      if (CURRENT_PAGE_INDEX > MAX_PAGE_NUM) CURRENT_PAGE_INDEX = MIN_PAGE_NUM;
+    } else {
+      CURRENT_PAGE_INDEX = CURRENT_PAGE_INDEX - 1;
+      if (CURRENT_PAGE_INDEX < MIN_PAGE_NUM) CURRENT_PAGE_INDEX = MAX_PAGE_NUM;
+    }
+    $("#json-dropdown").val(CURRENT_PAGE_INDEX).change();
+  }
+
+
+  // Đầu file app.js (toàn cục)
+let tickAudio = null;
+
+// Trong startCountdownHTML hoặc bất kỳ đâu
+function playTickSound() {
+  if (!tickAudio) {
+    tickAudio = new Audio('assets/sound/tick.mp3');
+    tickAudio.preload = 'auto'; // tải trước
+  }
+
+  // Reset về đầu (để play lại)
+  tickAudio.currentTime = 0;
+  tickAudio.play().catch(() => {});
+}
+
+

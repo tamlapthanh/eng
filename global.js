@@ -1,8 +1,10 @@
-const AUTO_PLAY_TIME = 4; // 4 giây
+const AUTO_PLAY_TIME = 6; // 4 
+let countdownTimeout = null;
+let countdownElement = null;
 
 const OPTIONS_ARRAY  = [
     { id: 'radio_student_37_book', data_type: 'student37', label: 'Student book 37',  max: 107, min: 1, current: 2, fetch:true }, // 0
-    { id: 'radio_work_37_book', data_type: 'work37', label: 'Work book 37' , max: 97, min: 1, current: '1' }, // 1
+    { id: 'radio_work_37_book', data_type: 'work37', label: 'Work book 37' , max: 97, min: 1, current: '1', fetch:true}, // 1
     { id: 'radio_btbt_37_book', data_type: 'btbt37', label: 'BTBT 3' , max: 140, min: 1, current: '1', fetch:true }, // 2
     { id: 'radio_student_book', data_type: 'student', label: 'Student book 27' , max: 66, min: 1, current: 1 , fetch:true}, // 3
     { id: 'radio_work_book', data_type: 'work', label: 'Workbook 27' , max: 65, min: 1, current: 1 , fetch:true}, // 4

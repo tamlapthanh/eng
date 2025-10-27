@@ -160,31 +160,41 @@ $(document).ready(function () {
     }
   }
 
-  let autoPlayInterval = null;
-  $("#auto-play-btn").on("click", function () {
-    const $icon = $(this).find("i");
+$("#auto-play-btn").on("click", function () {
+  const $btn = $(this);
+  const $icon = $btn.find("i");
 
-    if ($icon.hasClass("bi-play-btn")) {
-      // 👉 Chuyển sang chế độ Auto Play
-      $(this).removeClass("btn-success").addClass("btn-danger");      
-      $icon.removeClass("bi-play-btn").addClass("bi-pause-btn");
+  if ($icon.hasClass("bi-play-btn")) {
+    // BẬT AUTO PLAY
+    $btn.removeClass("btn-success").addClass("btn-danger");
+    $icon.removeClass("bi-play-btn").addClass("bi-pause-btn");
 
-      // ⏱ Lần đầu chờ 2 giây rồi gọi
-        setTimeout(() => {
-          processNextPrePage(true);
-        }, 2000);
+    startCountdownHTML(AUTO_PLAY_TIME);
 
-      // Gọi lại mỗi 5 giây
-      autoPlayInterval = setInterval(() => {
-        processNextPrePage(true);
-      }, AUTO_PLAY_TIME*1000);
-    } else {
-      // 👉 Dừng Auto Play
-      $(this).removeClass("btn-danger").addClass("btn-success");            
-      $icon.removeClass("bi-pause-btn").addClass("bi-play-btn");
-      clearInterval(autoPlayInterval);
-    }
-  });
+    autoPlayInterval = setInterval(() => {
+      startCountdownHTML(AUTO_PLAY_TIME);
+    }, AUTO_PLAY_TIME * 1000);
+
+  } else {
+    // TẮT
+    stopAutoPlay();
+  }
+});
+
+function stopAutoPlay() {
+  const $btn = $("#auto-play-btn");
+  const $icon = $btn.find("i");
+
+  $btn.removeClass("btn-danger").addClass("btn-success");
+  $icon.removeClass("bi-pause-btn").addClass("bi-play-btn");
+
+  if (autoPlayInterval) {
+    clearInterval(autoPlayInterval);
+    autoPlayInterval = null;
+  }
+
+  stopCountdownHTML(); // thêm dòng này
+}
 
   $("#lock-btn").on("click", function () {
     // replicate original toggleLockIcon behavior
@@ -249,17 +259,7 @@ $(document).ready(function () {
     processNextPrePage(true);
   });
 
-  function processNextPrePage(isNext = true) {
-    window.AudioService && window.AudioService.stopAudio();
-    if (isNext) {
-      CURRENT_PAGE_INDEX = CURRENT_PAGE_INDEX + 1;
-      if (CURRENT_PAGE_INDEX > MAX_PAGE_NUM) CURRENT_PAGE_INDEX = MIN_PAGE_NUM;
-    } else {
-      CURRENT_PAGE_INDEX = CURRENT_PAGE_INDEX - 1;
-      if (CURRENT_PAGE_INDEX < MIN_PAGE_NUM) CURRENT_PAGE_INDEX = MAX_PAGE_NUM;
-    }
-    $("#json-dropdown").val(CURRENT_PAGE_INDEX).change();
-  }
+
 
   // pop dropdown
   function popDropdown(dropdown, text, start, end, default_index) {
