@@ -295,7 +295,7 @@ function stopAutoPlay() {
       page: page,
       json: JSON.stringify(jsonData),
     };
-    showSpinner("#F54927");
+    showSpinner("spinnerOverlay", "#F54927");
     fetch(global_const.API_LINE_KEY_METHOD, {
       method: "POST",
       headers: AuthService.getAuthHeaders(), // ← Thay đổi này
@@ -325,7 +325,7 @@ function stopAutoPlay() {
     }
 
     if (APP_DATA == null) {
-      showSpinner("#FFC0CB", "spinnerOverlay_async_id");
+      showSpinner("spinnerOverlay_async_id", "#FFC0CB");
       const dataToSend = { sheet_name: DATA_TYPE, clear_cache: isClearCache };
       fetch(global_const.SERVER_API_ALL_METHOD, {
         method: "POST",
@@ -334,7 +334,7 @@ function stopAutoPlay() {
         body: JSON.stringify(dataToSend),
       })
         .then(async (res) => {
-          if (res & !res.ok) throw new Error("HTTP " + res.status);
+          if (!res.ok) throw new Error("HTTP " + res.status);
           return res.json();
         })
         .then((data) => {

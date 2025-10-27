@@ -377,7 +377,7 @@ function resetIcons() {
 
     // --- chỉnh sửa loadAssetJson: không clear layer ngay lập tức ---
     function loadAssetJson(page, url) {
-      showSpinner();
+      showSpinner("spinnerOverlay", "#F54927");
       fetch(url)
         .then(res => { if(!res.ok) throw new Error(res.statusText); return res.json(); })
         .then((data) => {
@@ -393,109 +393,101 @@ function resetIcons() {
     }
 
     // --- load và swap an toàn (với fade-in) ---
-    function loadJsonBackgroundAndIcons(page, data) {
-      if (!data || !data.background) {
-        hideSpinner();
-        return;
+   async function loadJsonBackgroundAndIcons(page, data) {
+  if (!data || !data.background) {
+    hideSpinner();
+    return;
+  }
+
+  const basePath = (cfg.global_const && cfg.global_const.PATH_ASSETS_IMG) ? cfg.global_const.PATH_ASSETS_IMG : "";
+  const bgUrl = basePath + data.background;
+
+  showSpinner("spinnerOverlay", "#F54927");
+
+  try {
+    // 1) preload background image
+    const imageObj = await preloadImage(bgUrl);
+
+    // 2) tạo Konva.Image mới (opacity 0 để fade-in)
+    const newBg = new Konva.Image({
+      x: 0,
+      y: 0,
+      image: imageObj,
+      width: imageObj.width,
+      height: imageObj.height,
+      id: "backgroundImage_tmp",
+      opacity: 0,
+    });
+
+    // add vào layer
+    backgroundLayer.add(newBg);
+    adjustBackgroundImageNode(newBg); // resize/fit nếu bạn có logic này
+
+    // 3) clear icons cũ
+    playIcons.forEach((i) => {
+      try { i.destroy(); } catch (e) {}
+    });
+    playIcons = [];
+    iconLayer.clear();
+
+    // 4) preload icons (nếu icons có image assets) - optional
+    // nếu addPlayIcon tự tạo hình từ sprite/static icon thì bỏ khối preload này
+    const iconPreloads = [];
+    (data.icons || []).forEach(iconData => {
+      if (iconData.img) { // giả sử iconData có trường img nếu icon riêng
+        const iconUrl = basePath + iconData.img;
+        iconPreloads.push(preloadImage(iconUrl).catch(()=>null));
       }
+    });
+    // chờ preload icons xong (không block nếu lỗi)
+    if (iconPreloads.length) await Promise.all(iconPreloads);
 
-      const imageObj = new Image();
-      const oldBackground = backgroundImage; // giữ ref ảnh cũ (có thể null)
-      showSpinner("#F54927");
+    // 5) add icons mới (toạ độ dựa trên kích thước newBg)
+    const bgX = newBg.x();
+    const bgY = newBg.y();
+    const bgW = newBg.width();
+    const bgH = newBg.height();
 
-      imageObj.onload = function () {
-        try {
-          // tạo Konva.Image mới, đặt opacity 0 để fade-in
-          const newBg = new Konva.Image({
-            x: 0,
-            y: 0,
-            image: imageObj,
-            width: imageObj.width,
-            height: imageObj.height,
-            id: "backgroundImage_tmp",
-            opacity: 0,
-          });
+    (data.icons || []).forEach((iconData) => {
+      const iconX = (typeof iconData.x === "number") ? iconData.x * bgW + bgX : bgX;
+      const iconY = (typeof iconData.y === "number") ? iconData.y * bgH + bgY : bgY;
+      addPlayIcon(iconX, iconY, iconData.sound, iconData); // truyền iconData nếu addPlayIcon cần img path
+    });
 
-          // add vào backgroundLayer (layer này nằm dưới iconLayer nên ổn)
-          backgroundLayer.add(newBg);
+    // 6) batch draw
+    backgroundLayer.batchDraw();
+    iconLayer.batchDraw();
 
-          // chỉ điều chỉnh kích thước & vị trí cho node mới (không reset toàn stage)
-          adjustBackgroundImageNode(newBg);
+    // 7) fade-in new background, remove old
+    const oldBackground = backgroundImage;
+    const tween = new Konva.Tween({
+      node: newBg,
+      duration: 0.22,
+      opacity: 1,
+      easing: Konva.Easings.EaseInOut,
+    });
+    tween.play();
+    tween.onFinish = function () {
+      try { tween.destroy(); } catch (e) {}
+      if (oldBackground) {
+        try { oldBackground.destroy(); } catch (e) {}
+      }
+      backgroundImage = newBg;
+      backgroundImage.id("backgroundImage");
+      backgroundLayer.batchDraw();
+      iconLayer.batchDraw();
+      drawingLayer.batchDraw();
 
-          // add icons mới (xoá icons cũ trước)
-          playIcons.forEach((i) => i.destroy());
-          playIcons = [];
-          iconLayer.clear();
+      if (typeof cfg.onLoadLines === "function") cfg.onLoadLines(page);
+    };
+  } catch (err) {
+    console.error("Error loading background/icons:", err);
+    if (typeof cfg.showToast === "function") cfg.showToast("Error loading background image", "danger");
+  } finally {
+    hideSpinner();
+  }
+}
 
-          const bgX = newBg.x();
-          const bgY = newBg.y();
-          const bgW = newBg.width();
-          const bgH = newBg.height();
-
-          (data.icons || []).forEach((iconData) => {
-            const iconX = iconData.x * bgW + bgX;
-            const iconY = iconData.y * bgH + bgY;
-            addPlayIcon(iconX, iconY, iconData.sound);
-          });
-
-          // batch draw trước khi tween
-          backgroundLayer.batchDraw();
-          iconLayer.batchDraw();
-
-          // fade-in newBg rồi destroy oldBackground khi xong
-          const tween = new Konva.Tween({
-            node: newBg,
-            duration: 0.22,
-            opacity: 1,
-            easing: Konva.Easings.EaseInOut,
-          });
-          tween.play();
-          tween.onFinish = function () {
-            try {
-              tween.destroy();
-            } catch (e) {}
-            // remove old background sau khi fade-in để tránh white flash
-            if (oldBackground) {
-              try {
-                oldBackground.destroy();
-              } catch (e) {}
-            }
-            // set chính thức
-            backgroundImage = newBg;
-            backgroundImage.id("backgroundImage");
-            backgroundLayer.batchDraw();
-            iconLayer.batchDraw();
-            drawingLayer.batchDraw();
-
-            // notify caller nếu cần load lines
-            if (typeof cfg.onLoadLines === "function") cfg.onLoadLines(page);
-          };
-        } finally {
-          hideSpinner();
-          // không reset toàn bộ stage ở đây — chỉ cập nhật view nếu cần
-          // nếu bạn muốn reset zoom mỗi lần load trang mới, gọi resetZoom() từ caller thay vì tự động ở đây.
-        }
-      };
-
-      imageObj.onerror = function (err) {
-        hideSpinner();
-        console.error("Error loading background image", err);
-        if (typeof cfg.showToast === "function")
-          cfg.showToast("Error loading background image", "danger");
-      };
-
-      // imageObj.src =
-      //   (cfg.global_const && cfg.global_const.PATH_ASSETS_IMG
-      //     ? cfg.global_const.PATH_ASSETS_IMG
-      //     : "") + data.background;
-
-      imageObj.src = `${
-        (cfg.global_const && cfg.global_const.PATH_ASSETS_IMG
-          ? cfg.global_const.PATH_ASSETS_IMG
-          : "") + data.background
-      }?t=${new Date().getTime()}`;
-
-    }
 
     // --- điều chỉnh kích thước + vị trí cho 1 Konva.Image node (KHÔNG reset stage) ---
     function adjustBackgroundImageNode(konvaImageNode) {

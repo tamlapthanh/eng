@@ -3,15 +3,23 @@
 const AuthService = {
   API_BASE_URL: global_const.RUN_URL_SERVER,
 
-  // Lưu token vào localStorage
-  setToken(token) {
-    localStorage.setItem("jwt_token", token);
+  setToken(token, { persist = false } = {}) {
+    if (persist) localStorage.setItem("jwt_token", token);
+    else sessionStorage.setItem("jwt_token", token);
+  },
+  getToken() {
+    return sessionStorage.getItem("jwt_token") || localStorage.getItem("jwt_token");
   },
 
-  // Lấy token
-  getToken() {
-    return localStorage.getItem("jwt_token");
-  },
+  // Lưu token vào localStorage
+  // setToken(token) {
+  //   localStorage.setItem("jwt_token", token);
+  // },
+
+  // // Lấy token
+  // getToken() {
+  //   return localStorage.getItem("jwt_token");
+  // },
 
   // Xóa token (logout)
   removeToken() {
@@ -169,7 +177,7 @@ $(document).ready(function () {
       errorMsg.addClass("d-none");
 
       // 🌀 Hiện spinner
-      showSpinner();
+      showSpinner("spinnerOverlay", "#F54927");
 
 
     try {
