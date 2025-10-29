@@ -108,7 +108,6 @@ body {
 /* Ẩn các nút con ban đầu */
 .group-controls .btn:not(.toggle-btn) {
     display: none;
-    margin-left: 15px;
     /* Lùi vào một chút */
 }
 

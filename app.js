@@ -2,15 +2,40 @@
 AuthService.requireAuth();
 
 $(document).ready(function () {
-  
-  [DATA_TYPE, CURRENT_PAGE_INDEX, MAX_PAGE_NUM, MIN_PAGE_NUM, ASSETS_URL, FETCH_DRAW_INFO] = createRadioButtons(); // from common.js
+  [
+    DATA_TYPE,
+    CURRENT_PAGE_INDEX,
+    MAX_PAGE_NUM,
+    MIN_PAGE_NUM,
+    ASSETS_URL,
+    FETCH_DRAW_INFO,
+  ] = createRadioButtons(); // from common.js
 
   // UI inputs references
   const iconSoundUrlInput = $("#icon-sound-url");
   const iconXInput = $("#icon-x");
   const iconYInput = $("#icon-y");
-  const previous_page = $("#previous_page");
-  const next_page = $("#next_page");
+
+  // const previous_page = $("#previous_page");
+  // const next_page = $("#next_page");
+
+  // init AudioService
+  AudioService.init({
+    iconPathPlaying: ICON_PLAYING, // "assets/music_icon.svg"
+    iconPathIdle: ICON_AUDIO, // "assets/play_icon.png"
+    resetIcons: resetIcons,
+    changeImageUrl: changeImageUrl,
+    getSoundStartEnd: getSoundStartEnd,
+    global_const: global_const,
+    autoShowPanel: true,
+    //   onClose: () => {
+    //     console.log("Closed panel!");
+    //     // $("#id_ShowPanel")
+    //     //   .toggleClass("btn-dark", true)
+    //     //   .toggleClass("btn-success", false);
+    //     // window.AudioService.setAutoShowPanel(false);
+    //   }
+  });
 
   // --- Initialize CanvasManager ---
   CanvasManager.init({
@@ -27,12 +52,12 @@ $(document).ready(function () {
     getIconSize: getIconSize,
     showToast: showToast,
     AudioService: window.AudioService,
-    onToggleLock:function (isLock) {
+    onToggleLock: function (isLock) {
       toggleLockIcon(isLock);
     },
     onLoadLines: function (page) {
       // called by CanvasManager after background+icons loaded
-      listDrawingPagesDetailed(String(page));
+      listDrawingPagesDetailed(String(page), false);
     },
     onPageChangeRequest: function (isNext) {
       // called by CanvasManager swipe -> we handle page index change & load
@@ -43,236 +68,10 @@ $(document).ready(function () {
     iconPathPlaying: ICON_PLAYING,
   });
 
-  // --- helper wrappers used by CanvasManager ---
-  function resetIcons() {
-    // app-level reset (keeps same behaviour)
-    const imageList = CanvasManager.getState().iconLayer.find("Image");
-    imageList.forEach(function (icon) {
-      const srcIcon = getAssetPath(icon.getAttr('sound'));
-      const newImage = new Image();
-      newImage.onload = function () {
-        icon.image(newImage);
-        CanvasManager.getState().iconLayer.batchDraw();
-      };
-      newImage.src = srcIcon; // "assets/play_icon.png";
-    });
-  }
-
-  function changeImageUrl(newUrl, icon) {
-    const newImage = new Image();
-    newImage.onload = function () {
-      icon.image(newImage);
-      CanvasManager.getState().iconLayer.batchDraw();
-    };
-    newImage.src = newUrl;
-  }
-
-  // ---- non-canvas UI handlers ----
-
-  $("#add-text-btn").on("click", function () {
-    CanvasManager.addText();
-  });
-
-  $("#add-rect-btn").on("click", function () {
-    CanvasManager.addRect();
-  });  
-
-  $("#toggle-zoom-btn").on("click", function () {
-    toggleButtons("zoom-controls-btn", "toggle-zoom-btn");
-  });
-
-  
-
-  // Zoom & draw & lock buttons (some are still in CanvasManager but UI toggles here)
-  $("#draw-btn").on("click", function () {
-    CanvasManager.toggleDrawing();
-    $(this).toggleClass("btn-danger btn-dark");
-  });
-
-  $('input[name="options"]').on("click", function () {
-    var selectedValue = $(this).val();
-    var currentPageIndex = $(this).data("current-page-index");
-    var maxPageNum = $(this).data("max-page-num");
-    var minPageNum = $(this).data("min-page-num");
-    var fetchInfo      = $(this).data("fetch") ? true : false;
-    if (selectedValue === "math_page") {
-      window.location.href = "math.html";
-    } else if (DATA_TYPE !== selectedValue) {
-      DATA_TYPE = selectedValue;
-      setPageInfo(DATA_TYPE, currentPageIndex, maxPageNum, minPageNum, fetchInfo);
-      popDropdown(
-        $("#json-dropdown"),
-        "Page",
-        MIN_PAGE_NUM,
-        MAX_PAGE_NUM,
-        CURRENT_PAGE_INDEX
-      );
-      APP_DATA = null;
-      loadPage();
-      $("#settingsModal").modal("hide");
-    }
-  });
-
-  function setPageInfo(dataType, currentPageIndex, maxPageNum, minPageNum, fetchInfo) {
-    DATA_TYPE = dataType;
-    CURRENT_PAGE_INDEX = currentPageIndex;
-    MAX_PAGE_NUM = maxPageNum;
-    MIN_PAGE_NUM = minPageNum;
-    FETCH_DRAW_INFO = fetchInfo;
-    ASSETS_URL = getLinkByType(dataType);
-  }
-
-  $("#setting").on("click", function () {
-    const controls = document.querySelector(".controls");
-    if (controls.style.display === "none") {
-      controls.style.display = "flex";
-    } else {
-      controls.style.display = "none";
-      toggleDrawIcon(true);
-    }
-  });
-
-  $("#id_ShowPanel").on("click", function () {
-    let isAuto = !$(this).hasClass("btn-success");
-    $(this).toggleClass("btn-success", isAuto).toggleClass("btn-dark", !isAuto);
-    // toggle audio panel visibility
-    if (isAuto)
-      window.AudioService.showPanel && window.AudioService.showPanel();
-    else window.AudioService.hidePanel && window.AudioService.hidePanel();
-    window.AudioService.setAutoShowPanel(isAuto);
-  });
-
-  function toggleLockIcon(isLock = true) {
-    // replicate original toggleLockIcon behavior
-    const icon = document.getElementById("lock-btn").querySelector("i");
-    if (!isLock) {
-      icon.classList.remove("bi-lock-fill");
-      icon.classList.add("bi-unlock-fill");
-      // unlock -> stage draggable true
-      const st = CanvasManager.getState().stage;
-      st && st.draggable(true);
-      CanvasManager.setDrawingMode(false);
-    } else {
-      icon.classList.remove("bi-unlock-fill");
-      icon.classList.add("bi-lock-fill");
-      const st = CanvasManager.getState().stage;
-      st && st.draggable(false);
-    }
-  }
-
-$("#auto-play-btn").on("click", function () {
-  const $btn = $(this);
-  const $icon = $btn.find("i");
-
-  if ($icon.hasClass("bi-play-btn")) {
-    // BẬT AUTO PLAY
-    $btn.removeClass("btn-success").addClass("btn-danger");
-    $icon.removeClass("bi-play-btn").addClass("bi-pause-btn");
-
-    startCountdownHTML(AUTO_PLAY_TIME);
-
-    autoPlayInterval = setInterval(() => {
-      startCountdownHTML(AUTO_PLAY_TIME);
-    }, AUTO_PLAY_TIME * 1000);
-
-  } else {
-    // TẮT
-    stopAutoPlay();
-  }
-});
-
-function stopAutoPlay() {
-  const $btn = $("#auto-play-btn");
-  const $icon = $btn.find("i");
-
-  $btn.removeClass("btn-danger").addClass("btn-success");
-  $icon.removeClass("bi-pause-btn").addClass("bi-play-btn");
-
-  if (autoPlayInterval) {
-    clearInterval(autoPlayInterval);
-    autoPlayInterval = null;
-  }
-
-  stopCountdownHTML(); // thêm dòng này
-}
-
-  $("#lock-btn").on("click", function () {
-    // replicate original toggleLockIcon behavior
-    const icon = document.getElementById("lock-btn").querySelector("i");
-    if (icon.classList.contains("bi-lock-fill")) {
-      toggleLockIcon(false);
-    } else {
-      toggleLockIcon(true);
-    }
-  });
-
-  // zoom buttons -> delegate to CanvasManager (so logic sống ở canvas.js)
-  $("#zoom-in")
-    .off("click")
-    .on("click", function () {
-      // optionally zoom around stage center
-      CanvasManager.zoomIn();
-    });
-
-  $("#zoom-out")
-    .off("click")
-    .on("click", function () {
-      CanvasManager.zoomOut();
-    });
-
-  $("#reset-zoom")
-    .off("click")
-    .on("click", function () {
-      CanvasManager.resetZoom();
-    });
-
-  // undo button
-  $("#undo-btn")
-    .off("click")
-    .on("click", function () {
-      const ok = CanvasManager.undoLastLine();
-      if (!ok) {
-        // optional feedback
-        showToast && showToast("Không có gì để undo", "info");
-      }
-    });
-
-  $("#delete-line-btn")
-    .off("click")
-    .on("click", function () {
-      const ok = CanvasManager.deleteSelectedLine();
-      if (!ok) {
-        // optional feedback
-        showToast && showToast("Đâu có chọn gì đâu mừ xóa.", "info");
-      }
-    });
-
-  $("#id_line_stroke_width").on("change", function () {
-    CanvasManager.setLineStrokeWidth($(this).val());
-  });
-
-  // previous/next buttons
-  previous_page.on("click", function () {
-    processNextPrePage(false);
-  });
-  next_page.on("click", function () {
-    processNextPrePage(true);
-  });
-
-
-
-  // pop dropdown
-  function popDropdown(dropdown, text, start, end, default_index) {
-    dropdown.empty();
-    for (let i = start; i <= end; i++) {
-      const option = $("<option>", { value: i, text: text + " " + i });
-      if (i === default_index) option.prop("selected", true);
-      dropdown.append(option);
-    }
-  }
+ 
 
   // load page: asks CanvasManager to load JSON
-  function loadPage() {    
+  function loadPage() {
     const page = parseInt($("#json-dropdown").val(), 10);
     CURRENT_PAGE_INDEX = page;
     $("#settingsModal").modal("hide");
@@ -280,7 +79,9 @@ function stopAutoPlay() {
     CanvasManager.loadPage(page, urlJson);
   }
 
-  $("#json-dropdown").change(loadPage);
+  $("#json-dropdown").on("change", function () {
+    loadPage();
+  });
 
   // sendJsonToServer - using CanvasManager.exportDrawnLines()
   $("#send-json").click(function () {
@@ -314,14 +115,15 @@ function stopAutoPlay() {
       .finally(() => hideSpinner());
   });
 
-  // load lines list (uses APP_DATA and CanvasManager.loadLinesByDraw)
-  function listDrawingPagesDetailed(page = null, isClearCache = false) {
+  // load lines list (uses APP_DATA and shapes)
+  function listDrawingPagesDetailed(page = null, isClearCache = true) {
     IS_EANBLE_SWIPE = true;
-
     if (typeof FETCH_DRAW_INFO === "undefined" || FETCH_DRAW_INFO === false) {
-      // không cần phải load cho loại data type này vì nó không có draw gì cả. 
-      console.log(" không cần phải load cho loại data type này vì nó không có draw gì cả. ");
-      return ;
+      // không cần phải load cho loại data type này vì nó không có draw gì cả.
+      console.log(
+        " không cần phải load cho loại data type này vì nó không có draw gì cả. "
+      );
+      return;
     }
 
     if (APP_DATA == null) {
@@ -346,13 +148,10 @@ function stopAutoPlay() {
           } catch (e) {
             parsed = null;
           }
-          const linesArr = parsed && Array.isArray(parsed.lines) ? parsed.lines : [];
-          CanvasManager.loadLinesByDraw(page, linesArr);
 
-          const textArr = parsed && Array.isArray(parsed.texts) ? parsed.texts : [];
-          CanvasManager.loadTextsFromExport(textArr);
+          CanvasManager.loadShapes(page, parsed);
 
-        })
+       })
         .catch((err) => console.error("Fetch error", err))
         .finally(() => hideSpinner("spinnerOverlay_async_id"));
     } else {
@@ -363,11 +162,7 @@ function stopAutoPlay() {
       } catch (e) {
         parsed = null;
       }
-      const linesArr = parsed && Array.isArray(parsed.lines) ? parsed.lines : [];
-      CanvasManager.loadLinesByDraw(page, linesArr);
-
-      const textArr = parsed && Array.isArray(parsed.texts) ? parsed.texts : [];
-      CanvasManager.loadTextsFromExport(textArr);      
+      CanvasManager.loadShapes(page, parsed);
     }
   }
 
@@ -380,58 +175,25 @@ function stopAutoPlay() {
     CanvasManager,
   };
 
-
   Coloris({
     onChange: (color, inputEl) => {
       if (!inputEl) return;
 
       // lấy data-target từ input
       const target = inputEl.dataset.target;
-    
+
       if (target === "window") {
         console.log("Đang chọn màu cho:", target, "=>", color);
         CanvasManager.setLineColor(color);
-      } 
+      }
 
       // đóng popup Coloris sau khi chọn
       Coloris.close();
-
     },
   });
 
-
   // init UI: populate dropdowns and load initial page
-  popDropdown(
-    $("#json-dropdown"),
-    "Page",
-    MIN_PAGE_NUM,
-    MAX_PAGE_NUM,
-    CURRENT_PAGE_INDEX
-  );
+  popDropdown($("#json-dropdown"),"Page",MIN_PAGE_NUM,MAX_PAGE_NUM,CURRENT_PAGE_INDEX);
   loadPage();
-
-  // init AudioService
-  AudioService.init({
-    iconPathPlaying: ICON_PLAYING, // "assets/music_icon.svg"
-    iconPathIdle: ICON_AUDIO, // "assets/play_icon.png"
-    resetIcons: resetIcons,
-    changeImageUrl: changeImageUrl,
-    getSoundStartEnd: getSoundStartEnd,
-    global_const: global_const,
-    autoShowPanel: true,
-  //   onClose: () => {
-  //     console.log("Closed panel!");
-  //     // $("#id_ShowPanel")
-  //     //   .toggleClass("btn-dark", true)
-  //     //   .toggleClass("btn-success", false);
-  //     // window.AudioService.setAutoShowPanel(false);
-  //   }
-  });
-  
-    $('#logout').on('click', function() {
-      if (confirm('Are you sure you want to logout?')) {
-        AuthService.logout();
-      }
-    });
 
 });

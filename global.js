@@ -1,6 +1,8 @@
 const AUTO_PLAY_TIME = 6; // 4 
 let countdownTimeout = null;
 let countdownElement = null;
+let coverRectsArray = [];
+let TEXT_DEFAULT = "...."
 
 const OPTIONS_ARRAY  = [
     { id: 'radio_student_37_book', data_type: 'student37', label: 'Student book 37',  max: 107, min: 1, current: 2, fetch:true }, // 0
@@ -10,6 +12,7 @@ const OPTIONS_ARRAY  = [
     { id: 'radio_work_book', data_type: 'work', label: 'Workbook 27' , max: 65, min: 1, current: 1 , fetch:true}, // 4
     { id: 'radio_dict_book', data_type: 'dict', label: 'Dictionary' , max: 87, min: 1, current: 2, fetch:true }, // 5
     { id: 'radio_first_work_sheet', data_type: 'first_work_sheet', label: 'Vocabulary Work Sheet' , max: 14, min: 1, current: 2, fetch:true }, // 6
+    { id: 'phonic01', data_type: 'phonic01', label: 'phonic01' , max: 2, min: 1, current: 2, fetch:false }, // 6
     { id: 'radio_math', data_type: 'math_page', label: 'Math Game' }, // 7
 ];
 

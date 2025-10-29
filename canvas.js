@@ -4,13 +4,10 @@
 
 (function (global) {
   const CanvasManager = (function () {
-
     let line_color = " #ff6347"; // Tomato
     let line_stroke_width = 3;
     // const selected_color = "black";
     let is_auto_ShowPanel = true;
-
-
 
     // drawing state
     let isDrawingMode = false;
@@ -33,7 +30,6 @@
       _idleImageCache = new Image();
       _idleImageCache.src = iconPathIdle;
     }
-
 
     // zoom/pinch state
     let zoomLevel = 1;
@@ -75,7 +71,7 @@
       getIconSize: null,
       showToast: null,
       AudioService: null,
-      onToggleLock:null,
+      onToggleLock: null,
       onPageChangeRequest: null, // callback(isNext) => boolean/void
     };
 
@@ -89,9 +85,6 @@
       return transform.point({ x, y });
     }
 
-    function formatNumber(n, decimals = 6) {
-      return Number(n.toFixed(decimals));
-    }
 
     // Stage animation tween helper (smooth zoom / pan)
     function animateStageTo(newScale, newPos, duration = 0.18) {
@@ -275,7 +268,7 @@
           ? cfg.getIconSize(ICON_SIZE)
           : ICON_SIZE;
 
-      var iconPathFile = getAssetPath(sound) ;// iconPathIdle;
+      var iconPathFile = getAssetPath(sound); // iconPathIdle;
 
       Konva.Image.fromURL(iconPathFile, function (icon) {
         icon.setAttrs({
@@ -328,30 +321,30 @@
     }
 
     // reset icons images (calls external resetIcons if provided, else revert to idle)
-function resetIcons() {
-  if (typeof cfg.resetIcons === "function") {
-    cfg.resetIcons();
-    return;
-  }
-  const imageList = iconLayer.find("Image");
-  imageList.forEach(function (icon) {
-    if (currentIcon !== icon) {
-      if (_idleImageCache && _idleImageCache.complete) {
-        // ✅ dùng ảnh cache
-        icon.image(_idleImageCache);
-        iconLayer.batchDraw();
-      } else {
-        // fallback: nếu cache chưa sẵn sàng (rất hiếm)
-        const newImage = new Image();
-        newImage.onload = function () {
-          icon.image(newImage);
-          iconLayer.batchDraw();
-        };
-        newImage.src = iconPathIdle;
+    function resetIcons() {
+      if (typeof cfg.resetIcons === "function") {
+        cfg.resetIcons();
+        return;
       }
+      const imageList = iconLayer.find("Image");
+      imageList.forEach(function (icon) {
+        if (currentIcon !== icon) {
+          if (_idleImageCache && _idleImageCache.complete) {
+            // ✅ dùng ảnh cache
+            icon.image(_idleImageCache);
+            iconLayer.batchDraw();
+          } else {
+            // fallback: nếu cache chưa sẵn sàng (rất hiếm)
+            const newImage = new Image();
+            newImage.onload = function () {
+              icon.image(newImage);
+              iconLayer.batchDraw();
+            };
+            newImage.src = iconPathIdle;
+          }
+        }
+      });
     }
-  });
-}
 
     // change icon image URL (uses external changeImageUrl if provided)
     function changeImageUrl(newUrl, icon) {
@@ -379,7 +372,10 @@ function resetIcons() {
     function loadAssetJson(page, url) {
       showSpinner("spinnerOverlay", "#F54927");
       fetch(url)
-        .then(res => { if(!res.ok) throw new Error(res.statusText); return res.json(); })
+        .then((res) => {
+          if (!res.ok) throw new Error(res.statusText);
+          return res.json();
+        })
         .then((data) => {
           // don't clear background/icon here — wait until new image loaded successfully
           loadJsonBackgroundAndIcons(page, data);
@@ -393,101 +389,114 @@ function resetIcons() {
     }
 
     // --- load và swap an toàn (với fade-in) ---
-   async function loadJsonBackgroundAndIcons(page, data) {
-  if (!data || !data.background) {
-    hideSpinner();
-    return;
-  }
-
-  const basePath = (cfg.global_const && cfg.global_const.PATH_ASSETS_IMG) ? cfg.global_const.PATH_ASSETS_IMG : "";
-  const bgUrl = basePath + data.background;
-
-  showSpinner("spinnerOverlay", "#F54927");
-
-  try {
-    // 1) preload background image
-    const imageObj = await preloadImage(bgUrl);
-
-    // 2) tạo Konva.Image mới (opacity 0 để fade-in)
-    const newBg = new Konva.Image({
-      x: 0,
-      y: 0,
-      image: imageObj,
-      width: imageObj.width,
-      height: imageObj.height,
-      id: "backgroundImage_tmp",
-      opacity: 0,
-    });
-
-    // add vào layer
-    backgroundLayer.add(newBg);
-    adjustBackgroundImageNode(newBg); // resize/fit nếu bạn có logic này
-
-    // 3) clear icons cũ
-    playIcons.forEach((i) => {
-      try { i.destroy(); } catch (e) {}
-    });
-    playIcons = [];
-    iconLayer.clear();
-
-    // 4) preload icons (nếu icons có image assets) - optional
-    // nếu addPlayIcon tự tạo hình từ sprite/static icon thì bỏ khối preload này
-    const iconPreloads = [];
-    (data.icons || []).forEach(iconData => {
-      if (iconData.img) { // giả sử iconData có trường img nếu icon riêng
-        const iconUrl = basePath + iconData.img;
-        iconPreloads.push(preloadImage(iconUrl).catch(()=>null));
+    async function loadJsonBackgroundAndIcons(page, data) {
+      
+      if (!data || !data.background) {
+        hideSpinner();
+        return;
       }
-    });
-    // chờ preload icons xong (không block nếu lỗi)
-    if (iconPreloads.length) await Promise.all(iconPreloads);
 
-    // 5) add icons mới (toạ độ dựa trên kích thước newBg)
-    const bgX = newBg.x();
-    const bgY = newBg.y();
-    const bgW = newBg.width();
-    const bgH = newBg.height();
+      const basePath =
+        cfg.global_const && cfg.global_const.PATH_ASSETS_IMG
+          ? cfg.global_const.PATH_ASSETS_IMG
+          : "";
+      const bgUrl = basePath + data.background;
 
-    (data.icons || []).forEach((iconData) => {
-      const iconX = (typeof iconData.x === "number") ? iconData.x * bgW + bgX : bgX;
-      const iconY = (typeof iconData.y === "number") ? iconData.y * bgH + bgY : bgY;
-      addPlayIcon(iconX, iconY, iconData.sound, iconData); // truyền iconData nếu addPlayIcon cần img path
-    });
+      showSpinner("spinnerOverlay", "#F54927");
 
-    // 6) batch draw
-    backgroundLayer.batchDraw();
-    iconLayer.batchDraw();
+      try {
+        // 1) preload background image
+        const imageObj = await preloadImage(bgUrl);
 
-    // 7) fade-in new background, remove old
-    const oldBackground = backgroundImage;
-    const tween = new Konva.Tween({
-      node: newBg,
-      duration: 0.22,
-      opacity: 1,
-      easing: Konva.Easings.EaseInOut,
-    });
-    tween.play();
-    tween.onFinish = function () {
-      try { tween.destroy(); } catch (e) {}
-      if (oldBackground) {
-        try { oldBackground.destroy(); } catch (e) {}
+        // 2) tạo Konva.Image mới (opacity 0 để fade-in)
+        const newBg = new Konva.Image({
+          x: 0,
+          y: 0,
+          image: imageObj,
+          width: imageObj.width,
+          height: imageObj.height,
+          id: "backgroundImage_tmp",
+          opacity: 0,
+        });
+
+        // add vào layer
+        backgroundLayer.add(newBg);
+        adjustBackgroundImageNode(newBg); // resize/fit nếu bạn có logic này
+
+        // 3) clear icons cũ
+        playIcons.forEach((i) => {
+          try {
+            i.destroy();
+          } catch (e) {}
+        });
+        playIcons = [];
+        iconLayer.clear();
+
+        // 4) preload icons (nếu icons có image assets) - optional
+        // nếu addPlayIcon tự tạo hình từ sprite/static icon thì bỏ khối preload này
+        const iconPreloads = [];
+        (data.icons || []).forEach((iconData) => {
+          if (iconData.img) {
+            // giả sử iconData có trường img nếu icon riêng
+            const iconUrl = basePath + iconData.img;
+            iconPreloads.push(preloadImage(iconUrl).catch(() => null));
+          }
+        });
+        // chờ preload icons xong (không block nếu lỗi)
+        if (iconPreloads.length) await Promise.all(iconPreloads);
+
+        // 5) add icons mới (toạ độ dựa trên kích thước newBg)
+        const bgX = newBg.x();
+        const bgY = newBg.y();
+        const bgW = newBg.width();
+        const bgH = newBg.height();
+
+        (data.icons || []).forEach((iconData) => {
+          const iconX =
+            typeof iconData.x === "number" ? iconData.x * bgW + bgX : bgX;
+          const iconY =
+            typeof iconData.y === "number" ? iconData.y * bgH + bgY : bgY;
+          addPlayIcon(iconX, iconY, iconData.sound, iconData); // truyền iconData nếu addPlayIcon cần img path
+        });
+
+        // 6) batch draw
+        backgroundLayer.batchDraw();
+        iconLayer.batchDraw();
+
+        // 7) fade-in new background, remove old
+        const oldBackground = backgroundImage;
+        const tween = new Konva.Tween({
+          node: newBg,
+          duration: 0.22,
+          opacity: 1,
+          easing: Konva.Easings.EaseInOut,
+        });
+        tween.play();
+        tween.onFinish = function () {
+          try {
+            tween.destroy();
+          } catch (e) {}
+          if (oldBackground) {
+            try {
+              oldBackground.destroy();
+            } catch (e) {}
+          }
+          backgroundImage = newBg;
+          backgroundImage.id("backgroundImage");
+          backgroundLayer.batchDraw();
+          iconLayer.batchDraw();
+          drawingLayer.batchDraw();
+
+          if (typeof cfg.onLoadLines === "function") cfg.onLoadLines(page);
+        };
+      } catch (err) {
+        console.error("Error loading background/icons:", err);
+        if (typeof cfg.showToast === "function")
+          cfg.showToast("Error loading background image", "danger");
+      } finally {
+        hideSpinner();
       }
-      backgroundImage = newBg;
-      backgroundImage.id("backgroundImage");
-      backgroundLayer.batchDraw();
-      iconLayer.batchDraw();
-      drawingLayer.batchDraw();
-
-      if (typeof cfg.onLoadLines === "function") cfg.onLoadLines(page);
-    };
-  } catch (err) {
-    console.error("Error loading background/icons:", err);
-    if (typeof cfg.showToast === "function") cfg.showToast("Error loading background image", "danger");
-  } finally {
-    hideSpinner();
-  }
-}
-
+    }
 
     // --- điều chỉnh kích thước + vị trí cho 1 Konva.Image node (KHÔNG reset stage) ---
     function adjustBackgroundImageNode(konvaImageNode) {
@@ -509,21 +518,11 @@ function resetIcons() {
       }
 
       let x = 0,
-        y = 0;
-      // if (
-      //   typeof cfg.isNotMobile === "function"
-      //     ? cfg.isNotMobile()
-      //     : window.innerWidth >= 768
-      // ) {
-      //   // keep horizontal center, center vertically as well for large screens
-      //   x = (stageWidth - newWidth) / 2;
-      //   y = (stageHeight - newHeight) / 2; // <-- center vertically
-        
-      // }
+      y = 0;
+
 
       x = (stageWidth - newWidth) / 2;
-      y = 0;
-      // y = (stageHeight - newHeight) / 2; // <-- center vertically
+      y = 0;      
 
       konvaImageNode.width(newWidth);
       konvaImageNode.height(newHeight);
@@ -542,7 +541,7 @@ function resetIcons() {
       stage.width(window.innerWidth);
       stage.height(window.innerHeight);
       resetZoom();
-      stage.batchDraw();     
+      stage.batchDraw();
     }
 
     // Build stage + layers + pointer handlers
@@ -558,13 +557,12 @@ function resetIcons() {
       stage.add(iconLayer);
       stage.add(drawingLayer);
 
-
       // ensure container touch-action none recommended in CSS: #canvas { touch-action: none; }
       setupPointerHandlers();
       let _resizeTimer = null;
       window.addEventListener("resize", () => {
-          clearTimeout(_resizeTimer);
-          _resizeTimer = setTimeout(() => fitStageIntoParentContainer(), 120);
+        clearTimeout(_resizeTimer);
+        _resizeTimer = setTimeout(() => fitStageIntoParentContainer(), 120);
       });
 
       window.addEventListener("beforeunload", function () {
@@ -572,8 +570,6 @@ function resetIcons() {
         cfg.AudioService.stopAudio();
       });
     }
-
-   
 
     // pointer handlers: handle pointerdown/move/up with pinch detection, swipe, drawing (see earlier conversation)
     function setupPointerHandlers() {
@@ -779,29 +775,41 @@ function resetIcons() {
       );
 
       // ----------------- register mouse dblclick on container -----------------
-        // Some browsers fire native dblclick reliably on desktop — listen on container
-      container.addEventListener('dblclick', function (ev) {
-        const rect = stage.container().getBoundingClientRect();
-        const stagePt = { x: ev.clientX - rect.left, y: ev.clientY - rect.top };
-        const hit = stage.getIntersection(stagePt);
-        if (hit && hit.className === 'Text') {
-          // nếu target là Text, không chạy zoom
-          return;
-        }
-        try { ev.preventDefault(); } catch (e) {}
-        zoomAtClient(ev.clientX, ev.clientY, zoomStep);
-      }, { passive: false });
+      // Some browsers fire native dblclick reliably on desktop — listen on container
+      container.addEventListener(
+        "dblclick",
+        function (ev) {
+          const rect = stage.container().getBoundingClientRect();
+          const stagePt = {
+            x: ev.clientX - rect.left,
+            y: ev.clientY - rect.top,
+          };
+          const hit = stage.getIntersection(stagePt);
+          if (hit && hit.className === "Text") {
+            // nếu target là Text, không chạy zoom
+            return;
+          }
+          try {
+            ev.preventDefault();
+          } catch (e) {}
+          zoomAtClient(ev.clientX, ev.clientY, zoomStep);
+        },
+        { passive: false }
+      );
 
       // ----------------- also register Konva dblclick if you prefer -----------------
       stage.on("dblclick", function (e) {
-
         // nếu người dùng double click lên một Text (hoặc node con của text), đừng xử lý zoom ở đây
         const target = e && e.target;
-        if (target && (target.className === 'Text' || target.getAttr && target.getAttr('isEditable'))) {
+        if (
+          target &&
+          (target.className === "Text" ||
+            (target.getAttr && target.getAttr("isEditable")))
+        ) {
           // allow text handler to run
           return;
-        }        
-        
+        }
+
         // Konva event e has .evt (native event) — prefer using native client coords if present
         const native = e && e.evt;
         if (native && typeof native.clientX !== "undefined") {
@@ -959,7 +967,9 @@ function resetIcons() {
       cfg = Object.assign(cfg, options || {});
       ICON_SIZE = options.iconSize || ICON_SIZE;
       iconPathIdle = options.iconPathIdle ? options.iconPathIdle : iconPathIdle;
-      iconPathPlaying = options.iconPathPlaying ? options.iconPathPlaying : iconPathPlaying;
+      iconPathPlaying = options.iconPathPlaying
+        ? options.iconPathPlaying
+        : iconPathPlaying;
 
       // ✅ preload ảnh icon để tránh lag
       preloadIdleIcon();
@@ -975,7 +985,7 @@ function resetIcons() {
     function clearCanvas() {
       // Clear text
       clearAllTextNodesAndTransformers();
-      
+
       if (cfg.AudioService) cfg.AudioService.stopAudio();
       playIcons.forEach((icon) => icon.destroy());
       playIcons = [];
@@ -987,20 +997,19 @@ function resetIcons() {
       fitStageIntoParentContainer();
       lines = [];
       selectedLine = null;
-
     }
 
-function clearAllTextsInLayer() {
-  iconLayer.destroyChildren(); // xóa toàn bộ node con trong layer
-  iconLayer.batchDraw();
-}
+    function clearAllTextsInLayer() {
+      iconLayer.destroyChildren(); // xóa toàn bộ node con trong layer
+      iconLayer.batchDraw();
+    }
 
     function clearAllTextNodesAndTransformers() {
-      const allNodes = iconLayer.find(node =>
-        ['Text', 'Transformer'].includes(node.getClassName())
+      const allNodes = iconLayer.find((node) =>
+        ["Text", "Transformer"].includes(node.getClassName())
       );
 
-      allNodes.forEach(n => n.destroy());
+      allNodes.forEach((n) => n.destroy());
       iconLayer.batchDraw(); // redraw sau khi xóa
     }
 
@@ -1011,7 +1020,7 @@ function clearAllTextsInLayer() {
       cfg.AudioService && cfg.AudioService.stopAudio();
       clearCanvas();
       loadAssetJson(page, jsonUrl);
-      fitStageIntoParentContainer();    
+      fitStageIntoParentContainer();
       stage.draggable(false);
     }
 
@@ -1020,6 +1029,16 @@ function clearAllTextsInLayer() {
       loadTexts(textsArray);
     }
 
+    function loadShapes(page, parsed) {
+      const linesArr = parsed && Array.isArray(parsed.lines) ? parsed.lines : [];
+      loadLinesByDraw(page, linesArr);
+
+       const rectArr = parsed && Array.isArray(parsed.rects) ? parsed.rects : [];
+       loadRectFromExport(rectArr);
+
+      const textArr = parsed && Array.isArray(parsed.texts) ? parsed.texts : [];
+      loadTextsFromExport(textArr);       
+    }
 
     // load lines (normalized display coords) — caller passes APP_DATA map or raw parsed
     function loadLinesByDraw(page, rawLinesArray, tries = 0) {
@@ -1086,9 +1105,7 @@ function clearAllTextsInLayer() {
           const x = Number(pts[i]);
           const y = Number(pts[i + 1]);
           const nx = bgDisplay.width ? (x - bgDisplay.x) / bgDisplay.width : 0;
-          const ny = bgDisplay.height
-            ? (y - bgDisplay.y) / bgDisplay.height
-            : 0;
+          const ny = bgDisplay.height ? (y - bgDisplay.y) / bgDisplay.height: 0;
           norm.push(formatNumber(nx));
           norm.push(formatNumber(ny));
         }
@@ -1101,68 +1118,16 @@ function clearAllTextsInLayer() {
         };
       });
 
-      // export Text nodes on iconLayer (if any)
-      const textNodes = [];
-      try {
-        const texts = drawingLayer ? drawingLayer.find("Text") : [];
-        texts.forEach((tn) => {
-          const absX = tn.x();
-          const absY = tn.y();
-          const w = tn.width();
-          const h = tn.height();
-          const nx = bgDisplay.width
-            ? (absX - bgDisplay.x) / bgDisplay.width
-            : 0;
-          const ny = bgDisplay.height
-            ? (absY - bgDisplay.y) / bgDisplay.height
-            : 0;
-          const nw = bgDisplay.width ? w / bgDisplay.width : 0;
-          const nh = bgDisplay.height ? h / bgDisplay.height : 0;
-
-          // Lấy attrs nhưng lọc ra các trường đã lưu riêng (tránh duplicate)
-          let savedAttrs = {};
-          try {
-            const allAttrs = tn.getAttrs ? tn.getAttrs() : {};
-            // copy selective attrs (or remove keys you don't want)
-            savedAttrs = Object.assign({}, allAttrs);
-            // remove duplicates / positional / dimensional props
-            delete savedAttrs.text;
-            delete savedAttrs.x;
-            delete savedAttrs.y;
-            delete savedAttrs.width;
-            delete savedAttrs.height;
-            delete savedAttrs.id; // nếu bạn không muốn ghi id vào attrs nữa
-            delete savedAttrs.isShowText;
-            delete savedAttrs.isShowBorder;
-            delete savedAttrs.readOny;    
-          } catch (err) {
-            savedAttrs = null;
-          }
-
-          textNodes.push({
-            text: tn.text(),
-            fontSize: tn.fontSize(),
-            fontFamily: tn.fontFamily ? tn.fontFamily() : undefined,
-            fill: tn.fill ? tn.fill() : undefined,
-            align: tn.align ? tn.align() : undefined,
-            lineHeight: tn.lineHeight ? tn.lineHeight() : undefined,
-            widthNorm: formatNumber(nw),
-            heightNorm: formatNumber(nh),
-            xNorm: formatNumber(nx),
-            yNorm: formatNumber(ny),
-            rotation: tn.rotation ? tn.rotation() : 0,
-            draggable: !!tn.draggable(),
-            id: tn.id() || null,
-            attrs: savedAttrs,
-          });
-        });
-      } catch (err) {
-        console.warn("exportDrawnLines: error enumerating Text nodes", err);
-      }
+      // save text nodes
+      const textNodes = saveTextNodes(bgDisplay);
+     
+      // Save rects
+      const rects = saveCoverRects();
 
       return {
         lines: drawnLines,
         texts: textNodes,
+        rects: rects,
         meta: {
           savedAtDisplay: {
             x: bgDisplay.x,
@@ -1174,6 +1139,7 @@ function clearAllTextsInLayer() {
         },
       };
     }
+
 
 
     // navigation helper (can be used by UI or swipe)
@@ -1243,13 +1209,13 @@ function clearAllTextsInLayer() {
       return true;
     }
 
-    function addText() {
-      createText();
-    }
-
     function addRect() {
       createRect();
-    }    
+    }
+
+    function addText(text = TEXT_DEFAULT) {
+      createText(text);
+    }
 
     // public API
     return {
@@ -1259,8 +1225,9 @@ function clearAllTextsInLayer() {
       resetIcons,
       changeImageUrl,
       getSoundStartEnd,
-      loadLinesByDraw,
-      loadTextsFromExport,
+      loadShapes,
+      // loadLinesByDraw,
+      // loadTextsFromExport,
       exportDrawnLines,
       clearCanvas,
       deleteSelectedLine,
