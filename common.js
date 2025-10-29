@@ -568,29 +568,29 @@ function playTickSound() {
   tickAudio.play().catch(() => {});
 }
 
-// preloadImage.js — Utility tải ảnh trước khi hiển thị
-const _imageCache = new Map();
+// // preloadImage.js — Utility tải ảnh trước khi hiển thị
+// const _imageCache = new Map();
 
-function preloadImage(url) {
-  return new Promise((resolve, reject) => {
-    if (!url) return reject(new Error("Invalid image url"));
+// function preloadImage(url) {
+//   return new Promise((resolve, reject) => {
+//     if (!url) return reject(new Error("Invalid image url"));
 
-    // nếu đã cache thì trả ngay object Image đã load
-    if (_imageCache.has(url)) {
-      return resolve(_imageCache.get(url));
-    }
+//     // nếu đã cache thì trả ngay object Image đã load
+//     if (_imageCache.has(url)) {
+//       return resolve(_imageCache.get(url));
+//     }
 
-    const img = new Image();
-    img.onload = () => {
-      _imageCache.set(url, img);
-      resolve(img);
-    };
-    img.onerror = (err) => reject(err);
+//     const img = new Image();
+//     img.onload = () => {
+//       _imageCache.set(url, img);
+//       resolve(img);
+//     };
+//     img.onerror = (err) => reject(err);
 
-    // bắt đầu tải
-    img.src = url;
-  });
-}
+//     // bắt đầu tải
+//     img.src = url;
+//   });
+// }
 
 function formatNumber(n, decimals = 6) {
   return Number(n.toFixed(decimals));

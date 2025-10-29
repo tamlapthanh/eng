@@ -2,7 +2,7 @@ const AUTO_PLAY_TIME = 6; // 4
 let countdownTimeout = null;
 let countdownElement = null;
 let coverRectsArray = [];
-let TEXT_DEFAULT = "...."
+let TEXT_DEFAULT = "....";
 
 const OPTIONS_ARRAY  = [
     { id: 'radio_student_37_book', data_type: 'student37', label: 'Student book 37',  max: 107, min: 1, current: 2, fetch:true }, // 0

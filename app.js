@@ -11,13 +11,10 @@ $(document).ready(function () {
     FETCH_DRAW_INFO,
   ] = createRadioButtons(); // from common.js
 
-  // UI inputs references
-  const iconSoundUrlInput = $("#icon-sound-url");
-  const iconXInput = $("#icon-x");
-  const iconYInput = $("#icon-y");
-
-  // const previous_page = $("#previous_page");
-  // const next_page = $("#next_page");
+  // // UI inputs references
+  // const iconSoundUrlInput = $("#icon-sound-url");
+  // const iconXInput = $("#icon-x");
+  // const iconYInput = $("#icon-y");
 
   // init AudioService
   AudioService.init({
