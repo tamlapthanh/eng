@@ -412,8 +412,8 @@
         if (typeof cfg.onLoadLines === "function") cfg.onLoadLines(page);
       };
       imageObj.src =
-        (cfg.global_const && cfg.global_const.PATH_ASSETS_IMG
-          ? cfg.global_const.PATH_ASSETS_IMG
+        (cfg.global_const && cfg.global_const.PATH_IMG
+          ? cfg.global_const.PATH_IMG
           : "") + data.background;
     }
 

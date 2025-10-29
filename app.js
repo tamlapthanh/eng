@@ -1,15 +1,41 @@
 // Kiểm tra authentication
 AuthService.requireAuth();
 
-$(document).ready(function () {
-  [
-    DATA_TYPE,
-    CURRENT_PAGE_INDEX,
-    MAX_PAGE_NUM,
-    MIN_PAGE_NUM,
-    ASSETS_URL,
-    FETCH_DRAW_INFO,
-  ] = createRadioButtons(); // from common.js
+$(document).ready(async function () {
+
+  await loadOptions();
+
+  // createRadioButtons(); // from common.js
+
+    $('input[name="options"]').on("click", function () {
+    var selectedValue = $(this).val();
+    var currentPageIndex = $(this).data("current-page-index");
+    var maxPageNum = $(this).data("max-page-num");
+    var minPageNum = $(this).data("min-page-num");
+    var fetchInfo = $(this).data("fetch") ? true : false;
+    if (selectedValue === "math_page") {
+      window.location.href = "math.html";
+    } else if (DATA_TYPE !== selectedValue) {
+      DATA_TYPE = selectedValue;
+      setPageInfo(
+        DATA_TYPE,
+        currentPageIndex,
+        maxPageNum,
+        minPageNum,
+        fetchInfo
+      );
+      popDropdown(
+        $("#json-dropdown"),
+        "Page",
+        MIN_PAGE_NUM,
+        MAX_PAGE_NUM,
+        CURRENT_PAGE_INDEX
+      );
+      APP_DATA = null;
+      loadPage();
+      $("#settingsModal").modal("hide");
+    }
+  });
 
   // // UI inputs references
   // const iconSoundUrlInput = $("#icon-sound-url");

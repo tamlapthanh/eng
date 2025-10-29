@@ -1,6 +1,7 @@
 // ---- non-canvas UI handlers ----
 
-$(document).ready(function () {
+$(document).ready( function () {
+    
   $("#logout").on("click", function () {
     if (confirm("Are you sure you want to logout?")) {
       AuthService.logout();
@@ -48,35 +49,7 @@ $(document).ready(function () {
     $(this).toggleClass("btn-danger btn-dark");
   });
 
-  $('input[name="options"]').on("click", function () {
-    var selectedValue = $(this).val();
-    var currentPageIndex = $(this).data("current-page-index");
-    var maxPageNum = $(this).data("max-page-num");
-    var minPageNum = $(this).data("min-page-num");
-    var fetchInfo = $(this).data("fetch") ? true : false;
-    if (selectedValue === "math_page") {
-      window.location.href = "math.html";
-    } else if (DATA_TYPE !== selectedValue) {
-      DATA_TYPE = selectedValue;
-      setPageInfo(
-        DATA_TYPE,
-        currentPageIndex,
-        maxPageNum,
-        minPageNum,
-        fetchInfo
-      );
-      popDropdown(
-        $("#json-dropdown"),
-        "Page",
-        MIN_PAGE_NUM,
-        MAX_PAGE_NUM,
-        CURRENT_PAGE_INDEX
-      );
-      APP_DATA = null;
-      loadPage();
-      $("#settingsModal").modal("hide");
-    }
-  });
+
 
   $("#setting").on("click", function () {
     const controls = document.querySelector(".controls");

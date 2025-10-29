@@ -2,19 +2,24 @@ const AUTO_PLAY_TIME = 6; // 4
 let countdownTimeout = null;
 let countdownElement = null;
 let coverRectsArray = [];
-let TEXT_DEFAULT = "....";
+let TEXT_DEFAULT = "...."
 
-const OPTIONS_ARRAY  = [
-    { id: 'radio_student_37_book', data_type: 'student37', label: 'Student book 37',  max: 107, min: 1, current: 2, fetch:true }, // 0
-    { id: 'radio_work_37_book', data_type: 'work37', label: 'Work book 37' , max: 97, min: 1, current: '1', fetch:true}, // 1
-    { id: 'radio_btbt_37_book', data_type: 'btbt37', label: 'BTBT 3' , max: 140, min: 1, current: '1', fetch:true }, // 2
-    { id: 'radio_student_book', data_type: 'student', label: 'Student book 27' , max: 66, min: 1, current: 1 , fetch:true}, // 3
-    { id: 'radio_work_book', data_type: 'work', label: 'Workbook 27' , max: 65, min: 1, current: 1 , fetch:true}, // 4
-    { id: 'radio_dict_book', data_type: 'dict', label: 'Dictionary' , max: 87, min: 1, current: 2, fetch:true }, // 5
-    { id: 'radio_first_work_sheet', data_type: 'first_work_sheet', label: 'Vocabulary Work Sheet' , max: 14, min: 1, current: 2, fetch:true }, // 6
-    { id: 'phonic01', data_type: 'phonic01', label: 'phonic01' , max: 2, min: 1, current: 2, fetch:false }, // 6
-    { id: 'radio_math', data_type: 'math_page', label: 'Math Game' }, // 7
-];
+let OPTIONS_ARRAY = [];
+let DEFAULT_DATA_TYPE = "student37";
+
+async function loadOptions() {
+  try {
+    const response = await fetch("options.json");
+    const json = await response.json();
+    // 👉 Lưu mảng và giá trị mặc định
+    OPTIONS_ARRAY = json.data || [];
+    DEFAULT_DATA_TYPE = json.default_data_type || null;
+
+    createRadioButtons();
+  } catch (error) {
+    console.error("Lỗi khi load options.json:", error);
+  }
+}
 
 const ASSET_URL_ARRAY = [
     { data_type: 'student37', link: 'https://tamlapthanh.github.io/store_images/' }
@@ -29,7 +34,7 @@ const ASSET_URL_ARRAY = [
   let APP_DATA = null;
   let IS_EANBLE_SWIPE = true;
   
-  let ASSETS_URL ="https://tamlapthanh.github.io/store_images/";
+  let ASSET_URL = {};
   let DATA_TYPE = "student37";
   let CURRENT_PAGE_INDEX = 1;
   let MAX_PAGE_NUM = 107;
@@ -46,20 +51,17 @@ const ASSET_URL_ARRAY = [
   const LOCAL_IP = "127.0.0.1";
 
   const global_const = {
-    get PATH_ASSETS_IMG() {
-      return  PATH_ROOT + DATA_TYPE + "/img/";
-    },
     get PATH_IMG() {
-      return  PATH_ROOT + DATA_TYPE + "/img/";
+      return  ASSET_URL.IMG_URL + PATH_ROOT + DATA_TYPE + "/img/";
     },
     get PATH_SOUND() {
-      return  PATH_ROOT + DATA_TYPE + "/sound/";
+      return  ASSET_URL.SOUND_URL + PATH_ROOT + DATA_TYPE + "/sound/";
     },
     get PATH_VIDEO() {
-      return ASSETS_URL + PATH_ROOT + DATA_TYPE + "/video/";
+      return ASSET_URL.VIDEO_URL + PATH_ROOT + DATA_TYPE + "/video/";
     },    
     get PATH_JSON() {
-      return  PATH_ROOT + DATA_TYPE + "/data/X.json";
+      return  ASSET_URL.JSON_URL + PATH_ROOT + DATA_TYPE + "/data/X.json";
     },
     get RUN_URL_SERVER() {
       const hostname = window.location.hostname;

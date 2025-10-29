@@ -1,24 +1,13 @@
-function createRadioButtons(defaultIndex = 0) {
+function createRadioButtons() {
   const container = document.getElementById("radioContainer");
-
   let idx = 0;
-  let data_type = "student37";
-  let current = 1;
-  let max = 107;
-  let min = 1;
   let checkedVal = false;
-  let assetUrl = "";
-  let fetchInfo = false;
+  let data_type = "student37";
 
   OPTIONS_ARRAY.forEach((option) => {
-    if (defaultIndex == idx) {
+    if (DEFAULT_DATA_TYPE == option.data_type) {
       data_type = option.data_type;
-      current = option.current;
-      max = option.max;
-      min = option.min;
-      fetchInfo = option.fetch ? true : false;
       checkedVal = true;
-      assetUrl = getLinkByType(data_type);
     } else {
       checkedVal = false;
     }
@@ -32,11 +21,6 @@ function createRadioButtons(defaultIndex = 0) {
     inputElement.id = option.id + "_1";
     inputElement.value = option.data_type;
     inputElement.checked = checkedVal;
-    // Adding custom attributes
-    inputElement.setAttribute("data-current-page-index", option.current);
-    inputElement.setAttribute("data-max-page-num", option.max);
-    inputElement.setAttribute("data-min-page-num", option.min);
-    inputElement.setAttribute("data-fetch", option.fetch ? true : false);
 
     const labelElement = document.createElement("label");
     labelElement.className = "form-check-label";
@@ -49,7 +33,7 @@ function createRadioButtons(defaultIndex = 0) {
     idx = idx + 1;
   });
 
-  return [data_type, current, max, min, assetUrl, fetchInfo];
+  setPageInfo(data_type);
 }
 
   // pop dropdown
@@ -62,13 +46,26 @@ function createRadioButtons(defaultIndex = 0) {
     }
   }
 
-function setPageInfo(dataType, currentPageIndex, maxPageNum, minPageNum, fetchInfo) {
-    DATA_TYPE = dataType;
-    CURRENT_PAGE_INDEX = currentPageIndex;
-    MAX_PAGE_NUM = maxPageNum;
-    MIN_PAGE_NUM = minPageNum;
-    FETCH_DRAW_INFO = fetchInfo;
-    ASSETS_URL = getLinkByType(dataType);
+
+  function setPageInfo(dataType) {
+    const foundOption = OPTIONS_ARRAY.find((opt) => opt.data_type === dataType);
+
+     DATA_TYPE = dataType;
+    CURRENT_PAGE_INDEX = foundOption.current;
+    MAX_PAGE_NUM = foundOption.max;
+    MIN_PAGE_NUM = foundOption.min;
+    FETCH_DRAW_INFO = foundOption.fetch;
+
+    if (foundOption && foundOption.ASSET_URL) {     
+      ASSET_URL = foundOption.ASSET_URL;
+    } else {      
+      ASSET_URL = {
+        IMG_URL: "",
+        SOUND_URL: "",
+        VIDEO_URL: "",
+        JSON_URL: "",
+      };
+    }
   }
 
 function showToast(message, type = "success") {
@@ -472,11 +469,6 @@ function stopAutoPlay() {
 function isDebugMode() {
   const hostname = window.location.hostname;
   return hostname === "localhost" || hostname === "127.0.0.1" ? true : false;
-}
-
-function getLinkByType(data_type) {
-  const item = ASSET_URL_ARRAY.find((obj) => obj.data_type === data_type);
-  return item ? item.link : "";
 }
 
 $(document).on("click", ".group-controls .toggle-btn", function () {
