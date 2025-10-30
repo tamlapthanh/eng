@@ -21,10 +21,6 @@ async function loadOptions() {
   }
 }
 
-const ASSET_URL_ARRAY = [
-    { data_type: 'student37', link: 'https://tamlapthanh.github.io/store_images/' }
-];    
-
   let ICON_VIDEO         = "assets/video_icon.png";
   let ICON_AUDIO         = "assets/audio_icon.png";
   let ICON_PLAYING       = "assets/playing_icon.svg";

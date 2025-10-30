@@ -233,11 +233,11 @@ body {
     font-size: 120px;
     font-weight: bold;
     color: #ff4757;
-    text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.6);
+    /* text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.6); */
     pointer-events: none;
     z-index: 100;
     opacity: 0;
-    transition: opacity 0.3s ease, transform 0.3s ease;
+    /* transition: opacity 0.3s ease, transform 0.3s ease; */
     font-family: Arial, sans-serif;
     user-select: none;
 }

@@ -477,39 +477,36 @@ $(document).on("click", ".group-controls .toggle-btn", function () {
 });
 
 function startCountdownHTML(seconds) {
-  stopCountdownHTML();
+  // stopCountdownHTML();
 
   const overlay = document.getElementById("countdown-overlay");
   if (!overlay) return;
 
   let timeLeft = seconds - 1;
-  overlay.textContent = timeLeft;
   overlay.classList.add("show");
   overlay.classList.remove("vibrate");
+  overlay.textContent = timeLeft;
 
   const update = () => {
     timeLeft--;
-
+   overlay.classList.add("show");
     if (timeLeft <= 0) {
       overlay.classList.remove("show", "vibrate");
       setTimeout(() => {
         overlay.textContent = "";
-      }, 300);
+      }, 100);
       processNextPrePage(true);
       return;
     }
 
     overlay.textContent = timeLeft;
-    overlay.style.opacity = Math.max(0.6, timeLeft / 3);
+    // overlay.style.opacity = Math.max(0.6, timeLeft / 3);
 
     // THÊM HIỆU ỨNG RUNG + VIBRATE KHI CÒN 1 GIÂY
-    if (timeLeft < 3) {
+    if (timeLeft < 2) {
       overlay.classList.add("vibrate");
-      // playTickSound(); // gọi hàm
-      // if (navigator.vibrate) {
-      //   navigator.vibrate([200, 100, 200]);
-      // }
     } else {
+      
       overlay.classList.remove("vibrate");
     }
 
@@ -529,7 +526,7 @@ function stopCountdownHTML() {
     overlay.classList.remove("show", "vibrate");
     setTimeout(() => {
       overlay.textContent = "";
-    }, 300);
+    }, 100);
   }
 }
 
