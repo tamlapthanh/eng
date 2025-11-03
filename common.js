@@ -187,6 +187,13 @@ function hideSpinner(id = "spinnerOverlay") {
   if (overlay) overlay.style.display = "none";
 }
 
+
+function getExtension(filename) {
+  const str = String(filename || '');       // ✅ ép thành chuỗi an toàn
+  const match = str.match(/\.([^.]+)$/);    // tìm phần sau dấu chấm cuối
+  return match ? match[1].toLowerCase() : '';
+}
+
 function getSoundStartEnd(fileName) {
   if (!fileName) return [];
   const arr = fileName.split("/");

@@ -59,6 +59,9 @@ async function loadOptions() {
     get PATH_JSON() {
       return  ASSET_URL.JSON_URL + PATH_ROOT + DATA_TYPE + "/data/X.json";
     },
+    get PATH_TXT_DATA() {
+      return  ASSET_URL.JSON_URL + PATH_ROOT + DATA_TYPE + "/sound/txt/";
+    },    
     get RUN_URL_SERVER() {
       const hostname = window.location.hostname;
       return hostname === "localhost" || hostname === LOCAL_IP

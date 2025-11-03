@@ -23,7 +23,7 @@
     let iconPathIdle = ICON_AUDIO; // "assets/play_icon.png";
     let iconPathPlaying = ICON_PLAYING; //"assets/music_icon.svg";
 
-    // 🔹 Cache ảnh idle để tránh tạo nhiều lần
+    // // 🔹 Cache ảnh idle để tránh tạo nhiều lần
     let _idleImageCache = null;
     function preloadIdleIcon() {
       if (_idleImageCache) return; // đã cache rồi thì bỏ qua
@@ -260,15 +260,17 @@
     }
 
     // add play icon (Konva image node)
-    function addPlayIcon(x, y, sound) {
+    function addPlayIcon(x, y, iconW, iconH, sound) {
       if (sound && sound.trim() === "x") return;
 
-      const size =
-        typeof cfg.getIconSize === "function"
-          ? cfg.getIconSize(ICON_SIZE)
-          : ICON_SIZE;
+      const size = typeof cfg.getIconSize === "function" ? cfg.getIconSize(ICON_SIZE): ICON_SIZE;
 
       var iconPathFile = getAssetPath(sound); // iconPathIdle;
+      var opacity_value = 1;
+      if (iconPathFile == ICON_AUDIO) {
+        //TODO: sẽ không show trong trường họp là audio 
+        opacity_value = 0;
+      }
 
       Konva.Image.fromURL(iconPathFile, function (icon) {
         icon.setAttrs({
@@ -276,9 +278,11 @@
           y: typeof y === "number" ? y : Math.random() * (stage.height() - 50),
           width: size,
           height: size,
+          // opacity: opacity_value,
         });
 
         icon.setAttr("sound", (sound || "").trim());
+        
         // ensure listening on desktop
         icon.listening(true);
 
@@ -395,18 +399,35 @@
       showSpinner("spinnerOverlay", "#F54927");
       imageObj.onload = function () {
         hideSpinner();
-        if (backgroundImage) backgroundImage.destroy();
+        if (backgroundImage) {
+          backgroundImage.destroy();
+        }
         adjustBackgroundImage(imageObj);
         // destroy icons
         playIcons.forEach((i) => i.destroy());
         playIcons = [];
         // add icons from json
         (data.icons || []).forEach((iconData) => {
-          const iconX =
-            iconData.x * backgroundImage.width() + backgroundImage.x();
-          const iconY =
-            iconData.y * backgroundImage.height() + backgroundImage.y();
-          addPlayIcon(iconX, iconY, iconData.sound);
+          const iconX = iconData.x * backgroundImage.width() + backgroundImage.x();
+          const iconY = iconData.y * backgroundImage.height() + backgroundImage.y();
+
+        if (typeof iconData.w === 'number' && typeof iconData.h === 'number') {
+          // Nếu là tỉ lệ nhỏ (<1) => hiểu là phần trăm
+          if (iconData.w <= 1 && iconData.h <= 1) {
+            iconW = iconData.w * backgroundImage.width();
+            iconH = iconData.h * backgroundImage.height();
+          } else {
+            // Nếu là pixel => chuyển tỉ lệ theo ảnh nền thực tế
+            iconW = (iconData.w / imageObj.naturalWidth) * backgroundImage.width();
+            iconH = (iconData.h / imageObj.naturalHeight) * backgroundImage.height();
+          }
+        } else {
+          // Nếu chưa có w/h, fallback theo ICON_SIZE
+          iconW = (ICON_SIZE / imageObj.naturalWidth) * backgroundImage.width();
+          iconH = (ICON_SIZE / imageObj.naturalHeight) * backgroundImage.height();
+        }
+ 
+          addPlayIcon(iconX, iconY, iconW, iconH, iconData.sound);
         });
         // load lines (caller should pass APP_DATA map to CanvasManager.loadLinesByDraw if needed)
         if (typeof cfg.onLoadLines === "function") cfg.onLoadLines(page);
@@ -418,6 +439,7 @@
     }
 
     function adjustBackgroundImage(imageObj) {
+      
       const imageWidth = imageObj.width;
       const imageHeight = imageObj.height;
       const stageWidth = stage.width();
@@ -450,6 +472,12 @@
         height: newHeight,
         id: "backgroundImage",
       });
+
+      backgroundImage.setAttrs({
+        originalWidth: imageObj.naturalWidth,
+        originalHeight: imageObj.naturalHeight
+      });
+
       backgroundLayer.add(backgroundImage);
       backgroundLayer.batchDraw();
       // ensure other images moved to bottom

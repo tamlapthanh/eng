@@ -20,6 +20,13 @@ $(document).ready(function () {
   let MAX_PAGE_NUM = 107;
   let MIN_PAGE_NUM = 1;
 
+  // let DATA_TYPE = "Young_Children_2_5";
+  // let CURRENT_PAGE_INDEX = 1;
+  // let MAX_PAGE_NUM = 37;
+  // let MIN_PAGE_NUM = 1;  
+
+
+
   // let DATA_TYPE = "dict"
   // let CURRENT_PAGE_INDEX = 1;
   // let MAX_PAGE_NUM = 87;
@@ -61,16 +68,20 @@ $(document).ready(function () {
 
   //const imageDropdown = $('#imageDropdown');
   const imageFileInput = $("#upload-image");
-  // const addIconButton = $('#add-icon');
-  // const jsonDropdown = $('#json-dropdown');
   const iconSoundUrlInput = $("#icon-sound-url");
   const iconXInput = $("#icon-x");
   const iconYInput = $("#icon-y");
+
+  const iconTypeInput = $("#icon-type");
+  const iconOpacityInput = $("#icon-opacity");
+  const iconWidthInput = $("#icon-width");
+  const iconHeightInput = $("#icon-height");
+
+
   const playIconButton = $("#play-icon");
   const saveIconButton = $("#save-icon");
   const saveSendIconButton = $("#save-icon-send");
   const saveSendIconButton2 = $("#save-icon-send-2");
-
   const saveJsonButton = $("#save-json");
 
   const previous_page = $("#previous_page");
@@ -147,27 +158,47 @@ $(document).ready(function () {
     }
   }
 
-  function addPlayIcon(x, y, sound) {
+
+  // icon_type, icon_width, icon_heigh, sound
+  function addPlayIcon(x, y, width, height, iconData) {
+
     icon_size = getIconSize(19);
     Konva.Image.fromURL(ICON_AUDIO, function (icon) {
       icon.setAttrs({
         x: x || stage.width() - 150,
         y: y || Math.random() * (stage.height() - 50),
-        width: icon_size,
-        height: icon_size,
+        width: width || icon_size,
+        height: height || icon_size,
       });
 
-      icon.setAttr("sound", sound || "");
+      icon.setAttr("sound", iconData?.sound || "");
+      icon.setAttr("icon_opacity", iconData?.icon_opacity || "1");
+      icon.setAttr("icon_type", iconData?.icon_type || "1");
       icon.draggable(true);
 
+      // selected icon
       function handleInteraction() {
         // set selected visual
         setSelectedIcon(icon);
 
+        // set value for controls
         currentIcon = icon;
         iconSoundUrlInput.val(icon.getAttr("sound") || "");
+
+        // x, y
         iconXInput.val(icon.x());
         iconYInput.val(icon.y());
+
+        // icon type
+        $('#icon-type').val(icon.getAttr("icon_type") || "1");
+        $('#icon-opacity').val(icon.getAttr("icon_opacity") || "1");
+
+        // width, heigh
+        $('#icon-width').val(icon.width() || icon_size);
+        $('#icon-height').val(icon.height()  || icon_size);
+       
+
+
         if (!is_move_icon) {
           $("#settingsModal").modal("show");
         } else {
@@ -206,6 +237,12 @@ $(document).ready(function () {
     // Kiểm tra tất cả icon trong playIcons và thay đổi hình ảnh nếu sound rỗng
     playIcons.forEach((icon, index) => {
       const sound = icon.getAttr("sound") || "";
+      const icon_type = icon.getAttr("icon_type") || "1";
+      const icon_opacity = icon.getAttr("icon_opacity") || "1";
+
+      const icon_width = icon.width() || ICON_SIZE;
+      const icon_heigh = icon.height() || ICON_SIZE;
+
       const imageUrl =
         !sound || sound.trim() === "" ? ICON_PLAYING : ICON_AUDIO;
 
@@ -218,6 +255,8 @@ $(document).ready(function () {
             width: icon.width(),
             height: icon.height(),
             sound: sound,
+            icon_type: icon_type,
+            icon_opacity: icon_opacity,
             draggable: true,
           });
 
@@ -225,6 +264,10 @@ $(document).ready(function () {
           newImage.on("click", function () {
             currentIcon = newImage;
             iconSoundUrlInput.val(newImage.getAttr("sound") || "");
+            $('#icon-width').val(icon.width());
+            $('#icon-height').val(icon.height());
+            $('#icon-type').val(newImage.getAttr("icon_type"));
+            $('#icon-opacity').val(newImage.getAttr("icon_opacity"));
             iconXInput.val(newImage.x());
             iconYInput.val(newImage.y());
             $("#settingsModal").modal("show");
@@ -232,6 +275,10 @@ $(document).ready(function () {
           newImage.on("touchend", function () {
             currentIcon = newImage;
             iconSoundUrlInput.val(newImage.getAttr("sound") || "");
+            $('#icon-width').val(icon.width());
+            $('#icon-height').val(icon.height());
+            $('#icon-type').val(newImage.getAttr("icon_type"));
+            $('#icon-opacity').val(newImage.getAttr("icon_opacity"));
             iconXInput.val(newImage.x());
             iconYInput.val(newImage.y());
             $("#settingsModal").modal("show");
@@ -253,6 +300,7 @@ $(document).ready(function () {
     });
   }
 
+  // load icons
   function loadJsonBackgroundAndIcons(data) {
     if (data.background) {
       const imageObj = new Image();
@@ -267,11 +315,9 @@ $(document).ready(function () {
 
         // Tính toán vị trí mới của các icon dựa trên kích thước hình nền mới
         data.icons.forEach((iconData) => {
-          const iconX =
-            iconData.x * backgroundImage.width() + backgroundImage.x();
-          const iconY =
-            iconData.y * backgroundImage.height() + backgroundImage.y();
-          addPlayIcon(iconX, iconY, iconData.sound);
+          const iconX = iconData.x * backgroundImage.width() + backgroundImage.x();
+          const iconY = iconData.y * backgroundImage.height() + backgroundImage.y();
+          addPlayIcon(iconX, iconY, iconData.width, iconData.height,  iconData);
         });
       };
       imageObj.src = global_const.PATH_ASSETS_IMG + data.background;
@@ -625,7 +671,11 @@ $(document).ready(function () {
       currentIcon.setAttrs({
         x: parseFloat(iconXInput.val()) || currentIcon.x(),
         y: parseFloat(iconYInput.val()) || currentIcon.y(),
+        width: $('#icon-width').val() || ICON_SIZE,
+        height: $('#icon-height').val() || ICON_SIZE,        
         sound: iconSoundUrlInput.val(),
+        icon_type: $('#icon-type').val() || "1",
+        icon_opacity: $('#icon-opacity').val() || "1"
       });
       iconLayer.batchDraw();
     }
@@ -665,9 +715,7 @@ $(document).ready(function () {
       backgroundImage &&
       backgroundImage.image &&
       typeof backgroundImage.image === "function" &&
-      backgroundImage.image()
-        ? getFileNameFromUrl(backgroundImage.image().src)
-        : "background";
+      backgroundImage.image() ? getFileNameFromUrl(backgroundImage.image().src) : "background";
 
     const jsonData = {
       background: fileName,
@@ -684,10 +732,12 @@ $(document).ready(function () {
               ? backgroundImage.y()
               : backgroundImage.y)) /
           (backgroundSize.height || 1),
-        sound:
-          typeof icon.getAttr === "function"
-            ? icon.getAttr("sound") || ""
-            : icon.sound || "",
+        sound: typeof icon.getAttr === "function" ? icon.getAttr("sound") || "" : icon.sound || "",
+        width: icon.width() ,
+        height: icon.height()  ,
+        icon_type: typeof icon.getAttr === "function" ? icon.getAttr("icon_type") || "" : icon.icon_type || "",
+        icon_opacity: typeof icon.getAttr === "function" ? icon.getAttr("icon_opacity") || "" : icon.icon_opacity || "",
+
       })),
       backgroundSize,
     };
@@ -856,6 +906,10 @@ $(document).ready(function () {
         x: (icon.x() - backgroundImage.x()) / backgroundSize.width,
         y: (icon.y() - backgroundImage.y()) / backgroundSize.height,
         sound: icon.getAttr("sound"),
+        width: icon.width(),
+        height: icon.height() ,
+        icon_type: icon.getAttr("icon_type"),
+        icon_opacity: icon.getAttr("icon_opacity"),
       })),
       backgroundSize: backgroundSize,
     };
@@ -894,6 +948,27 @@ $(document).ready(function () {
   $("#send-json").click(function () {
     sendJsonToServer();
   });
+
+  function getIconSize(ICON_SIZE) {
+  let icon_size = ICON_SIZE;
+  const width = window.innerWidth;
+  const userAgent = navigator.userAgent.toLowerCase();
+
+  if (
+    width < 768 ||
+    /mobile|android|iphone|ipod|blackberry|iemobile|opera mini/i.test(userAgent)
+  ) {
+    icon_size = 15;
+  } else if (
+    (width >= 768 && width <= 1024) ||
+    /tablet|ipad|playbook|silk/i.test(userAgent)
+  ) {
+    icon_size = ICON_SIZE;
+  } else {
+    icon_size = ICON_SIZE;
+  }
+  return icon_size;
+}
 
   // Load page 1
   // populateDropdown(jsonDropdown, "/assets/page.json");

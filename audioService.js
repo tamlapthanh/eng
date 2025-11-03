@@ -348,6 +348,36 @@
       return mediaEl;
     }
 
+     return {
+      init: init,
+      playSound: playSound,
+      stopAudio: stopAudio,
+      showPanel: showPanel,
+      hidePanel: hidePanel,
+      setAutoShowPanel: function (flag) { cfg.autoShowPanel = !!flag; },
+      setPlaybackRate: setPlaybackRate,
+      getPlaybackRate: getPlaybackRate,
+      // NEW: control loop programmatically
+      setLoop: function(flag) {
+        isLoop = !!flag;
+        try {
+          // update panel UI if exists
+          updateLoopUI();
+          const st = panelEls();
+          // if media currently playing, reflect loop setting on it
+          if (mediaEl) {
+            try { mediaEl.loop = !!isLoop; } catch(e) {}
+            if (mediaEl.tagName && mediaEl.tagName.toLowerCase() === 'video') {
+              if (isLoop) mediaEl.setAttribute('loop','');
+              else mediaEl.removeAttribute('loop');
+            }
+          }
+        } catch (e) {}
+      },
+      getLoop: function() { return !!isLoop; },
+      getState: function () { return { mediaEl, currentIcon }; }
+    };
+
     // Public init
     function init(options = {}) {
       cfg.iconPathPlaying = options.iconPathPlaying || cfg.iconPathPlaying;
@@ -394,33 +424,36 @@
 
       if (!soundFileName || soundFileName.trim() === "x") return;
 
-      const parts =
-        typeof cfg.getSoundStartEnd === "function"
-          ? cfg.getSoundStartEnd(soundFileName)
-          : (function (s) {
-              return s.split("/");
-            })(soundFileName);
+      const parts =  typeof cfg.getSoundStartEnd === "function" ? cfg.getSoundStartEnd(soundFileName): (function (s) {
+                            return s.split("/");
+                          })(soundFileName);
 
       const fileName = parts[0];
       const start = parts.length > 1 ? parseFloat(parts[1]) : null;
       const end = parts.length > 2 ? parseFloat(parts[2]) : null;
 
+      const fileExt = getExtension(fileName);
+      if ("txt" === fileExt) {
+        // show vocabulary table 
+        VocabModal.load(fileName); 
+        const modal = new bootstrap.Modal(document.getElementById('vocabModal'));
+        modal.show();      
+        return;
+      }      
+
       // ✅ Xác định xem có phải video không
-      const isVideo =
-        fileName.endsWith(".mp4") ||
-        fileName.endsWith(".mov") ||
-        fileName.endsWith(".mkv") ||
-        fileName.endsWith(".webm");
+      const isVideo = fileName.endsWith(".mp4") ||
+                      fileName.endsWith(".mov") ||
+                      fileName.endsWith(".mkv") ||
+                      fileName.endsWith(".webm");
 
       // ✅ Chọn đúng đường dẫn theo loại file
-      const basePath = cfg.global_const
-        ? isVideo
-          ? cfg.global_const.PATH_VIDEO
-          : cfg.global_const.PATH_SOUND
-        : "";
+      const basePath = cfg.global_const ? isVideo ? cfg.global_const.PATH_VIDEO : cfg.global_const.PATH_SOUND : "";
 
       // ✅ Nếu không có đuôi file → luôn mặc định thêm .mp3
       let url = basePath + fileName;
+
+      // mặc định là .mp3 nếu là không có extension
       if (!/\.(mp3|mp4|mov|mkv|webm)$/i.test(fileName)) {
         url += ".mp3";
       }

@@ -67,6 +67,11 @@
       gap: 3px;
     }
 
+    #settingsModal .modal-dialog {
+    max-width: 40%; /* hoặc 1200px, 80vw, etc. */
+}
+
+
   </style>
 </head>
 <body>
@@ -85,7 +90,7 @@
           </button>
 
           <button   id="save-icon-send-2" class="btn btn-danger save-icon" >
-            <i class="bi bi-save"></i>
+            <i class="bi bi-cloud-upload"></i>
           </button>         
           
           
@@ -131,16 +136,66 @@
              Edit play sound icon: (click to save Icon)
             </div>
             <div class="card-body">
-              <input type="text" id="icon-sound-url" class="form-control" />
-              <button type="button" id="play-icon" class="btn btn-info">Play</button>
-              <button type="button" id="save-icon" class="btn btn-primary">Save Icon</button>
-              <button type="button" id="save-icon-send" class="btn btn-primary">Save & Send Icon</button> <br>
-              <button  type="button"  class="btn btn-success add-icon" data-param="1">Add  Icon (1)</button>
-              <button  type="button"  class="btn btn-success add-icon" data-param="2">Add  Icon (2)</button>
-              <button  type="button"  class="btn btn-success add-icon" data-param="3">Add  Icon (3)</button>
-              <button  type="button"  class="btn btn-success add-icon" data-param="4">Add  Icon (4)</button>
-              <button  type="button"  class="btn btn-success add-icon" data-param="5">Add  Icon (5)</button>
-              <button type="button" id="delete-icon" class="btn btn-danger">Delete Icon</button>
+
+              
+              <form>
+                <div class="form-group row">
+                  <label for="icon-sound-url" class="col-sm-2 col-form-label">File name</label>
+                  <div class="col-sm-10">
+                    <input type="text" id="icon-sound-url" class="form-control" placeholder="specify  file name" />   
+                  </div>
+                </div>
+                
+                <div class="form-group row">
+                  <label for="icon-type" class="col-sm-2 col-form-label">Icon type</label>
+                  <div class="col-sm-10">
+                      <select  id="icon-type" class="form-select">
+                      <option value="1" selected>Play Icon (audio)</option>
+                      <option value="2">Play Icon (video)</option>
+                      <option value="3">Play Icon (text)</option>
+                      <option value="4">Image Icon</option>
+                  </select>
+                  </div>
+                </div>
+
+              <div class="form-group row">
+                  <label for="icon-opacity" class="col-sm-2 col-form-label">Icon opacity</label>
+                  <div class="col-sm-10">
+                     <input type="text" id="icon-opacity" class="form-control" placeholder="0 to 1" /> 
+                  </div>
+                </div>
+
+
+                 
+
+
+               <div class="form-group row">
+                  <label for="icon-width" class="col-sm-2 col-form-label">Icon width</label>
+                  <div class="col-sm-10">
+                     <input type="text" id="icon-width" class="form-control" placeholder="width 18" /> 
+                  </div>
+                </div>
+
+               <div class="form-group row">
+                  <label for="icon-height" class="col-sm-2 col-form-label">Icon height</label>
+                  <div class="col-sm-10">
+                    <input type="text" id="icon-height" class="form-control" placeholder="heigh 18" />    
+                  </div>
+                </div>
+                
+                <button type="button" id="play-icon" class="btn btn-info">Play</button>
+                <button type="button" id="save-icon" class="btn btn-primary">Save Icon</button>
+                <button type="button" id="save-icon-send" class="btn btn-primary">Save & Send Icon</button> 
+                
+                <button  type="button"  class="btn btn-success add-icon" data-param="1">Add  Icon (1)</button>
+                <button  type="button"  class="btn btn-success add-icon" data-param="2">Add  Icon (2)</button>
+                <button  type="button"  class="btn btn-success add-icon" data-param="3">Add  Icon (3)</button>
+                <button  type="button"  class="btn btn-success add-icon" data-param="4">Add  Icon (4)</button>
+                <button  type="button"  class="btn btn-success add-icon" data-param="5">Add  Icon (5)</button>
+                
+                <button type="button" id="delete-icon" class="btn btn-danger">Delete Icon</button>
+
+              </form>
             </div>
           </div>
           <br>
@@ -165,7 +220,7 @@
     </div>
   </div>
 
-   <script src ="common.js"></script>
+  
   <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
   <script src="edit.js">
 
