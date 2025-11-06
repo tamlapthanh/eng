@@ -60,12 +60,20 @@ function createRadioButtons() {
       ASSET_URL = foundOption.ASSET_URL;
     } else {      
       ASSET_URL = {
-        IMG_URL: "",
-        SOUND_URL: "",
-        VIDEO_URL: "",
-        JSON_URL: "",
+        IMG_URL: "https://tamlapthanh.github.io/store_images/",
+        SOUND_URL: "https://tamlapthanh.github.io/store_images/",
+        VIDEO_URL: "https://tamlapthanh.github.io/store_images/",
+        JSON_URL: "https://tamlapthanh.github.io/store_images/",
       };
     }
+
+    //TODO: for testing only
+      ASSET_URL = {
+        IMG_URL: "https://tamlapthanh.github.io/store_images/",
+        SOUND_URL: "https://tamlapthanh.github.io/store_images/",
+        VIDEO_URL: "https://tamlapthanh.github.io/store_images/",
+        JSON_URL: "https://tamlapthanh.github.io/store_images/",
+      };    
   }
 
 function showToast(message, type = "success") {
