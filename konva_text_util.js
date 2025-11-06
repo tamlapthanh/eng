@@ -28,7 +28,7 @@ function createText(defaultText = TEXT_DEFAULT) {
   const maxY = 0.85;
 
   // ✅ Random vị trí trong vùng cho phép
-  const xNorm = Math.random() * (maxX - minX) + minX;
+  const xNorm = (maxX - minX) + minX;
   const yNorm = Math.random() * (maxY - minY) + minY;  
 
   const t =  {
@@ -91,6 +91,7 @@ function generateTextNode(
 
     const x = bgX + (t.xNorm || 0) * bgW;
     let y = bgY + (t.yNorm || 0) * bgH;
+    
     if (isMobile()) {
       y -= 2;
       t.fontSize = 12;
@@ -98,19 +99,7 @@ function generateTextNode(
 
     const w = (Number(t.widthNorm) || 0) * bgW;
     const fontSize = Number(t.fontSize) || 15;
-    var orgX = (t.attrs && t.attrs.originX) || t.xNorm;
-    var orgY = (t.attrs && t.attrs.originY) || t.yNorm;
 
-    var isChangedPos = (t.attrs && t.attrs.isChangedPos) || false;
-    if (!readOny) {
-      orgX = t.xNorm;
-      orgY = t.yNorm;
-    }
-    if (!isShowBorder && isChangedPos == false) {
-      isShowText = false;
-    } else if (isChangedPos) {
-      t.fill = RECT_TEXT_MOVED_COLOR;
-    }
 
     // padding/corner cho background
     const PADDING = t.padding ?? 8;
@@ -125,7 +114,7 @@ function generateTextNode(
       fontFamily: t.fontFamily || "Arial",
       fill: t.fill || "blue",
       width: Math.max(10, Math.round(w || fontSize * 4)),
-      draggable: false,
+      draggable: true,
       rotation: 0,
       align: t.align || "center",
       lineHeight: t.lineHeight || 1,
@@ -162,6 +151,7 @@ function generateTextNode(
       strokeWidth: 1,
       shadowColor: "black",
       shadowBlur: 4,
+      draggable: true,
       shadowOffset: { x: 1, y: 1 },
       shadowOpacity: 0.12,
       listening: true,
@@ -226,9 +216,6 @@ function generateTextNode(
 
     // Restore attributes và flags lên textNode (giữ logic của bạn)
     textNode.fill(t.fill);
-    textNode.setAttr("isChangedPos", isChangedPos);
-    textNode.setAttr("originX", Number(orgX));
-    textNode.setAttr("originY", Number(orgY));
     textNode.setAttr("isShowText", isShowText);
     textNode.setAttr("isShowBorder", isShowBorder);
     textNode.setAttr("readOny", readOny);
@@ -253,6 +240,7 @@ function generateTextNode(
       anchorFill: "#fff",
       anchorStroke: "#444",
       anchorSize: 6,
+      draggable: true,
       borderStrokeWidth: 0.3,
       borderStroke: "rgba(0, 0, 0, 0.2)",
     });
@@ -279,43 +267,17 @@ function generateTextNode(
       drawingLayer.batchDraw();
     });
 
-    // --- thêm method reset -> trả về vị trí ban đầu ---
-    textNode.resetToInitialPosition = function () {
-      textNode.setAttr("isChangedPos", false);
 
-      var isShowTextLocal = true;
-      const isShowBorderLocal = textNode.getAttr("isShowBorder");
-      if (!isShowBorderLocal) {
-        isShowTextLocal = false;
-      }
-      textNode.fill(RECT_TEXT_DEFAULT_COLOR);
-      // show/hide
-      showText(isShowTextLocal);
-      showBorder(isShowBorderLocal);
-
-      const orgXLocal = textNode.getAttr("originX") || 0;
-      const orgYLocal = textNode.getAttr("originY") || 0;
-      const bgXLocal = backgroundImage.x();
-      const bgYLocal = backgroundImage.y();
-      const bgWLocal = backgroundImage.width();
-      const bgHLocal = backgroundImage.height();
-
-      const xNormm = bgXLocal + orgXLocal * bgWLocal;
-      let yNorm = bgYLocal + orgYLocal * bgHLocal;
-      if (isMobile()) {
-        yNorm -= 2;
-        try {
-          textNode.fontSize(12);
-        } catch (e) {}
-      }
-
-      textNode.position({ x: xNormm, y: yNorm });
-      updateBackground();
-      try {
-        tr.forceUpdate();
-      } catch (e) {}
-      drawingLayer.batchDraw();
-    };
+    // Drag events (sync updated background khi kéo)
+    textNode.on("dragstart", () => {
+      setCursor("pointer");
+    });
+    textNode.on("dragmove", () => {
+      setCursor("pointer");
+    });
+    textNode.on("dragend", () => {
+      setCursor("default");
+    });
 
     // --- TOOLTIP (an toàn check htmlTooltip/stage) ---
     textNode.on("mousemove", (e) => {
@@ -339,51 +301,6 @@ function generateTextNode(
       }
     });
 
-    // Drag events (sync updated background khi kéo)
-    textNode.on("dragstart", () => {
-      setCursor("pointer");
-      showText(true);
-    });
-    textNode.on("dragmove", () => {
-      setCursor("pointer");
-      updateBackground(); // sync bg khi đang kéo
-      showText(true);
-    });
-    textNode.on("dragend", () => {
-      if (!readOny) {
-        const bgX2 = backgroundImage.x();
-        const bgY2 = backgroundImage.y();
-        const bgW2 = backgroundImage.width();
-        const bgH2 = backgroundImage.height();
-
-        const xAbs = textNode.x();
-        const yAbs = textNode.y();
-
-        let newXNorm = 0;
-        let newYNorm = 0;
-        if (bgW2 && !isNaN(bgW2)) newXNorm = (xAbs - bgX2) / bgW2;
-        if (bgH2 && !isNaN(bgH2)) newYNorm = (yAbs - bgY2) / bgH2;
-
-        newXNorm = Math.max(0, Math.min(1, newXNorm));
-        newYNorm = Math.max(0, Math.min(1, newYNorm));
-
-        const roundedX = Number(newXNorm.toFixed(6));
-        const roundedY = Number(newYNorm.toFixed(6));
-
-        textNode.setAttr("originX", roundedX);
-        textNode.setAttr("originY", roundedY);
-      }
-
-      if (!isShowBorder) {
-        textNode.fill(RECT_TEXT_MOVED_COLOR);
-        textNode.setAttr("isChangedPos", true);
-      }
-
-      setCursor("default");
-      showText(true);
-      updateBackground();
-    });
-
     // show/hide helpers (cập nhật bgRect luôn)
     function showBorder(isShow = true) {
       tr.visible(Boolean(isShow));
@@ -401,15 +318,12 @@ function generateTextNode(
     }
 
     // enable draggable
-    textNode.draggable(Boolean(isDraggable));
-    tr.draggable(Boolean(isDraggable));
+    // textNode.draggable(Boolean(isDraggable));
+    // tr.draggable(Boolean(isDraggable));
 
     // đảm bảo transformer hiển thị theo isShowBorder
     showText(isShowText);
     showBorder(isShowBorder);
-
-    // thêm transformer vào layer (nếu chưa)
-    // (đã add tr ở trên)
 
     // --- Rotate icon mở color popup (an toàn) ---
     tr.on("mousedown touchstart", function (evt) {
@@ -445,7 +359,6 @@ function generateTextNode(
     // --- Editor logic (open textarea) ---
     function openTextEditor(e) {
       if (readOny) {
-        textNode.resetToInitialPosition();
         return;
       }
 
@@ -611,6 +524,8 @@ function generateTextNode(
     console.warn("generateTextNode: failed to restore", idx, err, t);
   }
 }
+
+
 
 function saveTextNodes(bgDisplay) {
   var textNodes = [];

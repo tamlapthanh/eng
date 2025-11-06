@@ -260,25 +260,27 @@
     }
 
     // add play icon (Konva image node)
-    function addPlayIcon(x, y, iconW, iconH, sound) {
-      if (sound && sound.trim() === "x") return;
+    function addPlayIcon(x, y, iconW, iconH, iconData) {
+
+      var sound = iconData?.sound || "x";
+      if (sound && sound.trim() === "x") {
+        return;
+      } 
 
       const size = typeof cfg.getIconSize === "function" ? cfg.getIconSize(ICON_SIZE): ICON_SIZE;
 
       var iconPathFile = getAssetPath(sound); // iconPathIdle;
-      var opacity_value = 1;
-      if (iconPathFile == ICON_AUDIO) {
-        //TODO: sẽ không show trong trường họp là audio 
-        opacity_value = 0;
-      }
+      var icon_opacity = iconData?.icon_opacity || "1";
+      var icon_type   = iconData?.icon_type || "1";
 
       Konva.Image.fromURL(iconPathFile, function (icon) {
         icon.setAttrs({
           x: typeof x === "number" ? x : Math.random() * (stage.width() - 50),
           y: typeof y === "number" ? y : Math.random() * (stage.height() - 50),
-          width: size,
-          height: size,
-          // opacity: opacity_value,
+          width: iconW || ICON_SIZE,
+          height: iconH || ICON_SIZE,
+          icon_type: icon_type,
+          opacity: icon_opacity,
         });
 
         icon.setAttr("sound", (sound || "").trim());
@@ -411,15 +413,15 @@
           const iconX = iconData.x * backgroundImage.width() + backgroundImage.x();
           const iconY = iconData.y * backgroundImage.height() + backgroundImage.y();
 
-        if (typeof iconData.w === 'number' && typeof iconData.h === 'number') {
+        if (typeof iconData.width === 'number' && typeof iconData.height === 'number') {
           // Nếu là tỉ lệ nhỏ (<1) => hiểu là phần trăm
-          if (iconData.w <= 1 && iconData.h <= 1) {
-            iconW = iconData.w * backgroundImage.width();
-            iconH = iconData.h * backgroundImage.height();
+          if (iconData.width <= 1 && iconData.height <= 1) {
+            iconW = iconData.width * backgroundImage.width();
+            iconH = iconData.height * backgroundImage.height();
           } else {
             // Nếu là pixel => chuyển tỉ lệ theo ảnh nền thực tế
-            iconW = (iconData.w / imageObj.naturalWidth) * backgroundImage.width();
-            iconH = (iconData.h / imageObj.naturalHeight) * backgroundImage.height();
+            iconW = (iconData.width / imageObj.naturalWidth) * backgroundImage.width();
+            iconH = (iconData.height / imageObj.naturalHeight) * backgroundImage.height();
           }
         } else {
           // Nếu chưa có w/h, fallback theo ICON_SIZE
@@ -427,7 +429,7 @@
           iconH = (ICON_SIZE / imageObj.naturalHeight) * backgroundImage.height();
         }
  
-          addPlayIcon(iconX, iconY, iconW, iconH, iconData.sound);
+          addPlayIcon(iconX, iconY, iconW, iconH, iconData);
         });
         // load lines (caller should pass APP_DATA map to CanvasManager.loadLinesByDraw if needed)
         if (typeof cfg.onLoadLines === "function") cfg.onLoadLines(page);
@@ -517,6 +519,10 @@
       stage.add(iconLayer);
       stage.add(drawingLayer);
 
+
+
+
+
       // ensure container touch-action none recommended in CSS: #canvas { touch-action: none; }
       setupPointerHandlers();
       let _resizeTimer = null;
@@ -555,7 +561,7 @@
       const DOUBLE_TAP_THRESHOLD = 300;
       const DOUBLE_TAP_DISTANCE = 30;
 
-      // pointerdown
+      // pointerdown, on click của stage.on
       container.addEventListener(
         "pointerdown",
         function (evt) {

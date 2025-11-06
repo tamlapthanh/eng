@@ -173,8 +173,7 @@ $(document).ready(async function () {
           }
 
           CanvasManager.loadShapes(page, parsed);
-
-       })
+        })
         .catch((err) => console.error("Fetch error", err))
         .finally(() => hideSpinner("spinnerOverlay_async_id"));
     } else {

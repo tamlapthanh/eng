@@ -431,14 +431,22 @@
       const fileName = parts[0];
       const start = parts.length > 1 ? parseFloat(parts[1]) : null;
       const end = parts.length > 2 ? parseFloat(parts[2]) : null;
-
-      const fileExt = getExtension(fileName);
-      if ("txt" === fileExt) {
-        // show vocabulary table 
+      //TODO: kiểm tra loại icon_type để switch cho phù họp 
+      var  icon_type = iconNode.getAttr("icon_type") || "1";
+      if ("1" ==  icon_type) { // Play Icon (audio)
+      
+      } else if ("2" ==  icon_type) { // Play Icon (video)
+        
+      } else if ("3" ==  icon_type) { // Play Icon (text)
         VocabModal.load(fileName); 
         const modal = new bootstrap.Modal(document.getElementById('vocabModal'));
         modal.show();      
         return;
+      } else if ("4" ==  icon_type) { // Play Icon (Image)
+
+      } else if ("5" ==  icon_type) { // Play Icon (Next Pre page)
+          $("#json-dropdown").val(fileName).change();
+          return;
       }      
 
       // ✅ Xác định xem có phải video không
