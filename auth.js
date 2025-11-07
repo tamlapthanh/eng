@@ -4,11 +4,10 @@ const AuthService = {
   API_BASE_URL: global_const.RUN_URL_SERVER,
 
   setToken(token, { persist = false } = {}) {
-    if (persist) localStorage.setItem("jwt_token", token);
-    else sessionStorage.setItem("jwt_token", token);
+    sessionStorage.setItem("jwt_token", token);
   },
   getToken() {
-    return sessionStorage.getItem("jwt_token") || localStorage.getItem("jwt_token");
+    return sessionStorage.getItem("jwt_token") ;
   },
 
   // Lưu token vào localStorage
@@ -23,7 +22,7 @@ const AuthService = {
 
   // Xóa token (logout)
   removeToken() {
-    localStorage.removeItem("jwt_token");
+    sessionStorage.removeItem("jwt_token");
   },
 
   // Kiểm tra đã login chưa
@@ -151,6 +150,7 @@ const AuthService = {
   requireAuth() {
     if (!this.isAuthenticated()) {
       window.location.href = "login.html";
+
     }
   },
 

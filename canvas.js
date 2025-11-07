@@ -85,7 +85,6 @@
       return transform.point({ x, y });
     }
 
-
     // Stage animation tween helper (smooth zoom / pan)
     function animateStageTo(newScale, newPos, duration = 0.18) {
       duration = Math.max(0.02, duration);
@@ -261,17 +260,19 @@
 
     // add play icon (Konva image node)
     function addPlayIcon(x, y, iconW, iconH, iconData) {
-
       var sound = iconData?.sound || "x";
       if (sound && sound.trim() === "x") {
         return;
-      } 
+      }
 
-      const size = typeof cfg.getIconSize === "function" ? cfg.getIconSize(ICON_SIZE): ICON_SIZE;
+      const size =
+        typeof cfg.getIconSize === "function"
+          ? cfg.getIconSize(ICON_SIZE)
+          : ICON_SIZE;
 
       var iconPathFile = getAssetPath(sound); // iconPathIdle;
       var icon_opacity = iconData?.icon_opacity || "0.1";
-      var icon_type   = iconData?.icon_type || "1";
+      var icon_type = iconData?.icon_type || "1";
 
       Konva.Image.fromURL(iconPathFile, function (icon) {
         icon.setAttrs({
@@ -284,7 +285,7 @@
         });
 
         icon.setAttr("sound", (sound || "").trim());
-        
+
         // ensure listening on desktop
         icon.listening(true);
 
@@ -322,7 +323,7 @@
         });
 
         iconLayer.add(icon);
-        icon.moveToTop();
+        // icon.moveToTop();
       });
     }
 
@@ -394,7 +395,6 @@
         .finally(() => hideSpinner());
     }
 
-    
     function loadJsonBackgroundAndIcons(page, data) {
       if (!data || !data.background) return;
       const imageObj = new Image();
@@ -410,37 +410,45 @@
         playIcons = [];
         // add icons from json
         (data.icons || []).forEach((iconData) => {
-          const iconX = iconData.x * backgroundImage.width() + backgroundImage.x();
-          const iconY = iconData.y * backgroundImage.height() + backgroundImage.y();
+          const iconX =
+            iconData.x * backgroundImage.width() + backgroundImage.x();
+          const iconY =
+            iconData.y * backgroundImage.height() + backgroundImage.y();
 
           // "width": 0.0242727326370449,
           //   "height": 0.01809523809523809,
           if (!iconData?.width) {
-              iconData.width = 0.0242727326370449;
+            iconData.width = 0.0242727326370449;
           }
           if (!iconData?.height) {
-              iconData.height = 0.01809523809523809;
+            iconData.height = 0.01809523809523809;
           }
 
-
-        if (typeof iconData.width === 'number' && typeof iconData.height === 'number') {
-
-          // Nếu là tỉ lệ nhỏ (<1) => hiểu là phần trăm
-          if (iconData.width <= 1 && iconData.height <= 1) {
-            iconW = iconData.width * backgroundImage.width();
-            iconH = iconData.height * backgroundImage.height();
+          if (
+            typeof iconData.width === "number" &&
+            typeof iconData.height === "number"
+          ) {
+            // Nếu là tỉ lệ nhỏ (<1) => hiểu là phần trăm
+            if (iconData.width <= 1 && iconData.height <= 1) {
+              iconW = iconData.width * backgroundImage.width();
+              iconH = iconData.height * backgroundImage.height();
+            } else {
+              // Nếu là pixel => chuyển tỉ lệ theo ảnh nền thực tế
+              iconW =
+                (iconData.width / imageObj.naturalWidth) *
+                backgroundImage.width();
+              iconH =
+                (iconData.height / imageObj.naturalHeight) *
+                backgroundImage.height();
+            }
           } else {
-            // Nếu là pixel => chuyển tỉ lệ theo ảnh nền thực tế
-            iconW = (iconData.width / imageObj.naturalWidth) * backgroundImage.width();
-            iconH = (iconData.height / imageObj.naturalHeight) * backgroundImage.height();
-            
+            // Nếu chưa có w/h, fallback theo ICON_SIZE
+            iconW =
+              (ICON_SIZE / imageObj.naturalWidth) * backgroundImage.width();
+            iconH =
+              (ICON_SIZE / imageObj.naturalHeight) * backgroundImage.height();
           }
-        } else {
-          // Nếu chưa có w/h, fallback theo ICON_SIZE
-          iconW = (ICON_SIZE / imageObj.naturalWidth) * backgroundImage.width();
-          iconH = (ICON_SIZE / imageObj.naturalHeight) * backgroundImage.height();
-        }
- 
+
           addPlayIcon(iconX, iconY, iconW, iconH, iconData);
         });
         // load lines (caller should pass APP_DATA map to CanvasManager.loadLinesByDraw if needed)
@@ -453,7 +461,6 @@
     }
 
     function adjustBackgroundImage(imageObj) {
-      
       const imageWidth = imageObj.width;
       const imageHeight = imageObj.height;
       const stageWidth = stage.width();
@@ -489,7 +496,7 @@
 
       backgroundImage.setAttrs({
         originalWidth: imageObj.naturalWidth,
-        originalHeight: imageObj.naturalHeight
+        originalHeight: imageObj.naturalHeight,
       });
 
       backgroundLayer.add(backgroundImage);
@@ -509,8 +516,6 @@
       stage.batchDraw();
     }
 
-
-
     function fitStageIntoParentContainer() {
       stage.width(window.innerWidth);
       stage.height(window.innerHeight);
@@ -520,6 +525,10 @@
 
     // Build stage + layers + pointer handlers
     function createStage(containerId, stageCfg) {
+       // TẮT WARNINGS TRƯỚC KHI TẠO STAGE
+      Konva.showWarnings = false;
+      Konva.verbose = false;
+
       Konva._fixTextRendering = true;
       stage = new Konva.Stage(
         Object.assign({ container: containerId }, stageCfg || {})
@@ -528,12 +537,9 @@
       iconLayer = new Konva.Layer();
       drawingLayer = new Konva.Layer();
       stage.add(backgroundLayer);
-      stage.add(iconLayer);
+
       stage.add(drawingLayer);
-
-
-
-
+      stage.add(iconLayer);
 
       // ensure container touch-action none recommended in CSS: #canvas { touch-action: none; }
       setupPointerHandlers();
@@ -961,34 +967,170 @@
       // NOTE: external code can call CanvasManager.addPlayIcon(...) etc.
     }
     function clearCanvas() {
-      // Clear text
-      clearAllTextNodesAndTransformers();
+      console.log("🧹 Clearing canvas completely...");
 
-      if (cfg.AudioService) cfg.AudioService.stopAudio();
-      playIcons.forEach((icon) => icon.destroy());
-      playIcons = [];
-      iconLayer.batchDraw();
-      backgroundLayer.destroyChildren();
-      backgroundLayer.draw();
-      drawingLayer.destroyChildren();
-      drawingLayer.draw();
-      fitStageIntoParentContainer();
-      lines = [];
-      selectedLine = null;
-    }
+      // 1. DỪNG AUDIO TRƯỚC
+      if (cfg.AudioService) {
+        cfg.AudioService.stopAudio();
+        console.log("✅ Audio stopped");
+      }
 
-    function clearAllTextsInLayer() {
-      iconLayer.destroyChildren(); // xóa toàn bộ node con trong layer
-      iconLayer.batchDraw();
+      // 2. RESET STATES
+      textMoveState = {
+        active: false,
+        targetText: null,
+        originalPosition: null,
+      };
+
+      // 3. XOÁ TEXT NODES & TRANSFORMERS (từ konva_text_util.js)
+      try {
+        clearAllTextNodesAndTransformers();
+        console.log("✅ Text nodes and transformers cleared");
+      } catch (err) {
+        console.warn("❌ Error clearing text nodes:", err);
+      }
+
+      // 4. XOÁ PLAY ICONS
+      try {
+        playIcons.forEach((icon) => {
+          // Xoá transformer của icon nếu có
+          // const transformer = iconTransformers.get(icon);
+          // if (transformer) {
+          //   transformer.destroy();
+          //   iconTransformers.delete(icon);
+          // }
+          // Xoá icon
+          icon.destroy();
+        });
+        playIcons = [];
+        // iconTransformers.clear();
+        console.log("✅ Play icons and transformers cleared");
+      } catch (err) {
+        console.warn("❌ Error clearing icons:", err);
+      }
+
+      // 5. XOÁ LINES & SELECTED LINE
+      try {
+        lines.forEach((line) => {
+          // Xoá event listeners nếu có
+          line.off("tap mousedown mouseover mouseout");
+          line.destroy();
+        });
+        lines = [];
+        selectedLine = null;
+        console.log("✅ Lines cleared");
+      } catch (err) {
+        console.warn("❌ Error clearing lines:", err);
+      }
+
+      // 6. XOÁ TẤT CẢ LAYERS COMPLETELY
+      try {
+        // Background layer - giữ lại background image nếu muốn, hoặc xoá hết
+        const bgChildren = backgroundLayer.getChildren();
+        bgChildren.forEach((child) => {
+          child.destroy();
+        });
+        backgroundLayer.destroyChildren();
+        console.log("✅ Background layer cleared");
+      } catch (err) {
+        console.warn("❌ Error clearing background:", err);
+      }
+
+      try {
+        // Icon layer - xoá mọi thứ
+        const iconChildren = iconLayer.getChildren();
+        iconChildren.forEach((child) => {
+          // Xoá transformer nếu có
+          if (child.className === "Transformer") {
+            child.nodes([]); // Remove nodes from transformer first
+          }
+          child.destroy();
+        });
+        iconLayer.destroyChildren();
+        console.log("✅ Icon layer cleared");
+      } catch (err) {
+        console.warn("❌ Error clearing icon layer:", err);
+      }
+
+      try {
+        // Drawing layer - xoá mọi thứ
+        const drawingChildren = drawingLayer.getChildren();
+        drawingChildren.forEach((child) => {
+          // Xoá transformer nếu có
+          if (child.className === "Transformer") {
+            child.nodes([]);
+          }
+          child.destroy();
+        });
+        drawingLayer.destroyChildren();
+        console.log("✅ Drawing layer cleared");
+      } catch (err) {
+        console.warn("❌ Error clearing drawing layer:", err);
+      }
+
+      // 7. XOÁ CÁC GLOBAL TRANSFORMER MAPS (nếu có)
+        // try {
+        //   // Xoá tất cả transformers còn sót
+        //   iconTransformers.forEach((transformer, icon) => {
+        //     transformer.destroy();
+        //   });
+        //   iconTransformers.clear();
+        //   console.log("✅ Transformer maps cleared");
+        // } catch (err) {
+        //   console.warn("❌ Error clearing transformer maps:", err);
+        // }
+
+      // 8. RESET ZOOM & POSITION
+      try {
+        fitStageIntoParentContainer();
+        console.log("✅ Stage reset");
+      } catch (err) {
+        console.warn("❌ Error resetting stage:", err);
+      }
+
+      // 9. FORCE REDRAW ALL LAYERS
+      try {
+        backgroundLayer.batchDraw();
+        iconLayer.batchDraw();
+        drawingLayer.batchDraw();
+        console.log("✅ All layers redrawn");
+      } catch (err) {
+        console.warn("❌ Error redrawing layers:", err);
+      }
+
+      console.log("🎉 Canvas clearing completed!");
     }
 
     function clearAllTextNodesAndTransformers() {
-      const allNodes = iconLayer.find((node) =>
-        ["Text", "Transformer"].includes(node.getClassName())
-      );
+      try {
+        const allTexts = drawingLayer.find("Text");
+        const allTransformers = drawingLayer.find("Transformer");
 
-      allNodes.forEach((n) => n.destroy());
-      iconLayer.batchDraw(); // redraw sau khi xóa
+        // Xóa transformers trước
+        allTransformers.forEach((transformer) => {
+          transformer.destroy();
+        });
+
+        // Xóa texts và các phần tử liên quan
+        allTexts.forEach((textNode) => {
+          // Xóa background rect nếu có
+          if (textNode._bgRect) {
+            textNode._bgRect.destroy();
+          }
+          // Xóa event listeners
+          if (textNode._containerDbl && stage && stage.container) {
+            stage
+              .container()
+              .removeEventListener("dblclick", textNode._containerDbl, true);
+          }
+          textNode.destroy();
+        });
+
+        drawingLayer.batchDraw();
+        console.log("✅ All text nodes and transformers cleared");
+      } catch (err) {
+        console.warn("❌ Error in clearAllTextNodesAndTransformers:", err);
+      }
     }
 
     // Load background+icons from URL; caller should pass url and page
@@ -1007,15 +1149,110 @@
       loadTexts(textsArray);
     }
 
+    function clearAllShapes() {
+      console.log("🧹 Clearing all shapes...");
+
+      // 1. DỪNG AUDIO
+      if (cfg.AudioService) {
+        cfg.AudioService.stopAudio();
+      }
+
+      // 2. XÓA LINES
+      try {
+        lines.forEach((line) => {
+          line.off("tap mousedown mouseover mouseout");
+          line.destroy();
+        });
+        lines = [];
+        selectedLine = null;
+        console.log("✅ Lines cleared");
+      } catch (err) {
+        console.warn("❌ Error clearing lines:", err);
+      }
+
+      // 3. XÓA TEXTS (sử dụng hàm từ konva_text_util.js)
+      try {
+        if (typeof clearAllTextNodesAndTransformers === "function") {
+          clearAllTextNodesAndTransformers();
+        } else {
+          // Fallback: xóa thủ công
+          const textNodes = drawingLayer.find("Text");
+          textNodes.forEach((textNode) => {
+            if (textNode._transformer) {
+              textNode._transformer.destroy();
+            }
+            if (textNode._containerDbl && stage && stage.container) {
+              stage
+                .container()
+                .removeEventListener("dblclick", textNode._containerDbl, true);
+            }
+            if (textNode._bgRect) {
+              textNode._bgRect.destroy();
+            }
+            textNode.destroy();
+          });
+        }
+        console.log("✅ Text nodes cleared");
+      } catch (err) {
+        console.warn("❌ Error clearing text nodes:", err);
+      }
+
+      // 4. XÓA RECTS (sử dụng hàm từ konva_rect_util.js)
+      try {
+        if (typeof clearAllCoverRects === "function") {
+          clearAllCoverRects();
+        } else {
+          // Fallback: xóa thủ công
+          const rects = drawingLayer.find(".maskRect");
+          rects.forEach((rect) => {
+            if (rect._transformer) {
+              rect._transformer.destroy();
+            }
+            if (rect._dashed) {
+              rect._dashed.destroy();
+            }
+            if (rect._onStagePointerDown && stage) {
+              stage.off(
+                "contentMouseDown contentTouchStart",
+                rect._onStagePointerDown
+              );
+            }
+            rect.destroy();
+          });
+        }
+        console.log("✅ Rects cleared");
+      } catch (err) {
+        console.warn("❌ Error clearing rects:", err);
+      }
+
+      // 5. XÓA TRANSFORMERS CÒN SÓT
+      try {
+        const transformers = drawingLayer.find("Transformer");
+        transformers.forEach((tr) => {
+          tr.destroy();
+        });
+        console.log("✅ Transformers cleared");
+      } catch (err) {
+        console.warn("❌ Error clearing transformers:", err);
+      }
+
+      // 6. REDRAW LAYER
+      drawingLayer.batchDraw();
+
+      console.log("🎉 All shapes cleared successfully!");
+    }
+
     function loadShapes(page, parsed) {
+      clearAllShapes();
+
       const linesArr = parsed && Array.isArray(parsed.lines) ? parsed.lines : [];
       loadLinesByDraw(page, linesArr);
 
-       const rectArr = parsed && Array.isArray(parsed.rects) ? parsed.rects : [];
-       loadRectFromExport(rectArr);
+      const rectArr = parsed && Array.isArray(parsed.rects) ? parsed.rects : [];
+      loadRectFromExport(rectArr);
 
       const textArr = parsed && Array.isArray(parsed.texts) ? parsed.texts : [];
-      loadTextsFromExport(textArr);       
+      loadTextsFromExport(textArr);
     }
 
     // load lines (normalized display coords) — caller passes APP_DATA map or raw parsed
@@ -1056,6 +1293,8 @@
           lineJoin: savedLine.lineJoin || "round",
           saved_stroke: savedLine.stroke || line_color,
         });
+
+        line.moveToTop();
         drawingLayer.add(line);
         lines.push(line);
       });
@@ -1083,7 +1322,9 @@
           const x = Number(pts[i]);
           const y = Number(pts[i + 1]);
           const nx = bgDisplay.width ? (x - bgDisplay.x) / bgDisplay.width : 0;
-          const ny = bgDisplay.height ? (y - bgDisplay.y) / bgDisplay.height: 0;
+          const ny = bgDisplay.height
+            ? (y - bgDisplay.y) / bgDisplay.height
+            : 0;
           norm.push(formatNumber(nx));
           norm.push(formatNumber(ny));
         }
@@ -1098,7 +1339,7 @@
 
       // save text nodes
       const textNodes = saveTextNodes(bgDisplay);
-     
+
       // Save rects
       const rects = saveCoverRects();
 
@@ -1117,8 +1358,6 @@
         },
       };
     }
-
-
 
     // navigation helper (can be used by UI or swipe)
     function processNextPrePage(isNext = true) {

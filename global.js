@@ -9,6 +9,7 @@ let DEFAULT_DATA_TYPE = "student37";
 
 async function loadOptions() {
   try {
+
     const response = await fetch("options.json");
     const json = await response.json();
     // 👉 Lưu mảng và giá trị mặc định

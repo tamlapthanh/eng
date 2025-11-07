@@ -130,6 +130,7 @@ $(document).ready(async function () {
       .then((d) => {
         showToast("Lưu bài làm thành công!");
         APP_DATA = null;
+        // loadPage() //TODO: có nên load lại toàn bộ page hay chi 1 phần
         listDrawingPagesDetailed(page.toString(), true);
       })
       .catch((err) => {
