@@ -68,12 +68,14 @@ function createRadioButtons() {
     }
 
     //TODO: for testing only
+    if (isDebugMode() == false) {
       ASSET_URL = {
         IMG_URL: "https://tamlapthanh.github.io/store_images/",
         SOUND_URL: "https://tamlapthanh.github.io/store_images/",
         VIDEO_URL: "https://tamlapthanh.github.io/store_images/",
         JSON_URL: "https://tamlapthanh.github.io/store_images/",
       };    
+    }
   }
 
 function showToast(message, type = "success") {

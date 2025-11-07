@@ -270,7 +270,7 @@
       const size = typeof cfg.getIconSize === "function" ? cfg.getIconSize(ICON_SIZE): ICON_SIZE;
 
       var iconPathFile = getAssetPath(sound); // iconPathIdle;
-      var icon_opacity = iconData?.icon_opacity || "1";
+      var icon_opacity = iconData?.icon_opacity || "0.1";
       var icon_type   = iconData?.icon_type || "1";
 
       Konva.Image.fromURL(iconPathFile, function (icon) {
@@ -413,7 +413,18 @@
           const iconX = iconData.x * backgroundImage.width() + backgroundImage.x();
           const iconY = iconData.y * backgroundImage.height() + backgroundImage.y();
 
+          // "width": 0.0242727326370449,
+          //   "height": 0.01809523809523809,
+          if (!iconData?.width) {
+              iconData.width = 0.0242727326370449;
+          }
+          if (!iconData?.height) {
+              iconData.height = 0.01809523809523809;
+          }
+
+
         if (typeof iconData.width === 'number' && typeof iconData.height === 'number') {
+
           // Nếu là tỉ lệ nhỏ (<1) => hiểu là phần trăm
           if (iconData.width <= 1 && iconData.height <= 1) {
             iconW = iconData.width * backgroundImage.width();
@@ -422,6 +433,7 @@
             // Nếu là pixel => chuyển tỉ lệ theo ảnh nền thực tế
             iconW = (iconData.width / imageObj.naturalWidth) * backgroundImage.width();
             iconH = (iconData.height / imageObj.naturalHeight) * backgroundImage.height();
+            
           }
         } else {
           // Nếu chưa có w/h, fallback theo ICON_SIZE

@@ -25,6 +25,13 @@ async function loadOptions() {
   let ICON_AUDIO         = "assets/audio_icon.png";
   let ICON_PLAYING       = "assets/playing_icon.svg";
 
+  
+  // ICON_VIDEO         = "assets/blank.png";
+  // ICON_AUDIO         = "assets/blank.png";
+  // ICON_PLAYING       = "assets/blank.png";
+
+
+
     // basic app config mirrored from your original index.js  
   const PATH_ROOT = "assets/books/27/";
   let APP_DATA = null;
