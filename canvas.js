@@ -1145,7 +1145,6 @@
     }
 
     function loadTextsFromExport(textsArray) {
-      clearAllTextNodesAndTransformers();
       loadTexts(textsArray);
     }
 
@@ -1267,8 +1266,8 @@
       }
 
       // remove old lines
-      lines.forEach((l) => l.destroy());
-      lines = [];
+      // lines.forEach((l) => l.destroy());
+      // lines = [];
 
       const bgX = backgroundImage.x();
       const bgY = backgroundImage.y();

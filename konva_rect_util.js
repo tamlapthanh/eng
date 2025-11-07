@@ -25,15 +25,12 @@ function clearAllCoverRects() {
   drawingLayer.batchDraw();
 }
 
+
+
 function loadRectFromExport(rectArray, options = {}) {
-  clearAllCoverRects();
 
   var isLocked = true;
   var isDraggable = false;
-
-  //TODO:
-//   isLocked = false;
-//   isDraggable = false;
 
   rectArray.forEach((it, i) => {
     IS_EANBLE_SWIPE = false;
