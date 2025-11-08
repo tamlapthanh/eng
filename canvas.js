@@ -410,10 +410,9 @@
         playIcons = [];
         // add icons from json
         (data.icons || []).forEach((iconData) => {
-          const iconX =
-            iconData.x * backgroundImage.width() + backgroundImage.x();
-          const iconY =
-            iconData.y * backgroundImage.height() + backgroundImage.y();
+          const iconX = iconData.x * backgroundImage.width() + backgroundImage.x();
+          const iconY = iconData.y * backgroundImage.height() + backgroundImage.y();
+          var iconW, iconH;
 
           // "width": 0.0242727326370449,
           //   "height": 0.01809523809523809,
@@ -424,29 +423,20 @@
             iconData.height = 0.01809523809523809;
           }
 
-          if (
-            typeof iconData.width === "number" &&
-            typeof iconData.height === "number"
-          ) {
+          if (typeof iconData.width === "number" && typeof iconData.height === "number") {
             // Nếu là tỉ lệ nhỏ (<1) => hiểu là phần trăm
             if (iconData.width <= 1 && iconData.height <= 1) {
               iconW = iconData.width * backgroundImage.width();
               iconH = iconData.height * backgroundImage.height();
             } else {
               // Nếu là pixel => chuyển tỉ lệ theo ảnh nền thực tế
-              iconW =
-                (iconData.width / imageObj.naturalWidth) *
-                backgroundImage.width();
-              iconH =
-                (iconData.height / imageObj.naturalHeight) *
-                backgroundImage.height();
+              iconW = (iconData.width / imageObj.naturalWidth) * backgroundImage.width();
+              iconH =(iconData.height / imageObj.naturalHeight) * backgroundImage.height();
             }
           } else {
             // Nếu chưa có w/h, fallback theo ICON_SIZE
-            iconW =
-              (ICON_SIZE / imageObj.naturalWidth) * backgroundImage.width();
-            iconH =
-              (ICON_SIZE / imageObj.naturalHeight) * backgroundImage.height();
+            iconW =  (ICON_SIZE / imageObj.naturalWidth) * backgroundImage.width();
+            iconH =  (ICON_SIZE / imageObj.naturalHeight) * backgroundImage.height();
           }
 
           addPlayIcon(iconX, iconY, iconW, iconH, iconData);

@@ -122,6 +122,12 @@ function generateTextNode(
       listening: true,
     });
 
+    // Restore attributes và flags lên textNode (giữ logic của bạn)
+    textNode.fill(t.fill);
+    textNode.setAttr("isShowText", isShowText);
+    textNode.setAttr("isShowBorder", isShowBorder);
+    textNode.setAttr("readOny", readOny);
+
     // Restore safe attrs (giữ logic của bạn)
     if (t.attrs && typeof t.attrs === "object") {
       const safeAttrs = Object.assign({}, t.attrs);
@@ -181,9 +187,13 @@ function generateTextNode(
   (function autoFitWidthAfterCreate() {
     try {
 
+      // const isReadOnly = textNode.getAttr("readOny");
+      // if (isReadOnly) {
+      //   return ;
+      // }
+
       const currentText = textNode.text().trim();
       if (!currentText || currentText === TEXT_DEFAULT) return; // ❌ bỏ qua text mặc định
-
       const lines = (textNode.text() || "").split("\n");
       const ctx = document.createElement("canvas").getContext("2d");
       // đảm bảo font giống Konva text
