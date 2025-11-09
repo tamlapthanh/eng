@@ -17,13 +17,7 @@
             "max": 209,
             "min": 1,
             "current": 1,
-            "fetch": false,
-            "ASSET_URL" : {
-                "IMG_URL" : "https://tamlapthanh.github.io/store_images/",
-                "SOUND_URL" : "https://tamlapthanh.github.io/store_images/",
-                "VIDEO_URL" : "https://tamlapthanh.github.io/store_images/",
-                "JSON_URL" : "https://tamlapthanh.github.io/store_images/"
-            }
+            "fetch": false
         },        
         {
             "id": "radio_student_37_book",
@@ -32,13 +26,7 @@
             "max": 107,
             "min": 1,
             "current": 2,
-            "fetch": true,
-            "ASSET_URL" : {
-                "IMG_URL" : "",
-                "SOUND_URL" : "",
-                "VIDEO_URL" : "https://tamlapthanh.github.io/store_images/",
-                "JSON_URL" : ""
-            }
+            "fetch": true
         },
         {
             "id": "radio_work_37_book",
@@ -47,13 +35,7 @@
             "max": 97,
             "min": 1,
             "current": 1,
-            "fetch": true,
-             "ASSET_URL" : {
-                "IMG_URL" : "",
-                "SOUND_URL" : "",
-                "VIDEO_URL" : "https://tamlapthanh.github.io/store_images/",
-                "JSON_URL" : ""
-            }
+            "fetch": true
         },
         {
             "id": "radio_btbt_37_book",
