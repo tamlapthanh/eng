@@ -259,6 +259,9 @@
     }
 
     // add play icon (Konva image node)
+    // Khởi tạo tooltip manager
+    const tooltipManager = new TooltipManager();
+
     function addPlayIcon(x, y, iconW, iconH, iconData) {
       var sound = iconData?.sound || "x";
       if (sound && sound.trim() === "x") {
@@ -313,13 +316,37 @@
         });
 
         playIcons.push(icon);
-        icon.on("mouseover", function () {
-          stage.container().style.cursor = "pointer";
+
+        // icon.on("mouseover", function () {
+        //   stage.container().style.cursor = "pointer";
+        // });
+        // icon.on("mouseout", function () {
+        //   stage.container().style.cursor = isDrawingMode
+        //     ? "crosshair"
+        //     : "default";
+        // });
+
+        //Tạo và cấu hình tooltip
+        icon.on("mouseover", function (e) {
+            stage.container().style.cursor = "pointer";
+            
+            tooltipManager.showForIcon(icon, iconData?.sound || 'Play Audio', e.evt);
         });
+
         icon.on("mouseout", function () {
           stage.container().style.cursor = isDrawingMode
-            ? "crosshair"
-            : "default";
+            tooltipManager.hide();
+        });
+
+        icon.on("mousemove", function (e) {
+             tooltipManager.updatePosition(e.evt);
+        });
+
+        // Cleanup
+        icon.on('remove', function() {
+            if (tooltipManager.currentIcon === icon) {
+                tooltipManager.hide();
+            }
         });
 
         iconLayer.add(icon);

@@ -601,4 +601,3 @@ function playTickSound() {
 function formatNumber(n, decimals = 6) {
   return Number(n.toFixed(decimals));
 }
-
