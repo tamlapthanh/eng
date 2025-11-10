@@ -263,7 +263,7 @@
     const tooltipManager = new TooltipManager();
 
     function addPlayIcon(x, y, iconW, iconH, iconData) {
-      var sound = iconData?.sound || "x";
+      var sound = String(iconData?.sound || "x");
       if (sound && sound.trim() === "x") {
         return;
       }
