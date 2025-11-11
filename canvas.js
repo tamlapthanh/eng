@@ -329,8 +329,8 @@
         //Tạo và cấu hình tooltip
         icon.on("mouseover", function (e) {
             stage.container().style.cursor = "pointer";
-            
-            tooltipManager.showForIcon(icon, iconData?.sound || 'Play Audio', e.evt);
+            const tooltip = (String(iconData?.sound || 'Play Audio')).split('/').pop();
+            tooltipManager.showForIcon(icon, tooltip, e.evt);
         });
 
         icon.on("mouseout", function () {
