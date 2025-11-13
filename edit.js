@@ -22,15 +22,21 @@ $(document).ready(function () {
   // let MAX_PAGE_NUM = 107;
   // let MIN_PAGE_NUM = 1;
 
-  let DATA_TYPE = "work37";
-  let CURRENT_PAGE_INDEX = 1;
-  let MAX_PAGE_NUM = 97;
-  let MIN_PAGE_NUM = 1;  
+  // let DATA_TYPE = "work37";
+  // let CURRENT_PAGE_INDEX = 1;
+  // let MAX_PAGE_NUM = 97;
+  // let MIN_PAGE_NUM = 1;  
 
   // let DATA_TYPE = "Young_Children_2_5";
   // let CURRENT_PAGE_INDEX = 1;
   // let MAX_PAGE_NUM = 37;
   // let MIN_PAGE_NUM = 1;  
+
+
+  let DATA_TYPE = "Young_Children_6_12";
+  let CURRENT_PAGE_INDEX = 2;
+  let MAX_PAGE_NUM = 65;
+  let MIN_PAGE_NUM = 1;  
 
   // let DATA_TYPE = "first_work_sheet";
   // let CURRENT_PAGE_INDEX = 1;
@@ -95,6 +101,10 @@ $(document).ready(function () {
   let audio = null;
   let currentSoundNum = 0;
   let iconTransformers = new Map();
+
+  // Khai báo stack undo/redo
+const undoStack = [];
+let currentActionId = 0;
 
 
   function createTransformerForIcon(icon) {
@@ -268,7 +278,7 @@ $(document).ready(function () {
   }
 
   // ========== ICON FUNCTIONS ==========
-  function addPlayIcon(x, y, width, height, iconData) {
+  function addPlayIcon(iconData, x, y, width, height) {
     let icon_size = getIconSize(19);
     
     Konva.Image.fromURL(ICON_AUDIO, function (icon) {
@@ -286,6 +296,23 @@ $(document).ready(function () {
       icon.setAttr("icon_opacity", iconData?.icon_opacity || "1");
       icon.setAttr("icon_type", iconData?.icon_type || "1");
       icon.draggable(true);
+
+       // Thêm vào undo stack
+        const action = {
+            id: currentActionId++,
+            type: 'ADD_ICON',
+            icon: icon,
+            data: {
+                x: icon.x(),
+                y: icon.y(),
+                width: icon.width(),
+                height: icon.height(),
+                iconData: iconData
+            }
+        };
+
+        undoStack.push(action); // Clear redo stack khi có action mới
+
 
       createTransformerForIcon(icon);
       applyCrop(icon, 'center-middle');
@@ -307,15 +334,50 @@ $(document).ready(function () {
         showModal(is_move_icon); // bật(xanh) thì show và không copy
       }
  
+        // Thêm sự kiện remove để cleanup
+        icon.on('remove', function() {
+            removeIconFromStacks(icon);
+        });
       icon.on("click", handleClick);
       icon.on("touchend", handleClick); // handleClick
 
-      icon.on("mouseover", function () {
-        document.body.style.cursor = "pointer";
-      });
-      icon.on("mouseout", function () {
-        document.body.style.cursor = "default";
-      });
+        // Tạo và cấu hình tooltip
+        const tiptext = (String(iconData?.sound || 'Play Audio')).split('/').pop();
+        const tooltip = createTooltip(tiptext);
+        
+        let tooltipTimeout;
+
+        icon.on("mouseover", function (e) {
+            document.body.style.cursor = "pointer";
+            
+            // Hiển thị tooltip sau một khoảng delay nhỏ
+            tooltipTimeout = setTimeout(() => {
+                updateTooltipPosition(tooltip, e.evt);
+                tooltip.classList.add('visible');
+            }, 100);
+        });
+
+        icon.on("mouseout", function () {
+            document.body.style.cursor = "default";
+            // Ẩn tooltip và clear timeout
+            clearTimeout(tooltipTimeout);
+            tooltip.classList.remove('visible');
+        });
+
+        icon.on("mousemove", function (e) {
+            if (tooltip.classList.contains('visible')) {
+                updateTooltipPosition(tooltip, e.evt);
+            }
+        });
+
+        // Cleanup
+        icon.on('remove', function() {
+            clearTimeout(tooltipTimeout);
+            if (tooltip.parentNode) {
+                tooltip.parentNode.removeChild(tooltip);
+            }
+        });
+
 
       playIcons.push(icon);
       iconLayer.add(icon);
@@ -323,6 +385,109 @@ $(document).ready(function () {
       iconLayer.batchDraw();
     });
   }
+
+  // Helper functions
+function removeIconFromStage(icon) {
+    // Xóa icon khỏi layer
+    icon.remove();
+    
+    // Xóa khỏi mảng playIcons
+    const index = playIcons.indexOf(icon);
+    if (index > -1) {
+        playIcons.splice(index, 1);
+    }
+    
+    // Xóa transformer nếu có
+    const transformer = iconTransformers.get(icon);
+    if (transformer) {
+        transformer.remove();
+        iconTransformers.delete(icon);
+    }
+    
+    iconLayer.batchDraw();
+}
+
+function addIconBackToStage(action) {
+    const { icon, data } = action;
+    
+    // Thêm icon trở lại layer
+    iconLayer.add(icon);
+    playIcons.push(icon);
+    
+    // Tạo lại transformer
+    createTransformerForIcon(icon);
+    
+    iconLayer.batchDraw();
+}
+
+function removeIconFromStacks(icon) {
+    // Xóa icon khỏi undo/redo stacks
+    removeFromStack(undoStack, icon);
+}
+
+function removeFromStack(stack, icon) {
+    const index = stack.findIndex(action => action.icon === icon);
+    if (index > -1) {
+        stack.splice(index, 1);
+    }
+}
+
+  // Hàm helper tạo tooltip
+function createTooltip(text) {
+    const tooltip = document.createElement('div');
+    tooltip.className = 'icon-tooltip';
+    tooltip.innerHTML = text;
+    document.body.appendChild(tooltip);
+    return tooltip;
+}
+
+// Hàm helper cập nhật vị trí tooltip
+function updateTooltipPosition(tooltip, event, icon) {
+    const stageRect = stage.container().getBoundingClientRect();
+    const tooltipRect = tooltip.getBoundingClientRect();
+    
+    // Tính toán vị trí mong muốn
+    const desired = calculateOptimalPosition(event, tooltipRect, stageRect, icon);
+    
+    // Áp dụng vị trí với transition
+    tooltip.style.transform = `translate(${desired.x}px, ${desired.y}px)`;
+}
+
+function calculateOptimalPosition(event, tooltipRect, stageRect, icon) {
+    const padding = 10;
+    const mouseOffset = 15;
+    
+    // Vị trí mặc định (bên phải chuột)
+    let x = event.clientX + mouseOffset;
+    let y = event.clientY - mouseOffset;
+    
+    // Kiểm tra collision với các cạnh
+    const collisions = {
+        right: x + tooltipRect.width > stageRect.right - padding,
+        left: x < stageRect.left + padding,
+        bottom: y + tooltipRect.height > stageRect.bottom - padding,
+        top: y < stageRect.top + padding
+    };
+    
+    // Xử lý collision theo thứ tự ưu tiên
+    if (collisions.right) {
+        x = event.clientX - tooltipRect.width - mouseOffset;
+    }
+    
+    if (collisions.left) {
+        x = stageRect.left + padding;
+    }
+    
+    if (collisions.bottom) {
+        y = event.clientY - tooltipRect.height - mouseOffset;
+    }
+    
+    if (collisions.top) {
+        y = stageRect.top + padding;
+    }
+    
+    return { x, y };
+}
 
   function showModal(isShow = false) {
     // if (isShow) {
@@ -526,15 +691,33 @@ $(document).ready(function () {
         data.icons.forEach((iconData) => {
             const iconX = iconData.x * backgroundImage.width() + backgroundImage.x();
             const iconY = iconData.y * backgroundImage.height() + backgroundImage.y();
+            var iconW, iconH;
+
+            if (typeof iconData.width === "number" && typeof iconData.height === "number") {
+            // Nếu là tỉ lệ nhỏ (<1) => hiểu là phần trăm
+            if (iconData.width <= 1 && iconData.height <= 1) {
+              iconW = iconData.width * backgroundImage.width();
+              iconH = iconData.height * backgroundImage.height();
+            } else {
+              // Nếu là pixel => chuyển tỉ lệ theo ảnh nền thực tế
+              iconW =(iconData.width / imageObj.naturalWidth) * backgroundImage.width();
+              iconH =(iconData.height / imageObj.naturalHeight) * backgroundImage.height();
+            }
+          } else {
+            // Nếu chưa có w/h, fallback theo ICON_SIZE
+            var ICON_SIZE = 19;
+            iconW =  (ICON_SIZE / imageObj.naturalWidth) * backgroundImage.width();
+            iconH =  (ICON_SIZE / imageObj.naturalHeight) * backgroundImage.height();
+          }
 
             //TODO:
-            const iconW = iconData.width * backgroundImage.width();
-            const iconH = iconData.height * backgroundImage.height();
+            // const iconW = iconData.width * backgroundImage.width();
+            // const iconH = iconData.height * backgroundImage.height();
 
             // const iconW = Math.min(19, iconData.width * backgroundImage.width());
             // const iconH = Math.min(19, iconData.height * backgroundImage.height());
 
-            addPlayIcon(iconX, iconY, iconW, iconH, iconData);
+            addPlayIcon(iconData, iconX, iconY, iconW, iconH);
         });
       };
       imageObj.src = global_const.PATH_ASSETS_IMG + data.background;
@@ -634,12 +817,75 @@ $(document).ready(function () {
     $('#icon-height').val(icon.height());
   }
 
+   $(".undo-icon-from-clipborad").on("click", async function () {
+          // Hàm undo
+
+      if (undoStack.length === 0) return;
+
+      const action = undoStack.pop();
+      
+      switch (action.type) {
+          case 'ADD_ICON':
+              removeIconFromStage(action.icon);
+              break;
+      }
+
+
+   });
+  
+
+
+$(".add-home-icon").on("click", function () {
+
+           const startX = 0.0025335059611293403; // Góc phải
+          const startY = 0.0349620671313793; // Bắt đầu từ trên xuống (thay vì dưới lên)
+
+const width = 0.09085449735449735 * backgroundImage.width();
+const height = 0.07195767195767196 * backgroundImage.height();
+
+ addPlayIcon({ sound: "2", icon_type:5 , icon_opacity: 0.1}, startX, startY, width, height);
+});  
+
+  $(".add-icon-from-clipborad").on("click", async function () {
+        try {
+
+          const text = (await navigator.clipboard.readText())?.trim() || "";
+          
+          const startX = stage.width() - 150; // Góc phải
+          const startY = 50; // Bắt đầu từ trên xuống (thay vì dưới lên)
+          
+const width = 0.09085449735449735 * backgroundImage.width();
+const height = 0.02708422630849887 * backgroundImage.height();
+
+          const parts = text
+            .split(";")
+            .map((t) => t.trim())
+            .filter((t) => t.length > 0);
+          
+          if (parts.length > 0) {
+            let currentY = startY;
+            
+            parts.forEach((t) => {
+              addPlayIcon({ sound: t, x: startX, y: currentY, width:width, height:height, icon_opacity: 0.1}, startX, currentY, width, height);
+              currentY += 30; // Xuống dòng cho icon tiếp theo
+            });
+          } else {
+            addPlayIcon({ x: startX, y: startY, width:width, height:height, icon_opacity: 0.1});
+          }
+        } catch (err) {
+          console.error("Không thể đọc clipboard:", err);
+          addPlayIcon({ x: stage.width() - 150, y: 50 });
+        }
+  });
+
   // ========== EVENT HANDLERS ==========
   $(".add-icon").on("click", function () {
+
     var max = parseInt($(this).data("param"), 10);
     for (var i = 0; i < max; i++) {
       addPlayIcon();
     }
+
   });
 
   stage.on("click tap", function(e) {
@@ -674,13 +920,13 @@ $(document).ready(function () {
     sendJsonToServer();
     // checkSoundPath();
     $("#settingsModal").modal("hide");
-    processNextPage();
+    // processNextPage();
   });
 
   saveSendIconButton2.off("click").on("click", function (e) {
     // saveIcon();
     sendJsonToServer();
-    processNextPage();
+    // processNextPage();
     // checkSoundPath();
     $("#settingsModal").modal("hide");
   });
@@ -730,7 +976,10 @@ function cloneIconFull(sourceIcon) {
     });
 
     // SET THUỘC TÍNH SOUND THÀNH "clone"
-    newIcon.setAttr("sound", "clone");
+    const sound = sourceIcon.getAttr("sound");
+    const soundNum = Number(sound);
+    const newSound = !isNaN(soundNum) ? soundNum + 1 : sound + "xx";
+    newIcon.setAttr("sound", newSound);
 
     // Thêm vào layer trước khi tạo transformer
     iconLayer.add(newIcon);
@@ -930,6 +1179,7 @@ function cloneIconFull(sourceIcon) {
   // ========== INITIALIZATION ==========
   popDropdown($("#json-dropdown"), "Page", MIN_PAGE_NUM, MAX_PAGE_NUM);
   popDropdown($("#image-dropdown"), "Image", MIN_PAGE_NUM, MAX_PAGE_NUM);
+   $("#json-dropdown").val(CURRENT_PAGE_INDEX).change();
   loadPage();
 
   // $("#settingsModal").on("show.bs.modal", function () {
