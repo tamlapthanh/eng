@@ -14,7 +14,8 @@
     let subtitleData = {};
     let subtitleTimeout = null;
     let currentFileName = '';
-    let isFirstSubtitleLoad = true; // ✅ THÊM BIẾN NÀY
+    let isFirstSubtitleLoad = true;
+    let globalSubtitleEnabled = true; // ✅ THÊM: Biến toàn cục để điều khiển hiển thị subtitle
   
     // config
     const cfg = {
@@ -26,7 +27,8 @@
       global_const: null,
       autoShowPanel: true,
       onClose: null,
-      defaultPlaybackRate: 1, 
+      defaultPlaybackRate: 1,
+      subtitleEnabled: true, // ✅ THÊM: Cấu hình mặc định cho subtitle
     };
 
     // create panel HTML if not exist
@@ -41,6 +43,7 @@
       <div style="font-size:14px; font-weight:600;" id="acp-title">Media</div>
     </div>
     <div style="display:flex; gap:6px; align-items:center;">
+     <button id="acp-subtitle" class="btn btn-sm btn-primary" title="Toggle subtitle" aria-pressed="true"><i class="bi bi-chat-square-text-fill" style="font-size:14px;"></i></button>
      <button id="acp-loop" class="btn btn-sm btn-primary" title="Toggle loop" aria-pressed="true"><i class="bi bi-arrow-repeat" style="font-size:14px;"></i></button>
       <button id="acp-close" class="btn btn-sm btn-danger" title="Close"><i class="bi bi-x-lg" style="font-size:14px;"></i></button>
     </div>
@@ -175,6 +178,7 @@
         currentTimeEl: document.getElementById('acp-current'),
         durationEl: document.getElementById('acp-duration'),
         volume: document.getElementById('acp-volume'),
+        subtitleBtn: document.getElementById('acp-subtitle'), // ✅ THÊM DÒNG NÀY
         loopBtn: document.getElementById('acp-loop'),
         videoWrap: document.getElementById('acp-video-wrap'),
         videoEl: document.getElementById('acp-video'),
@@ -236,6 +240,32 @@
       e.loopBtn.classList.toggle('active', !!isLoop);
     }
 
+    // ✅ THÊM: Update subtitle button UI
+    function updateSubtitleUI() {
+      const e = panelEls();
+      if (!e || !e.subtitleBtn) return;
+      
+      // Đổi icon và màu sắc dựa trên trạng thái
+      const icon = e.subtitleBtn.querySelector('i');
+      if (icon) {
+        if (globalSubtitleEnabled) {
+          icon.className = 'bi bi-chat-square-text-fill'; // Icon khi bật
+          e.subtitleBtn.style.opacity = '1';
+          e.subtitleBtn.style.background = '#0d6efd'; // Màu primary
+        } else {
+          icon.className = 'bi bi-chat-square-text'; // Icon khi tắt
+          e.subtitleBtn.style.opacity = '0.6';
+          e.subtitleBtn.style.background = '#6c757d'; // Màu secondary
+        }
+      }
+      
+      e.subtitleBtn.setAttribute('aria-pressed', globalSubtitleEnabled);
+      e.subtitleBtn.classList.toggle('active', globalSubtitleEnabled);
+      
+      // Cập nhật tooltip
+      e.subtitleBtn.title = globalSubtitleEnabled ? 'Hide subtitle' : 'Show subtitle';
+    }
+
     // one-time panel UI wiring
     let _panelInitialized = false;
     function setupPanelEvents() {
@@ -243,6 +273,19 @@
       _panelInitialized = true;
       ensurePanel();
       const e = panelEls();
+
+      // ✅ THÊM: Subtitle toggle button
+      e.subtitleBtn.addEventListener('click', function () {
+        globalSubtitleEnabled = !globalSubtitleEnabled;
+        updateSubtitleUI();
+        
+        // Nếu tắt subtitle, ẩn subtitle hiện tại
+        if (!globalSubtitleEnabled) {
+          hideSubtitle();
+        }
+        
+        console.log('Subtitle toggled:', globalSubtitleEnabled);
+      });
 
       // Play/pause toggle
       e.playpauseBtn.addEventListener('click', function () {
@@ -303,6 +346,7 @@
 
       // initial UI states
       updateLoopUI();
+      updateSubtitleUI(); // ✅ THÊM: Khởi tạo subtitle UI
       if (e.speed && e.speedLabel) {
         e.speed.value = (cfg.defaultPlaybackRate || 1).toString();
         e.speedLabel.textContent = (cfg.defaultPlaybackRate || 1).toFixed(2) + 'x';
@@ -375,180 +419,155 @@
       return activeSub ? activeSub.text : null;
     }
 
-  function showSubtitle(text) {
-    const overlay = document.getElementById('subtitle-overlay');
-    const textEl = document.getElementById('subtitle-text');
-    
-    console.log('🎬 showSubtitle called:', { 
-        text: text,
-        overlayExists: !!overlay,
-        textElExists: !!textEl
-    });
-    
-    if (overlay && textEl) {
-        try {
-            // Clear timeout cũ nếu có
-            if (subtitleTimeout) {
-                clearTimeout(subtitleTimeout);
-                subtitleTimeout = null;
-            }
-            
-            // Remove classes cũ
-            overlay.classList.remove('subtitle-hidden', 'subtitle-visible');
-            
-            // Set text mới
-            textEl.textContent = text;
-            
-            // Hiển thị với hiệu ứng
-            setTimeout(() => {
-                overlay.style.display = 'block';
-                
-                // ✅ MÀU SẮC CUTE CHO TRẺ EM
-                // overlay.style.background = 'linear-gradient(135deg, #FFB6C1 0%, #FF69B4 100%)'; // Hồng pastel
-                // overlay.style.color = 'white'; // Chữ trắng cho dễ đọc
-                // overlay.style.border = '3px solid #FF1493'; // Viền hồng đậm
-                // overlay.style.fontSize = '24px';
-                // overlay.style.fontWeight = 'bold';
-                // overlay.style.boxShadow = '0 8px 25px rgba(255, 105, 180, 0.3)'; // Shadow hồng nhẹ
-                // overlay.style.zIndex = '100000';
-                // overlay.style.textShadow = '1px 1px 2px rgba(0,0,0,0.2)'; // Shadow chữ
-                
-                // Force reflow
-                void overlay.offsetWidth;
-                overlay.classList.add('subtitle-visible');
-                
-                console.log('✅ Subtitle VISIBLE with cute pink colors!');
-                
-                // ✅ XÓA INDICATOR NẾU CÓ
-                const existingIndicator = document.getElementById('subtitle-indicator');
-                if (existingIndicator) {
-                    existingIndicator.remove();
-                }
-                
-            }, 10);
-            
-            return true;
-        } catch (error) {
-            console.error('❌ Error in showSubtitle:', error);
-            return false;
-        }
+// ✅ HÀM KIỂM TRA XEM CÓ HIỂN THỊ SUBTITLE KHÔNG
+function shouldShowSubtitle(iconNode) {
+  if (!iconNode) return globalSubtitleEnabled && cfg.subtitleEnabled;
+  
+  // ✅ SỬA: Sử dụng getAttr của Konva thay vì hasAttribute của DOM
+  try {
+    const subtitleAttr = iconNode.getAttr("data-subtitle");
+    if (subtitleAttr !== undefined && subtitleAttr !== null) {
+      const attrStr = String(subtitleAttr);
+      return attrStr === 'true' || attrStr === 'show' || attrStr === '1';
     }
-    console.error('❌ showSubtitle failed - elements not found');
+  } catch (error) {
+    console.log('Error getting subtitle attribute:', error);
+  }
+  
+  return globalSubtitleEnabled && cfg.subtitleEnabled;
+}
+
+   function showSubtitle(text, iconNode) {
+  // ✅ KIỂM TRA XEM CÓ ĐƯỢC PHÉP HIỂN THỊ KHÔNG
+  if (!shouldShowSubtitle(iconNode)) {
+    console.log('Subtitle disabled for this media');
     return false;
-}
+  }
 
-// ✅ ĐẢM BẢO HÀM NÀY TỒN TẠI
-function checkOverlayInDOM() {
+  const overlay = document.getElementById('subtitle-overlay');
+  const textEl = document.getElementById('subtitle-text');
+  
+  console.log('🎬 showSubtitle called:', { 
+    text: text,
+    overlayExists: !!overlay,
+    textElExists: !!textEl,
+    subtitleEnabled: shouldShowSubtitle(iconNode)
+  });
+  
+  if (overlay && textEl) {
     try {
-        const overlay = document.getElementById('subtitle-overlay');
-        if (!overlay) {
-            console.error('❌ Overlay not found in DOM');
-            return;
+      // Clear timeout cũ nếu có
+      if (subtitleTimeout) {
+        clearTimeout(subtitleTimeout);
+        subtitleTimeout = null;
+      }
+      
+      // Remove classes cũ
+      overlay.classList.remove('subtitle-hidden', 'subtitle-visible');
+      
+      // Set text mới
+      textEl.textContent = text;
+      
+      // Hiển thị với hiệu ứng
+      setTimeout(() => {
+        overlay.style.display = 'block';
+        
+        // Force reflow
+        void overlay.offsetWidth;
+        overlay.classList.add('subtitle-visible');
+        
+        console.log('✅ Subtitle VISIBLE with cute pink colors!');
+        
+        // ✅ XÓA INDICATOR NẾU CÓ
+        const existingIndicator = document.getElementById('subtitle-indicator');
+        if (existingIndicator) {
+          existingIndicator.remove();
         }
         
-        console.log('🔍 Overlay DOM check:', {
-            parent: overlay.parentNode ? overlay.parentNode.tagName : 'no parent',
-            inBody: document.body.contains(overlay),
-            computedStyle: {
-                display: window.getComputedStyle(overlay).display,
-                visibility: window.getComputedStyle(overlay).visibility,
-                opacity: window.getComputedStyle(overlay).opacity,
-                zIndex: window.getComputedStyle(overlay).zIndex,
-                position: window.getComputedStyle(overlay).position
-            }
-        });
-        
-        // Kiểm tra xem có element nào che overlay không
-        const centerX = window.innerWidth / 2;
-        const centerY = window.innerHeight / 2;
-        const elementsAtPoint = document.elementsFromPoint(centerX, centerY);
-        
-        console.log('🎯 Elements at center point:', elementsAtPoint.map(el => 
-            `${el.tagName}${el.id ? '#' + el.id : ''}${el.className ? '.' + el.className : ''}`
-        ));
-        
-        // Kiểm tra xem overlay có trong danh sách không
-        const isOverlayVisible = elementsAtPoint.some(el => el === overlay);
-        console.log('👀 Is overlay visible at center?', isOverlayVisible);
-        
+      }, 10);
+      
+      return true;
     } catch (error) {
-        console.error('❌ Error in checkOverlayInDOM:', error);
+      console.error('❌ Error in showSubtitle:', error);
+      return false;
     }
+  }
+  console.error('❌ showSubtitle failed - elements not found');
+  return false;
 }
-
 
     // ✅ HÀM ẨN SUBTITLE
-function hideSubtitle() {
-  const overlay = document.getElementById('subtitle-overlay');
-  if (overlay) {
-    // ✅ CHỈ ẨN NẾU ĐANG HIỂN THỊ
-    if (overlay.style.display !== 'block') return;
-    
-    // Clear timeout
-    if (subtitleTimeout) {
-      clearTimeout(subtitleTimeout);
-      subtitleTimeout = null;
+    function hideSubtitle() {
+      const overlay = document.getElementById('subtitle-overlay');
+      if (overlay) {
+        // ✅ CHỈ ẨN NẾU ĐANG HIỂN THỊ
+        if (overlay.style.display !== 'block') return;
+        
+        // Clear timeout
+        if (subtitleTimeout) {
+          clearTimeout(subtitleTimeout);
+          subtitleTimeout = null;
+        }
+        
+        console.log('🔻 Hiding subtitle with animation');
+        
+        // Hiệu ứng ẩn
+        overlay.classList.remove('subtitle-visible');
+        overlay.classList.add('subtitle-hidden');
+        
+        // Ẩn hoàn toàn sau khi animation kết thúc
+        setTimeout(() => {
+          overlay.style.display = 'none';
+          overlay.classList.remove('subtitle-hidden');
+        }, 300);
+      }
     }
-    
-    console.log('🔻 Hiding subtitle with animation');
-    
-    // Hiệu ứng ẩn
-    overlay.classList.remove('subtitle-visible');
-    overlay.classList.add('subtitle-hidden');
-    
-    // Ẩn hoàn toàn sau khi animation kết thúc
-    setTimeout(() => {
-      overlay.style.display = 'none';
-      overlay.classList.remove('subtitle-hidden');
-    }, 300);
-  }
-}
 
 // ✅ HÀM CHUYỂN SUBTITLE - ĐẢM BẢO LUÔN HIỂN THỊ
-function switchSubtitle(text) {
-    const overlay = document.getElementById('subtitle-overlay');
-    const textEl = document.getElementById('subtitle-text');
-    
-    console.log('=== switchSubtitle CALLED ===', {
-        text: text,
-        hasOverlay: !!overlay,
-        hasTextEl: !!textEl,
-        overlayDisplay: overlay ? overlay.style.display : 'no overlay',
-        currentText: textEl ? textEl.textContent : 'no textEl'
-    });
-    
-    if (!overlay || !textEl) {
-        console.error('❌ Subtitle elements not found!');
-        return;
-    }
-    
-    const currentText = textEl.textContent;
-    
-    // ✅ LUÔN HIỂN THỊ SUBTITLE MỚI, KHÔNG BAO GIỜ TỰ ẨN
-    if (currentText !== text) {
-        console.log('🔄 Switching to new subtitle:', text);
-        
-        if (overlay.style.display === 'block' && currentText) {
-            // Đang có subtitle cũ -> chuyển mượt mà
-            overlay.classList.remove('subtitle-visible');
-            overlay.classList.add('subtitle-hidden');
-            
-            // setTimeout(() => {
-            //     textEl.textContent = text;
-            //     overlay.classList.remove('subtitle-hidden');
-            //     overlay.classList.add('subtitle-visible');
-            //     console.log('✅ New subtitle displayed:', text);
-            // }, 150);
+function switchSubtitle(text, iconNode) {
+  // ✅ KIỂM TRA XEM CÓ ĐƯỢC PHÉP HIỂN THỊ KHÔNG
+  if (!shouldShowSubtitle(iconNode)) {
+    console.log('Subtitle disabled - skipping switch');
+    hideSubtitle();
+    return;
+  }
 
-            showSubtitle(text);
-        } else {
-            // Chưa có subtitle hoặc đang ẩn -> hiển thị trực tiếp
-            showSubtitle(text);
-        }
+  const overlay = document.getElementById('subtitle-overlay');
+  const textEl = document.getElementById('subtitle-text');
+  
+  console.log('=== switchSubtitle CALLED ===', {
+    text: text,
+    hasOverlay: !!overlay,
+    hasTextEl: !!textEl,
+    overlayDisplay: overlay ? overlay.style.display : 'no overlay',
+    currentText: textEl ? textEl.textContent : 'no textEl',
+    subtitleEnabled: shouldShowSubtitle(iconNode)
+  });
+  
+  if (!overlay || !textEl) {
+    console.error('❌ Subtitle elements not found!');
+    return;
+  }
+  
+  const currentText = textEl.textContent;
+  
+  // ✅ LUÔN HIỂN THỊ SUBTITLE MỚI, KHÔNG BAO GIỜ TỰ ẨN
+  if (currentText !== text) {
+    console.log('🔄 Switching to new subtitle:', text);
+    
+    if (overlay.style.display === 'block' && currentText) {
+      // Đang có subtitle cũ -> chuyển mượt mà
+      overlay.classList.remove('subtitle-visible');
+      overlay.classList.add('subtitle-hidden');
+      
+      showSubtitle(text, iconNode);
+    } else {
+      // Chưa có subtitle hoặc đang ẩn -> hiển thị trực tiếp
+      showSubtitle(text, iconNode);
     }
-    // Nếu subtitle giống nhau thì không làm gì cả - giữ nguyên hiển thị
+  }
+  // Nếu subtitle giống nhau thì không làm gì cả - giữ nguyên hiển thị
 }
-
 
     // attach handlers to current mediaEl
     function attachMediaUI(iconNode, start, end) {
@@ -561,67 +580,71 @@ function switchSubtitle(text) {
       let fileName = String(rawSound || 'Unknown').split('/')[0];      
       currentFileName = fileName;
       
-      console.log('Attach media UI - File name:', fileName);
+      console.log('Attach media UI - File name:', fileName, 'Subtitle enabled:', shouldShowSubtitle(iconNode));
 
       if (_timeUpdateHandler) mediaEl.removeEventListener('timeupdate', _timeUpdateHandler);
       if (_endedHandler) mediaEl.removeEventListener('ended', _endedHandler);
 
-    _timeUpdateHandler = function () {
-  let cur = mediaEl.currentTime;
+      _timeUpdateHandler = function () {
+         let cur = mediaEl.currentTime;
   let dur = mediaEl.duration || 0;
 
-  console.log('⏰ TimeUpdate - Current time:', cur.toFixed(2), 'File:', currentFileName);
+  console.log('⏰ TimeUpdate - Current time:', cur.toFixed(2), 'File:', currentFileName, 'Subtitle enabled:', shouldShowSubtitle(iconNode));
 
-  // ✅ HIỂN THỊ SUBTITLE THEO THỜI GIAN - FIX LẦN ĐẦU
-  const currentSubtitle = getCurrentSubtitle(currentFileName, cur);
-  console.log('🔍 Subtitle search result:', currentSubtitle);
-  
-  if (currentSubtitle) {
-    const currentDisplay = document.getElementById('subtitle-text').textContent;
-    console.log('📊 Current display vs new:', {
-      current: currentDisplay,
-      new: currentSubtitle,
-      isDifferent: currentSubtitle !== currentDisplay
-    });
+  // ✅ HIỂN THỊ SUBTITLE THEO THỜI GIAN - CHỈ KHI ĐƯỢC BẬT
+  if (shouldShowSubtitle(iconNode)) {
+    const currentSubtitle = getCurrentSubtitle(currentFileName, cur);
+    console.log('🔍 Subtitle search result:', currentSubtitle);
     
-    if (currentSubtitle !== currentDisplay) {
-      console.log('🔄 Calling switchSubtitle...');
+    if (currentSubtitle) {
+      const currentDisplay = document.getElementById('subtitle-text').textContent;
+      console.log('📊 Current display vs new:', {
+        current: currentDisplay,
+        new: currentSubtitle,
+        isDifferent: currentSubtitle !== currentDisplay
+      });
       
-      // ✅ QUAN TRỌNG: Clear timeout trước khi hiển thị subtitle mới
-      if (subtitleTimeout) {
-        clearTimeout(subtitleTimeout);
-        subtitleTimeout = null;
+      if (currentSubtitle !== currentDisplay) {
+        console.log('🔄 Calling switchSubtitle...');
+        
+        // ✅ QUAN TRỌNG: Clear timeout trước khi hiển thị subtitle mới
+        if (subtitleTimeout) {
+          clearTimeout(subtitleTimeout);
+          subtitleTimeout = null;
+        }
+        
+        switchSubtitle(currentSubtitle, iconNode);
       }
-      
-      switchSubtitle(currentSubtitle);
+    } else {
+      // ✅ ẨN SUBTITLE SAU 0.5 GIÂY - CHỈ KHI ĐANG CÓ SUBTITLE HIỂN THỊ
+      const currentDisplay = document.getElementById('subtitle-text').textContent;
+      if (currentDisplay && currentDisplay.trim() !== '') {
+        console.log('🚫 No subtitle found, will hide after 0.5s delay');
+        
+        // Clear timeout cũ nếu có
+        if (subtitleTimeout) {
+          clearTimeout(subtitleTimeout);
+        }
+        
+        // ✅ THÊM ĐIỀU KIỆN: Chỉ ẩn nếu vẫn không có subtitle sau 0.5s
+        subtitleTimeout = setTimeout(() => {
+          const currentTimeCheck = mediaEl.currentTime;
+          const currentSubtitleCheck = getCurrentSubtitle(currentFileName, currentTimeCheck);
+          
+          // Chỉ ẩn nếu vẫn không có subtitle phù hợp và media vẫn đang chạy
+          if (!currentSubtitleCheck && !mediaEl.paused) {
+            console.log('⏰ 0.5s passed, still no subtitle - HIDING');
+            hideSubtitle();
+          } else if (currentSubtitleCheck) {
+            console.log('🎯 Found subtitle during delay - KEEPING');
+          }
+        }, 500);
+      }
     }
   } else {
-    // ✅ ẨN SUBTITLE SAU 0.5 GIÂY - CHỈ KHI ĐANG CÓ SUBTITLE HIỂN THỊ
-    const currentDisplay = document.getElementById('subtitle-text').textContent;
-    if (currentDisplay && currentDisplay.trim() !== '') {
-      console.log('🚫 No subtitle found, will hide after 0.5s delay');
-      
-      // Clear timeout cũ nếu có
-      if (subtitleTimeout) {
-        clearTimeout(subtitleTimeout);
-      }
-      
-      // ✅ THÊM ĐIỀU KIỆN: Chỉ ẩn nếu vẫn không có subtitle sau 0.5s
-      subtitleTimeout = setTimeout(() => {
-        const currentTimeCheck = mediaEl.currentTime;
-        const currentSubtitleCheck = getCurrentSubtitle(currentFileName, currentTimeCheck);
-        
-        // Chỉ ẩn nếu vẫn không có subtitle phù hợp và media vẫn đang chạy
-        if (!currentSubtitleCheck && !mediaEl.paused) {
-          console.log('⏰ 0.5s passed, still no subtitle - HIDING');
-          hideSubtitle();
-        } else if (currentSubtitleCheck) {
-          console.log('🎯 Found subtitle during delay - KEEPING');
-        }
-      }, 500);
-    }
+    // ✅ NẾU SUBTITLE BỊ TẮT, ĐẢM BẢO ẨN SUBTITLE
+    hideSubtitle();
   }
-
 
         if (typeof end === 'number' && !isNaN(end)) {
           // We're playing a clipped segment [start .. end]
@@ -750,6 +773,12 @@ function switchSubtitle(text) {
 
       cfg.onClose = typeof options.onClose === "function" ? options.onClose : null;
 
+      // ✅ THÊM: Cài đặt subtitle mặc định
+      if (typeof options.subtitleEnabled !== "undefined") {
+        cfg.subtitleEnabled = !!options.subtitleEnabled;
+        globalSubtitleEnabled = cfg.subtitleEnabled;
+      }
+
       ensurePanel();
       setupPanelEvents();
 
@@ -763,6 +792,9 @@ function switchSubtitle(text) {
 
       // ensure loop UI reflects default
       updateLoopUI();
+      
+      // ✅ THÊM: Khởi tạo subtitle UI - ĐẶT Ở CUỐI FUNCTION
+      updateSubtitleUI();
     }
 
     // Public: play one media (audio or video)
@@ -786,7 +818,7 @@ function switchSubtitle(text) {
         console.log(duration);        
       }
 
-      console.log('Playing:', fileName, start, end);
+      console.log('Playing:', fileName, start, end, 'Subtitle enabled:', shouldShowSubtitle(iconNode));
 
       // Xử lý icon_type
       var icon_type = iconNode.getAttr("icon_type") || "1";
@@ -821,7 +853,7 @@ function switchSubtitle(text) {
         url += ".mp3";
       }
 
-      // ✅ LOAD SUBTITLE FILE
+      // ✅ LOAD SUBTITLE FILE (vẫn load dữ liệu nhưng có thể không hiển thị)
       await loadSubtitleFile(fileName);
 
       stopAudio();
@@ -891,6 +923,24 @@ function switchSubtitle(text) {
       } catch (err) { return cfg.defaultPlaybackRate || 1; }
     }
 
+    // ✅ THÊM API ĐỂ ĐIỀU KHIỂN SUBTITLE
+    function setSubtitleEnabled(enabled) {
+      globalSubtitleEnabled = !!enabled;
+      cfg.subtitleEnabled = !!enabled;
+      updateSubtitleUI();
+      
+      // Nếu tắt subtitle, ẩn subtitle hiện tại
+      if (!enabled) {
+        hideSubtitle();
+      }
+      
+      console.log('Global subtitle enabled:', globalSubtitleEnabled);
+    }
+    
+    function getSubtitleEnabled() {
+      return globalSubtitleEnabled && cfg.subtitleEnabled;
+    }
+
     // public API
     return {
       init: init,
@@ -918,7 +968,11 @@ function switchSubtitle(text) {
       getState: function () { return { mediaEl, currentIcon }; },
       showSubtitle: showSubtitle,
       hideSubtitle: hideSubtitle,
-      switchSubtitle: switchSubtitle
+      switchSubtitle: switchSubtitle,
+      // ✅ THÊM API MỚI CHO SUBTITLE
+      setSubtitleEnabled: setSubtitleEnabled,
+      getSubtitleEnabled: getSubtitleEnabled,
+      shouldShowSubtitle: shouldShowSubtitle // Export để debug
     };
   })();
 
