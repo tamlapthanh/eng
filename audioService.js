@@ -14,6 +14,7 @@
     let subtitleData = {};
     let subtitleTimeout = null;
     let currentFileName = '';
+    let isFirstSubtitleLoad = true; // ✅ THÊM BIẾN NÀY
   
     // config
     const cfg = {
@@ -348,6 +349,12 @@
         });
         
         console.log(`Loaded ${subtitleData[audioFileName].length} subtitles for ${audioFileName}`);
+
+        // ✅ ĐÁNH DẤU ĐÃ LOAD XONG LẦN ĐẦU
+        if (isFirstSubtitleLoad) {
+          isFirstSubtitleLoad = false;
+        }
+
         return subtitleData[audioFileName];
         
       } catch (error) {
@@ -471,26 +478,31 @@ function checkOverlayInDOM() {
 
 
     // ✅ HÀM ẨN SUBTITLE
-    function hideSubtitle() {
-      const overlay = document.getElementById('subtitle-overlay');
-      if (overlay) {
-        // Clear timeout
-        if (subtitleTimeout) {
-          clearTimeout(subtitleTimeout);
-          subtitleTimeout = null;
-        }
-        
-        // Hiệu ứng ẩn
-        overlay.classList.remove('subtitle-visible');
-        overlay.classList.add('subtitle-hidden');
-        
-        // Ẩn hoàn toàn sau khi animation kết thúc
-        setTimeout(() => {
-          overlay.style.display = 'none';
-          overlay.classList.remove('subtitle-hidden');
-        }, 300);
-      }
+function hideSubtitle() {
+  const overlay = document.getElementById('subtitle-overlay');
+  if (overlay) {
+    // ✅ CHỈ ẨN NẾU ĐANG HIỂN THỊ
+    if (overlay.style.display !== 'block') return;
+    
+    // Clear timeout
+    if (subtitleTimeout) {
+      clearTimeout(subtitleTimeout);
+      subtitleTimeout = null;
     }
+    
+    console.log('🔻 Hiding subtitle with animation');
+    
+    // Hiệu ứng ẩn
+    overlay.classList.remove('subtitle-visible');
+    overlay.classList.add('subtitle-hidden');
+    
+    // Ẩn hoàn toàn sau khi animation kết thúc
+    setTimeout(() => {
+      overlay.style.display = 'none';
+      overlay.classList.remove('subtitle-hidden');
+    }, 300);
+  }
+}
 
 // ✅ HÀM CHUYỂN SUBTITLE - ĐẢM BẢO LUÔN HIỂN THỊ
 function switchSubtitle(text) {
@@ -554,48 +566,63 @@ function switchSubtitle(text) {
       if (_timeUpdateHandler) mediaEl.removeEventListener('timeupdate', _timeUpdateHandler);
       if (_endedHandler) mediaEl.removeEventListener('ended', _endedHandler);
 
-      _timeUpdateHandler = function () {
-        let cur = mediaEl.currentTime;
-        let dur = mediaEl.duration || 0;
+    _timeUpdateHandler = function () {
+  let cur = mediaEl.currentTime;
+  let dur = mediaEl.duration || 0;
 
-console.log('⏰ TimeUpdate - Current time:', cur.toFixed(2), 'File:', currentFileName);
+  console.log('⏰ TimeUpdate - Current time:', cur.toFixed(2), 'File:', currentFileName);
 
-    // ✅ HIỂN THỊ SUBTITLE THEO THỜI GIAN - VỚI DELAY ẨN
-    const currentSubtitle = getCurrentSubtitle(currentFileName, cur);
-    console.log('🔍 Subtitle search result:', currentSubtitle);
+  // ✅ HIỂN THỊ SUBTITLE THEO THỜI GIAN - FIX LẦN ĐẦU
+  const currentSubtitle = getCurrentSubtitle(currentFileName, cur);
+  console.log('🔍 Subtitle search result:', currentSubtitle);
+  
+  if (currentSubtitle) {
+    const currentDisplay = document.getElementById('subtitle-text').textContent;
+    console.log('📊 Current display vs new:', {
+      current: currentDisplay,
+      new: currentSubtitle,
+      isDifferent: currentSubtitle !== currentDisplay
+    });
     
-    if (currentSubtitle) {
-        const currentDisplay = document.getElementById('subtitle-text').textContent;
-        console.log('📊 Current display vs new:', {
-            current: currentDisplay,
-            new: currentSubtitle,
-            isDifferent: currentSubtitle !== currentDisplay
-        });
-        
-        if (currentSubtitle !== currentDisplay) {
-            console.log('🔄 Calling switchSubtitle...');
-            switchSubtitle(currentSubtitle);
-        }
-    } else {
-        // ✅ ẨN SUBTITLE SAU 0.5 GIÂY ĐỂ TRÁNH NHẤP NHÁY
-        const currentDisplay = document.getElementById('subtitle-text').textContent;
-        if (currentDisplay) {
-            console.log('🚫 No subtitle found, will hide after 0.5s delay');
-            // Clear timeout cũ nếu có
-            if (subtitleTimeout) {
-                clearTimeout(subtitleTimeout);
-            }
-            // Set timeout mới để ẩn sau 0.5 giây
-            subtitleTimeout = setTimeout(() => {
-                const currentSubtitleCheck = getCurrentSubtitle(currentFileName, mediaEl.currentTime);
-                // Chỉ ẩn nếu vẫn không có subtitle phù hợp sau 0.5s
-                if (!currentSubtitleCheck) {
-                    console.log('⏰ 0.5s passed, still no subtitle - HIDING');
-                    hideSubtitle();
-                }
-            }, 500);
-        }
+    if (currentSubtitle !== currentDisplay) {
+      console.log('🔄 Calling switchSubtitle...');
+      
+      // ✅ QUAN TRỌNG: Clear timeout trước khi hiển thị subtitle mới
+      if (subtitleTimeout) {
+        clearTimeout(subtitleTimeout);
+        subtitleTimeout = null;
+      }
+      
+      switchSubtitle(currentSubtitle);
     }
+  } else {
+    // ✅ ẨN SUBTITLE SAU 0.5 GIÂY - CHỈ KHI ĐANG CÓ SUBTITLE HIỂN THỊ
+    const currentDisplay = document.getElementById('subtitle-text').textContent;
+    if (currentDisplay && currentDisplay.trim() !== '') {
+      console.log('🚫 No subtitle found, will hide after 0.5s delay');
+      
+      // Clear timeout cũ nếu có
+      if (subtitleTimeout) {
+        clearTimeout(subtitleTimeout);
+      }
+      
+      // ✅ THÊM ĐIỀU KIỆN: Chỉ ẩn nếu vẫn không có subtitle sau 0.5s
+      subtitleTimeout = setTimeout(() => {
+        const currentTimeCheck = mediaEl.currentTime;
+        const currentSubtitleCheck = getCurrentSubtitle(currentFileName, currentTimeCheck);
+        
+        // Chỉ ẩn nếu vẫn không có subtitle phù hợp và media vẫn đang chạy
+        if (!currentSubtitleCheck && !mediaEl.paused) {
+          console.log('⏰ 0.5s passed, still no subtitle - HIDING');
+          hideSubtitle();
+        } else if (currentSubtitleCheck) {
+          console.log('🎯 Found subtitle during delay - KEEPING');
+        }
+      }, 500);
+    }
+  }
+
+
         if (typeof end === 'number' && !isNaN(end)) {
           // We're playing a clipped segment [start .. end]
           if (cur >= end) {
@@ -748,7 +775,16 @@ console.log('⏰ TimeUpdate - Current time:', cur.toFixed(2), 'File:', currentFi
 
       const fileName = parts[0];
       const start = parts.length > 1 ? Math.floor(parseFloat(parts[1])) : null;
-      const end = parts.length > 2 ? Math.ceil(parseFloat(parts[2])) + 1 : null;
+      var end = parts.length > 2 ? Math.ceil(parseFloat(parts[2]))  : null;
+      if (start && end) {
+        const duration = end - start;
+        if (duration <= 2) {
+          end =  end + 0.5;
+        } else {
+          end =  end + 1;
+        }
+        console.log(duration);        
+      }
 
       console.log('Playing:', fileName, start, end);
 
