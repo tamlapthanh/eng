@@ -36,6 +36,17 @@ function createRadioButtons() {
   setPageInfo(data_type);
 }
 
+function getLastSegment(soundData) {
+    try {
+        const soundStr = String(soundData || 'Play Audio');
+        const segments = soundStr.split('/');
+        return segments[segments.length - 1] || 'Play Audio';
+    } catch (error) {
+        console.warn('Error processing sound data:', error);
+        return 'Play Audio';
+    }
+}
+
   // pop dropdown
   function popDropdown(dropdown, text, start, end, default_index) {
     dropdown.empty();

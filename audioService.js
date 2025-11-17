@@ -377,7 +377,7 @@
         console.log('Subtitle content loaded, first 100 chars:', text.substring(0, 100));
         
         // Parse data
-        const lines = text.split('\n').filter(line => line.trim());
+        const lines = text.split(text.includes(';') ? ';' : '\n').filter(line => line.trim());
         subtitleData[audioFileName] = [];
         
         lines.forEach(line => {
