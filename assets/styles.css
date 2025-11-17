@@ -361,3 +361,37 @@ body {
   outline: 2px solid rgba(16,185,129,0.12);
   box-shadow: inset 0 0 0 1px rgba(16,185,129,0.06);
 }
+
+@keyframes subtitleFadeIn {
+  from { 
+    opacity: 0; 
+    transform: translate(-50%, -40%); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translate(-50%, -50%); 
+  }
+}
+
+@keyframes subtitleFadeOut {
+  from { 
+    opacity: 1; 
+    transform: translate(-50%, -50%); 
+  }
+  to { 
+    opacity: 0; 
+    transform: translate(-50%, -60%); 
+  }
+}
+
+.subtitle-visible {
+  animation: subtitleFadeIn 0.2s ease-out forwards !important; /* ✅ GIẢM THỜI GIAN */
+}
+
+.subtitle-hidden {
+  animation: subtitleFadeOut 0.3s ease-in forwards !important;
+}
+
+#subtitle-overlay {
+  transition: all 0.2s ease !important; /* ✅ THÊM TRANSITION SMOOTH */
+}

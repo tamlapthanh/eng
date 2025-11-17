@@ -448,7 +448,7 @@ function shouldShowSubtitle(iconNode) {
   return globalSubtitleEnabled;
 }
 
-   function showSubtitle(text, iconNode) {
+function showSubtitle(text, iconNode, isHTML = false) {
   // ✅ KIỂM TRA XEM CÓ ĐƯỢC PHÉP HIỂN THỊ KHÔNG
   if (!shouldShowSubtitle(iconNode)) {
     console.log('Subtitle disabled for this media');
@@ -458,13 +458,6 @@ function shouldShowSubtitle(iconNode) {
   const overlay = document.getElementById('subtitle-overlay');
   const textEl = document.getElementById('subtitle-text');
   
-  console.log('🎬 showSubtitle called:', { 
-    text: text,
-    overlayExists: !!overlay,
-    textElExists: !!textEl,
-    subtitleEnabled: shouldShowSubtitle(iconNode)
-  });
-  
   if (overlay && textEl) {
     try {
       // Clear timeout cũ nếu có
@@ -473,29 +466,19 @@ function shouldShowSubtitle(iconNode) {
         subtitleTimeout = null;
       }
       
-      // Remove classes cũ
-      overlay.classList.remove('subtitle-hidden', 'subtitle-visible');
+      // ✅ SET TEXT: Dùng innerHTML nếu có HTML, ngược lại dùng textContent
+      if (isHTML) {
+        textEl.innerHTML = text;
+      } else {
+        textEl.textContent = text;
+      }
       
-      // Set text mới
-      textEl.textContent = text;
+      // ✅ HIỂN THỊ NGAY LẬP TỨC - KHÔNG DELAY
+      overlay.style.display = 'block';
+      overlay.classList.remove('subtitle-hidden');
+      overlay.classList.add('subtitle-visible');
       
-      // Hiển thị với hiệu ứng
-      setTimeout(() => {
-        overlay.style.display = 'block';
-        
-        // Force reflow
-        void overlay.offsetWidth;
-        overlay.classList.add('subtitle-visible');
-        
-        console.log('✅ Subtitle VISIBLE with cute pink colors!');
-        
-        // ✅ XÓA INDICATOR NẾU CÓ
-        const existingIndicator = document.getElementById('subtitle-indicator');
-        if (existingIndicator) {
-          existingIndicator.remove();
-        }
-        
-      }, 10);
+      console.log('✅ Subtitle VISIBLE instantly!');
       
       return true;
     } catch (error) {
@@ -507,33 +490,36 @@ function shouldShowSubtitle(iconNode) {
   return false;
 }
 
-    // ✅ HÀM ẨN SUBTITLE
-    function hideSubtitle() {
-      const overlay = document.getElementById('subtitle-overlay');
-      if (overlay) {
-        // ✅ CHỈ ẨN NẾU ĐANG HIỂN THỊ
-        if (overlay.style.display !== 'block') return;
-        
-        // Clear timeout
-        if (subtitleTimeout) {
-          clearTimeout(subtitleTimeout);
-          subtitleTimeout = null;
-        }
-        
-        console.log('🔻 Hiding subtitle with animation');
-        
-        // Hiệu ứng ẩn
-        overlay.classList.remove('subtitle-visible');
-        overlay.classList.add('subtitle-hidden');
-        
-        // Ẩn hoàn toàn sau khi animation kết thúc
-        setTimeout(() => {
-          overlay.style.display = 'none';
-          overlay.classList.remove('subtitle-hidden');
-        }, 300);
-      }
-    }
 
+    // ✅ HÀM ẨN SUBTITLE
+// ✅ HÀM ẨN SUBTITLE
+function hideSubtitle() {
+  const overlay = document.getElementById('subtitle-overlay');
+  if (overlay) {
+    // ✅ CHỈ ẨN NẾU ĐANG HIỂN THỊ
+    if (overlay.style.display !== 'block') return;
+    
+    // Clear timeout
+    if (subtitleTimeout) {
+      clearTimeout(subtitleTimeout);
+      subtitleTimeout = null;
+    }
+    
+    console.log('🔻 Hiding subtitle with animation');
+    
+    // Hiệu ứng ẩn (giữ lại cho mượt mà khi ẩn hoàn toàn)
+    overlay.classList.remove('subtitle-visible');
+    overlay.classList.add('subtitle-hidden');
+    
+    // Ẩn hoàn toàn sau khi animation kết thúc
+    setTimeout(() => {
+      overlay.style.display = 'none';
+      overlay.classList.remove('subtitle-hidden');
+    }, 300);
+  }
+}
+
+// ✅ HÀM CHUYỂN SUBTITLE - ĐẢM BẢO LUÔN HIỂN THỊ
 // ✅ HÀM CHUYỂN SUBTITLE - ĐẢM BẢO LUÔN HIỂN THỊ
 function switchSubtitle(text, iconNode) {
   // ✅ KIỂM TRA XEM CÓ ĐƯỢC PHÉP HIỂN THỊ KHÔNG
@@ -546,38 +532,52 @@ function switchSubtitle(text, iconNode) {
   const overlay = document.getElementById('subtitle-overlay');
   const textEl = document.getElementById('subtitle-text');
   
-  console.log('=== switchSubtitle CALLED ===', {
-    text: text,
-    hasOverlay: !!overlay,
-    hasTextEl: !!textEl,
-    overlayDisplay: overlay ? overlay.style.display : 'no overlay',
-    currentText: textEl ? textEl.textContent : 'no textEl',
-    subtitleEnabled: shouldShowSubtitle(iconNode)
-  });
-  
   if (!overlay || !textEl) {
     console.error('❌ Subtitle elements not found!');
     return;
   }
   
-  const currentText = textEl.textContent;
+  // ✅ XỬ LÝ XUỐNG DÒNG: Tách nội dung trong ngoặc thành dòng thứ 2
+  let formattedText = text;
+  let isHTML = false;
   
-  // ✅ LUÔN HIỂN THỊ SUBTITLE MỚI, KHÔNG BAO GIỜ TỰ ẨN
-  if (currentText !== text) {
-    console.log('🔄 Switching to new subtitle:', text);
+  if (text.includes('(') && text.includes(')')) {
+    const beforeBracket = text.split('(')[0].trim();
+    const inBracket = text.match(/\((.*?)\)/)?.[1] || '';
     
-    if (overlay.style.display === 'block' && currentText) {
-      // Đang có subtitle cũ -> chuyển mượt mà
-      overlay.classList.remove('subtitle-visible');
-      overlay.classList.add('subtitle-hidden');
-      
-      showSubtitle(text, iconNode);
-    } else {
-      // Chưa có subtitle hoặc đang ẩn -> hiển thị trực tiếp
-      showSubtitle(text, iconNode);
+    if (beforeBracket && inBracket) {
+      // formattedText = `${beforeBracket}<br/><span style="font-size: 0.8em; opacity: 0.9;">(${inBracket})</span>`;
+      formattedText = `${beforeBracket}<br/><span style="font-size: 0.8em; opacity: 0.9; color: blue;">(${inBracket})</span>`;
+      isHTML = true;
     }
   }
-  // Nếu subtitle giống nhau thì không làm gì cả - giữ nguyên hiển thị
+  
+  const currentText = isHTML ? textEl.innerHTML : textEl.textContent;
+  
+  // ✅ CHỈ CẬP NHẬT NẾU NỘI DUNG KHÁC NHAU
+  if (currentText !== formattedText) {
+    console.log('🔄 Switching to new subtitle:', formattedText);
+    
+    // ✅ QUAN TRỌNG: Clear timeout trước khi hiển thị subtitle mới
+    if (subtitleTimeout) {
+      clearTimeout(subtitleTimeout);
+      subtitleTimeout = null;
+    }
+    
+    // ✅ ĐƠN GIẢN HÓA: Hiển thị trực tiếp không hiệu ứng chuyển tiếp
+    if (isHTML) {
+      textEl.innerHTML = formattedText;
+    } else {
+      textEl.textContent = formattedText;
+    }
+    
+    // ✅ ĐẢM BẢO HIỂN THỊ (nếu chưa hiển thị)
+    if (overlay.style.display !== 'block') {
+      overlay.style.display = 'block';
+      overlay.classList.remove('subtitle-hidden');
+      overlay.classList.add('subtitle-visible');
+    }
+  }
 }
 
     // attach handlers to current mediaEl
