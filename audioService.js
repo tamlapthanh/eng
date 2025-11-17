@@ -8,14 +8,14 @@
     let _timeUpdateHandler = null;
     let _endedHandler = null;
     let currentIcon = null;
-    let isLoop = true;                 // default: loop enabled
+    let isLoop = false;                // ✅ Mặc định tắt loop
 
     // ✅ Biến lưu trữ subtitle
     let subtitleData = {};
     let subtitleTimeout = null;
     let currentFileName = '';
     let isFirstSubtitleLoad = true;
-    let globalSubtitleEnabled = true; // ✅ THÊM: Biến toàn cục để điều khiển hiển thị subtitle
+    let globalSubtitleEnabled = false; // ✅ Mặc định tắt subtitle
   
     // config
     const cfg = {
@@ -28,7 +28,7 @@
       autoShowPanel: true,
       onClose: null,
       defaultPlaybackRate: 1,
-      subtitleEnabled: true, // ✅ THÊM: Cấu hình mặc định cho subtitle
+      subtitleEnabled: false, // ✅ Mặc định tắt subtitle
     };
 
     // create panel HTML if not exist
@@ -43,8 +43,8 @@
       <div style="font-size:14px; font-weight:600;" id="acp-title">Media</div>
     </div>
     <div style="display:flex; gap:6px; align-items:center;">
-     <button id="acp-subtitle" class="btn btn-sm btn-primary" title="Toggle subtitle" aria-pressed="true"><i class="bi bi-chat-square-text-fill" style="font-size:14px;"></i></button>
-     <button id="acp-loop" class="btn btn-sm btn-primary" title="Toggle loop" aria-pressed="true"><i class="bi bi-arrow-repeat" style="font-size:14px;"></i></button>
+     <button id="acp-subtitle" class="btn btn-sm btn-primary" title="Toggle subtitle" aria-pressed="false"><i class="bi bi-chat-square-text-fill" style="font-size:14px;"></i></button>
+     <button id="acp-loop" class="btn btn-sm btn-primary" title="Toggle loop" aria-pressed="false"><i class="bi bi-arrow-repeat" style="font-size:14px;"></i></button>
       <button id="acp-close" class="btn btn-sm btn-danger" title="Close"><i class="bi bi-x-lg" style="font-size:14px;"></i></button>
     </div>
   </div>
@@ -239,32 +239,35 @@
       e.loopBtn.setAttribute('aria-pressed', !!isLoop);
       e.loopBtn.classList.toggle('active', !!isLoop);
     }
+// ✅ THÊM: Update subtitle button UI
+function updateSubtitleUI() {
+  const e = panelEls();
+  if (!e || !e.subtitleBtn) return;
 
-    // ✅ THÊM: Update subtitle button UI
-    function updateSubtitleUI() {
-      const e = panelEls();
-      if (!e || !e.subtitleBtn) return;
-      
-      // Đổi icon và màu sắc dựa trên trạng thái
-      const icon = e.subtitleBtn.querySelector('i');
-      if (icon) {
-        if (globalSubtitleEnabled) {
-          icon.className = 'bi bi-chat-square-text-fill'; // Icon khi bật
-          e.subtitleBtn.style.opacity = '1';
-          e.subtitleBtn.style.background = '#0d6efd'; // Màu primary
-        } else {
-          icon.className = 'bi bi-chat-square-text'; // Icon khi tắt
-          e.subtitleBtn.style.opacity = '0.6';
-          e.subtitleBtn.style.background = '#6c757d'; // Màu secondary
-        }
-      }
-      
-      e.subtitleBtn.setAttribute('aria-pressed', globalSubtitleEnabled);
-      e.subtitleBtn.classList.toggle('active', globalSubtitleEnabled);
-      
-      // Cập nhật tooltip
-      e.subtitleBtn.title = globalSubtitleEnabled ? 'Hide subtitle' : 'Show subtitle';
+  // ❌ XÓA DÒNG NÀY - KHÔNG đồng bộ ngược từ UI về biến
+  // globalSubtitleEnabled = e.subtitleBtn.getAttribute('aria-pressed') === 'true';      
+  
+  // Đổi icon và màu sắc dựa trên trạng thái
+  const icon = e.subtitleBtn.querySelector('i');
+  if (icon) {
+    if (globalSubtitleEnabled) {
+      icon.className = 'bi bi-chat-square-text-fill'; // Icon khi bật
+      e.subtitleBtn.style.opacity = '1';
+      e.subtitleBtn.style.background = '#0d6efd'; // Màu primary
+    } else {
+      icon.className = 'bi bi-chat-square-text'; // Icon khi tắt
+      e.subtitleBtn.style.opacity = '0.6';
+      e.subtitleBtn.style.background = '#6c757d'; // Màu secondary
     }
+  }
+  
+  // ✅ ĐỒNG BỘ TỪ BIẾN VÀO UI (đúng hướng)
+  e.subtitleBtn.setAttribute('aria-pressed', globalSubtitleEnabled);
+  e.subtitleBtn.classList.toggle('active', globalSubtitleEnabled);
+  
+  // Cập nhật tooltip
+  e.subtitleBtn.title = globalSubtitleEnabled ? 'Hide subtitle' : 'Show subtitle';
+}
 
     // one-time panel UI wiring
     let _panelInitialized = false;
@@ -279,8 +282,15 @@
         globalSubtitleEnabled = !globalSubtitleEnabled;
         updateSubtitleUI();
         
-        // Nếu tắt subtitle, ẩn subtitle hiện tại
-        if (!globalSubtitleEnabled) {
+        // ✅ THÊM: Nếu BẬT subtitle và đang có media playing, hiển thị subtitle hiện tại
+        if (globalSubtitleEnabled && mediaEl && !mediaEl.paused) {
+          const currentTime = mediaEl.currentTime;
+          const currentSubtitle = getCurrentSubtitle(currentFileName, currentTime);
+          if (currentSubtitle) {
+            switchSubtitle(currentSubtitle, currentIcon);
+          }
+        } else if (!globalSubtitleEnabled) {
+          // Nếu tắt subtitle, ẩn subtitle hiện tại
           hideSubtitle();
         }
         
@@ -434,7 +444,8 @@ function shouldShowSubtitle(iconNode) {
     console.log('Error getting subtitle attribute:', error);
   }
   
-  return globalSubtitleEnabled && cfg.subtitleEnabled;
+  // return globalSubtitleEnabled && cfg.subtitleEnabled;
+  return globalSubtitleEnabled;
 }
 
    function showSubtitle(text, iconNode) {
@@ -577,7 +588,12 @@ function switchSubtitle(text, iconNode) {
 
       // LẤY FILENAME ĐỂ LOAD SUBTITLE
       let rawSound = currentIcon ? currentIcon.getAttr("sound") : iconNode ? iconNode.getAttr("sound") : "Unknown";
-      let fileName = String(rawSound || 'Unknown').split('/')[0];      
+      let fileName = String(rawSound || 'Unknown').split('/')[0];    
+      if (!/\.(mp3|mp4|mov|mkv|webm)$/i.test(fileName)) {
+        fileName += ".mp3";
+      }
+
+        
       currentFileName = fileName;
       
       console.log('Attach media UI - File name:', fileName, 'Subtitle enabled:', shouldShowSubtitle(iconNode));
@@ -589,7 +605,7 @@ function switchSubtitle(text, iconNode) {
          let cur = mediaEl.currentTime;
   let dur = mediaEl.duration || 0;
 
-  console.log('⏰ TimeUpdate - Current time:', cur.toFixed(2), 'File:', currentFileName, 'Subtitle enabled:', shouldShowSubtitle(iconNode));
+  // console.log('⏰ TimeUpdate - Current time:', cur.toFixed(2), 'File:', currentFileName, 'Subtitle enabled:', shouldShowSubtitle(iconNode));
 
   // ✅ HIỂN THỊ SUBTITLE THEO THỜI GIAN - CHỈ KHI ĐƯỢC BẬT
   if (shouldShowSubtitle(iconNode)) {
@@ -805,7 +821,7 @@ function switchSubtitle(text, iconNode) {
 
       const parts = typeof cfg.getSoundStartEnd === "function" ? cfg.getSoundStartEnd(soundFileName) : soundFileName.split("/");
 
-      const fileName = parts[0];
+      var fileName = parts[0];
       const start = parts.length > 1 ? Math.floor(parseFloat(parts[1])) : null;
       var end = parts.length > 2 ? Math.ceil(parseFloat(parts[2]))  : null;
       if (start && end) {
@@ -851,6 +867,7 @@ function switchSubtitle(text, iconNode) {
       let url = basePath + fileName;
       if (!/\.(mp3|mp4|mov|mkv|webm)$/i.test(fileName)) {
         url += ".mp3";
+        fileName += ".mp3";
       }
 
       // ✅ LOAD SUBTITLE FILE (vẫn load dữ liệu nhưng có thể không hiển thị)

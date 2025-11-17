@@ -1,5 +1,5 @@
 {
-    "default_data_type": "Young_Children_2_5",
+    "default_data_type": "student37",
     "data": [
         {
             "id": "radio_Young_Children_6_12",
@@ -34,7 +34,7 @@
             "label": "Student book 37",
             "max": 107,
             "min": 1,
-            "current": 2,
+            "current": 3,
             "fetch": true
         },
         {
