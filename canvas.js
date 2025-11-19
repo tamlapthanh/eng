@@ -404,7 +404,7 @@
 
     // --- chỉnh sửa loadAssetJson: không clear layer ngay lập tức ---
     function loadAssetJson(page, url) {
-      showSpinner("spinnerOverlay", "#F54927");
+      showSpinner("spinnerOverlay", "#3527f5ff");
       fetch(url)
         .then((res) => {
           if (!res.ok) throw new Error(res.statusText);
@@ -424,17 +424,20 @@
 
     function loadJsonBackgroundAndIcons(page, data) {
       if (!data || !data.background) return;
+
       const imageObj = new Image();
-      showSpinner("spinnerOverlay", "#F54927");
+      showSpinner("spinnerOverlay", "#f5f227ff");
       imageObj.onload = function () {
         hideSpinner();
         if (backgroundImage) {
           backgroundImage.destroy();
         }
         adjustBackgroundImage(imageObj);
+
         // destroy icons
         playIcons.forEach((i) => i.destroy());
         playIcons = [];
+
         // add icons from json
         (data.icons || []).forEach((iconData) => {
           const iconX = iconData.x * backgroundImage.width() + backgroundImage.x();
@@ -468,13 +471,13 @@
 
           addPlayIcon(iconX, iconY, iconW, iconH, iconData);
         });
+
         // load lines (caller should pass APP_DATA map to CanvasManager.loadLinesByDraw if needed)
-        if (typeof cfg.onLoadLines === "function") cfg.onLoadLines(page);
+        if (typeof cfg.onLoadLines === "function") {
+          cfg.onLoadLines(page);
+        }
       };
-      imageObj.src =
-        (cfg.global_const && cfg.global_const.PATH_IMG
-          ? cfg.global_const.PATH_IMG
-          : "") + data.background;
+      imageObj.src = (cfg.global_const && cfg.global_const.PATH_IMG ? cfg.global_const.PATH_IMG : "") + data.background;
     }
 
     function adjustBackgroundImage(imageObj) {

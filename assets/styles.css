@@ -311,57 +311,6 @@ body {
   background-color: rgba(0,0,0,0.4); /* sáng hơn khi hover */
 }
 
-/* === Table style === */
-#vocab-table {
-  font-size: 13px;
-  white-space: nowrap; /* ✅ không xuống dòng text */
-}
-
-#vocab-table th,
-#vocab-table td {
-  padding: .45rem .5rem;
-  vertical-align: middle;
-  text-align: left;
-}
-
-/* Màu chẵn lẻ cho desktop */
-#vocab-table tbody tr:nth-child(even) {
-  background-color: #f9fafb;
-}
-#vocab-table tbody tr:hover {
-  background-color: #e9f3ff !important;
-}
-
-/* Khi mobile: tắt màu chẵn/lẻ, nhỏ font, vẫn scroll ngang */
-@media (max-width: 575.98px) {
-  #vocab-table tbody tr:nth-child(even) {
-    background-color: #fff !important;
-  }
-
-  #vocab-table {
-    font-size: 12px;
-  }
-
-  #vocab-table th,
-  #vocab-table td {
-    text-align: left !important;
-  }
-
-  #vocab-table td {
-    white-space: nowrap;
-  }
-
-  #vocab-table td:last-child {
-    min-width: 110px;
-  }
-}
-
-/* Highlight hàng đang phát */
-#vocab-table tbody tr.table-success {
-  outline: 2px solid rgba(16,185,129,0.12);
-  box-shadow: inset 0 0 0 1px rgba(16,185,129,0.06);
-}
-
 @keyframes subtitleFadeIn {
   from { 
     opacity: 0; 

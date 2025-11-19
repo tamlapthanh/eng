@@ -71,6 +71,32 @@
     max-width: 40%; /* hoặc 1200px, 80vw, etc. */
 }
 
+.icon-tooltip {
+    position: fixed;
+    top: 0;
+    left: 0;
+    background: rgba(0, 0, 0, 0.9);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    pointer-events: none;
+    opacity: 0;
+    transition: 
+        opacity 0.2s ease-in-out,
+        transform 0.1s ease-out;
+    z-index: 10000;
+    max-width: 250px;
+    word-wrap: break-word;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    transform: translate(0, 0); /* Cho phép sử dụng transform */
+}
+
+.icon-tooltip.visible {
+    opacity: 1;
+}
+
+
 
   </style>
 </head>
@@ -85,22 +111,33 @@
             <i class="bi bi-list-ol"></i>
           </button>
 
-          <button  class="btn btn-success add-icon" data-param="1">
-            <i class="bi bi-plus-square"></i>
+          <button  id="add-home-icon" class="btn btn-primary add-home-icon" data-toggle="tooltip" data-placement="left" title="Add home icon" >
+           <i class="bi bi-plus-square"></i> <i class="bi bi-house"></i>
+          </button> 
+
+          <button  class="btn btn-success add-icon-from-clipborad" data-param="1" data-toggle="tooltip" data-placement="left" title="Từ clipboard tạo icon" >
+            <i class="bi bi-plus-square"></i>  <i class="bi bi-plus-square"></i>
           </button>
 
-          <button   id="save-icon-send-2" class="btn btn-danger save-icon" >
-            <i class="bi bi-cloud-upload"></i>
-          </button>         
+         <button  class="btn btn-info undo-icon-from-clipborad" data-param="1" data-toggle="tooltip" data-placement="left" title="Undo" >
+            <i class="bi bi-arrow-counterclockwise"></i>
+          </button>
 
-          <button   id="clone-icon-2" class="btn btn-primary" >
+     
+
+          <button   id="clone-icon-2" class="btn btn-primary" data-toggle="tooltip" data-placement="left" title="Clone icon đang chọn">
             <i class="bi bi-clipboard-plus-fill"></i>
           </button>              
+
           
-          
-          <button  id="move-icon" class="btn btn-success move-icon" >
+          <button  id="move-icon" class="btn btn-success move-icon" data-toggle="tooltip" data-placement="left" title="Khi tắt thì sẽ copy properties" >
             <i class="bi bi-arrows-move"></i>
-          </button>               
+          </button>       
+          
+          
+          <button   id="save-icon-send-2" class="btn btn-danger save-icon" data-toggle="tooltip" data-placement="left" title="Save lên server" >
+            <i class="bi bi-cloud-upload"></i>
+          </button>        
 
         </div>
   </div>

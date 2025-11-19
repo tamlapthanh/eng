@@ -17,10 +17,10 @@ $(document).ready(function () {
   // let MAX_PAGE_NUM = 65;
   // let MIN_PAGE_NUM = 1;
 
-  // let DATA_TYPE = "student37";
-  // let CURRENT_PAGE_INDEX = 5;
-  // let MAX_PAGE_NUM = 107;
-  // let MIN_PAGE_NUM = 1;
+  let DATA_TYPE = "student37";
+  let CURRENT_PAGE_INDEX = 3;
+  let MAX_PAGE_NUM = 107;
+  let MIN_PAGE_NUM = 1;
 
   // let DATA_TYPE = "work37";
   // let CURRENT_PAGE_INDEX = 1;
@@ -33,10 +33,10 @@ $(document).ready(function () {
   // let MIN_PAGE_NUM = 1;  
 
 
-  let DATA_TYPE = "Young_Children_6_12";
-  let CURRENT_PAGE_INDEX = 2;
-  let MAX_PAGE_NUM = 65;
-  let MIN_PAGE_NUM = 1;  
+  // let DATA_TYPE = "Young_Children_6_12";
+  // let CURRENT_PAGE_INDEX = 2;
+  // let MAX_PAGE_NUM = 65;
+  // let MIN_PAGE_NUM = 1;  
 
   // let DATA_TYPE = "first_work_sheet";
   // let CURRENT_PAGE_INDEX = 1;
@@ -106,6 +106,23 @@ $(document).ready(function () {
 const undoStack = [];
 let currentActionId = 0;
 
+let selectedIcons = new Set();
+let ctrlKeyPressed = false;
+
+// Theo dõi phím Ctrl
+$(document).on('keydown', function(e) {
+  if (e.ctrlKey || e.metaKey) {
+    ctrlKeyPressed = true;
+    document.body.style.cursor = 'crosshair';
+  }
+});
+
+$(document).on('keyup', function(e) {
+  if (!e.ctrlKey && !e.metaKey) {
+    ctrlKeyPressed = false;
+    document.body.style.cursor = 'default';
+  }
+});
 
   function createTransformerForIcon(icon) {
     const transformer = new Konva.Transformer({
@@ -189,23 +206,28 @@ let currentActionId = 0;
     iconLayer.batchDraw();
   }
 
-  function removeIconAndTransformer(icon) {
-    const transformer = iconTransformers.get(icon);
-    if (transformer) {
-      transformer.destroy();
-      iconTransformers.delete(icon);
-    }
-    
-    const index = playIcons.indexOf(icon);
-    if (index > -1) {
-      playIcons.splice(index, 1);
-    }
-    if (icon.destroy) {
-      icon.destroy();
-    }
-    
-    iconLayer.batchDraw();
+function removeIconAndTransformer(icon) {
+  // Xóa khỏi selectedIcons nếu có
+  if (selectedIcons.has(icon)) {
+    selectedIcons.delete(icon);
   }
+  
+  const transformer = iconTransformers.get(icon);
+  if (transformer) {
+    transformer.destroy();
+    iconTransformers.delete(icon);
+  }
+  
+  const index = playIcons.indexOf(icon);
+  if (index > -1) {
+    playIcons.splice(index, 1);
+  }
+  if (icon.destroy) {
+    icon.destroy();
+  }
+  
+  iconLayer.batchDraw();
+}
 
   // ========== CROP FUNCTIONS ==========
   function applyCrop(img, pos) {
@@ -277,6 +299,44 @@ let currentActionId = 0;
     };
   }
 
+  function showTransformerForMultipleIcons(icons) {
+  if (icons.length === 0) {
+    hideAllTransformers();
+    return;
+  }
+
+  let transformer = iconTransformers.get('multiple');
+  
+  if (!transformer) {
+    transformer = new Konva.Transformer({
+      nodes: [],
+      keepRatio: false,
+      flipEnabled: false,
+      boundBoxFunc: function(oldBox, newBox) {
+        if (Math.abs(newBox.width) < 10 || Math.abs(newBox.height) < 10) {
+          return oldBox;
+        }
+        return newBox;
+      },
+      borderEnabled: true,
+      borderStroke: '#00ff00',
+      borderStrokeWidth: 2,
+      borderDash: [5, 5],
+      anchorStroke: '#00ff00',
+      anchorFill: '#ffffff',
+      anchorStrokeWidth: 2,
+      anchorSize: 8,
+      rotateAnchorOffset: 20
+    });
+
+    iconLayer.add(transformer);
+    iconTransformers.set('multiple', transformer);
+  }
+
+  transformer.nodes(icons);
+  iconLayer.batchDraw();
+}
+
   // ========== ICON FUNCTIONS ==========
   function addPlayIcon(iconData, x, y, width, height) {
     let icon_size = getIconSize(19);
@@ -324,15 +384,47 @@ let currentActionId = 0;
         }
       });
 
-      function handleClick() {
-        console.log("icon: handleClick");
-        hideAllTransformers();
-        setSelectedIcon(icon);
-        currentIcon = icon;
-        updateIconControls(icon);
-        showTransformerForIcon(icon);
-        showModal(is_move_icon); // bật(xanh) thì show và không copy
-      }
+function handleClick(e) {
+  console.log("icon: handleClick");
+  e.cancelBubble = true;
+  
+  if (ctrlKeyPressed) {
+    // Ctrl + click: thêm/bỏ chọn icon
+    if (selectedIcons.has(icon)) {
+      selectedIcons.delete(icon);
+      icon.stroke('blue'); // Trở về màu bình thường
+    } else {
+      selectedIcons.add(icon);
+      icon.stroke('green'); // Đánh dấu đang chọn
+    }
+    
+    // Hiển thị transformer cho các icon được chọn
+    if (selectedIcons.size > 0) {
+      showTransformerForMultipleIcons(Array.from(selectedIcons));
+    } else {
+      hideAllTransformers();
+    }
+    
+    // Ẩn modal khi chọn nhiều icon
+    if (selectedIcons.size !== 1) {
+      currentIcon = null;
+    } else {
+      // Nếu chỉ chọn 1 icon, cập nhật currentIcon
+      currentIcon = icon;
+      updateIconControls(icon);
+    }
+  } else {
+    // Click thường: chọn icon duy nhất (giữ nguyên logic cũ)
+    hideAllTransformers();
+    setSelectedIcon(icon);
+    currentIcon = icon;
+    updateIconControls(icon);
+    showTransformerForIcon(icon);
+    showModal(is_move_icon);
+  }
+  
+  iconLayer.batchDraw();
+}
  
         // Thêm sự kiện remove để cleanup
         icon.on('remove', function() {
@@ -838,45 +930,70 @@ function calculateOptimalPosition(event, tooltipRect, stageRect, icon) {
 $(".add-home-icon").on("click", function () {
 
            const startX = 0.0025335059611293403; // Góc phải
-          const startY = 0.0349620671313793; // Bắt đầu từ trên xuống (thay vì dưới lên)
+           const startY = 0.0349620671313793; // Bắt đầu từ trên xuống (thay vì dưới lên)
 
-const width = 0.09085449735449735 * backgroundImage.width();
-const height = 0.07195767195767196 * backgroundImage.height();
+          const width = 0.09085449735449735 * backgroundImage.width();
+          const height = 0.07195767195767196 * backgroundImage.height();
 
- addPlayIcon({ sound: "2", icon_type:5 , icon_opacity: 0.1}, startX, startY, width, height);
+          const obj = {"x":0.017387859562430354 * backgroundImage.width() + backgroundImage.x(),
+                      "y":0.01273540959484802 * backgroundImage.height() + backgroundImage.y(),
+                      "sound":"3",
+                      "width":0.9659666804890022 * backgroundImage.width(),
+                      "height":0.039751453516772825 * backgroundImage.height(),
+                      "icon_type":5,
+                      "icon_opacity":0.1};
+
+    addPlayIcon({ sound: obj.sound, icon_type: obj.icon_type , icon_opacity: obj.icon_opacity}, obj.x, obj.y, obj.width, obj.height);
 });  
 
-  $(".add-icon-from-clipborad").on("click", async function () {
-        try {
+$(".add-icon-from-clipborad").on("click", async function () {
+    try {
+        const text = (await navigator.clipboard.readText())?.trim() || "";
+        
+        const startX = stage.width() - 150; // Góc phải
+        const startY = 50; // Bắt đầu từ trên xuống (thay vì dưới lên)
 
-          const text = (await navigator.clipboard.readText())?.trim() || "";
-          
-          const startX = stage.width() - 150; // Góc phải
-          const startY = 50; // Bắt đầu từ trên xuống (thay vì dưới lên)
-          
-const width = 0.09085449735449735 * backgroundImage.width();
-const height = 0.02708422630849887 * backgroundImage.height();
+        // home của 6 - 12          
+        var width = 0.09085449735449735 * backgroundImage.width();
+        var height = 0.02708422630849887 * backgroundImage.height();
 
-          const parts = text
-            .split(";")
+        // home của 2 - 6
+        // width = 0.08013317053915248 * backgroundImage.width();
+        // height = 0.07611239247815975 * backgroundImage.height();
+
+        const parts = text
+            .split(text.includes(';') ? ';' : '\n')
             .map((t) => t.trim())
-            .filter((t) => t.length > 0);
-          
-          if (parts.length > 0) {
+            .filter((t) => t.length > 0)
+            // Thêm bước lọc để bỏ qua các phần tử không có chữ sau dấu / cuối cùng
+            .filter((t) => {
+                // Kiểm tra xem có chứa dấu / không
+                if (!t.includes('/')) return true;
+                
+                // Lấy phần sau dấu / cuối cùng
+                const lastPart = t.split('/').pop();
+                
+                // Kiểm tra phần cuối cùng có chứa chữ cái không
+                const hasLetters = /[a-zA-ZÀ-ỹ]/.test(lastPart);
+                
+                return hasLetters;
+            });
+        
+        if (parts.length > 0) {
             let currentY = startY;
             
             parts.forEach((t) => {
-              addPlayIcon({ sound: t, x: startX, y: currentY, width:width, height:height, icon_opacity: 0.1}, startX, currentY, width, height);
-              currentY += 30; // Xuống dòng cho icon tiếp theo
+                addPlayIcon({ sound: t, x: startX, y: currentY, width:width, height:height, icon_opacity: 0.1}, startX, currentY, width, height);
+                currentY += 40; // Xuống dòng cho icon tiếp theo
             });
-          } else {
+        } else {
             addPlayIcon({ x: startX, y: startY, width:width, height:height, icon_opacity: 0.1});
-          }
-        } catch (err) {
-          console.error("Không thể đọc clipboard:", err);
-          addPlayIcon({ x: stage.width() - 150, y: 50 });
         }
-  });
+    } catch (err) {
+        console.error("Không thể đọc clipboard:", err);
+        addPlayIcon({ x: stage.width() - 150, y: 50 });
+    }
+});
 
   // ========== EVENT HANDLERS ==========
   $(".add-icon").on("click", function () {
@@ -888,8 +1005,16 @@ const height = 0.02708422630849887 * backgroundImage.height();
 
   });
 
+  function clearSelection() {
+  selectedIcons.forEach(icon => {
+    icon.stroke('blue'); // Trở về màu bình thường
+  });
+  selectedIcons.clear();
+}
+
   stage.on("click tap", function(e) {
     if (e.target === stage) {
+       clearSelection(); // Thêm dòng này
       hideAllTransformers();
       currentIcon = null;
     }

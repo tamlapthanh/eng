@@ -6,22 +6,10 @@
     <title>Viance3/7 1.0.3</title>
     <link rel="manifest" " href="manifest.json" />
     <link rel="shortcut icon" type="image/png" href="assets/favicon.png" />
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
-    />
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css"
-    />
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.6.0/css/all.min.css"
-    />
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/bootstrap-colorpicker@2.5.3/dist/css/bootstrap-colorpicker.min.css"
-    />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.6.0/css/all.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-colorpicker@2.5.3/dist/css/bootstrap-colorpicker.min.css" />
     <link rel="stylesheet" type="text/css" href="assets/coloris.min.css" />
     <link rel="stylesheet" href="assets/styles.css">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
@@ -36,73 +24,38 @@
 
   <body>
     <div id="canvas-container">
-      <div
-        class="toast-container position-fixed top-50 start-50 translate-middle"
-      ></div>
+      <div class="toast-container position-fixed top-50 start-50 translate-middle" ></div>
 
       <!-- Loading Spinner Overlay -->
-      <div class="overlay" id="spinnerOverlay">
-        <i class="fas fa-spinner spinner-icon"></i>
-      </div>
+      <div class="overlay" id="spinnerOverlay"> <i class="fas fa-spinner spinner-icon"></i> </div>
 
       <!-- Loading Spinner Overlay -->
-      <div class="overlay-async" id="spinnerOverlay_async_id">
-        <i class="fas fa-spinner spinner-icon"></i>
-      </div>
+      <div class="overlay-async" id="spinnerOverlay_async_id"> <i class="fas fa-spinner spinner-icon"></i> </div>
 
       <div id="countdown-overlay"></div>
 
       <div id="canvas"></div>
 
-      <!-- <button id="start-btn" class="btn btn-success start-btn btn-sm">
-        <i class="bi bi-star"></i>
-      </button> -->
+      <button id="logout" class="btn btn-danger logout-btn btn-sm"> <i class="bi bi bi-box-arrow-left"></i> </button>
 
-      <button id="logout" class="btn btn-danger logout-btn btn-sm">
-        <i class="bi bi bi-box-arrow-left"></i>
-      </button>
-
-      <button id="setting" class="btn btn-primary setting-btn btn-sm">
-        <i class="bi bi-gear"></i>
+      <button id="setting" class="btn btn-primary setting-btn btn-sm" data-bs-trigger="hover" title="Show/hide menu item.">
+         <i class="bi bi-gear"></i> 
       </button>
 
       <div id="id_controls" class="controls">
-        <button
-          class="btn btn-success btn-sm"
-          data-bs-toggle="modal"
-          data-bs-target="#settingsModal"
-        >
-          <i class="bi bi-list-ol"></i>
+        <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#settingsModal" data-bs-trigger="hover" title="Lession List"> <i class="bi bi-list-ol"></i> 
         </button>
 
         <!-- Draw control begin-->
         <div class="group-controls draw-group">
-          <button class="btn btn-danger btn-sm toggle-btn">
-            <i class="bi bi-palette-fill"></i>
-          </button>
+          <button class="btn btn-danger btn-sm toggle-btn"> <i class="bi bi-palette-fill"></i> </button>
+          <button id="add-rect-btn" class="btn btn-success btn-sm"> <i class="bi bi-bounding-box"></i> </button>          
+          <button id="add-text-btn" class="btn btn-success btn-sm"> <i class="bi bi-chat-square-dots"></i> </button>
+          <button id="draw-btn" class="btn btn-dark btn-sm"> <i class="bi bi-brush-fill"></i> </button>
+          <button id="undo-btn" class="btn btn-warning btn-sm"> <i class="bi bi-arrow-counterclockwise"></i> </button>
+          <button id="delete-line-btn" class="btn btn-warning btn-sm"> <i class="bi bi-trash"></i> </button>
+          <button id="send-json" class="btn btn-danger btn-sm"> <i class="bi bi-cloud-arrow-up-fill"></i> </button>
 
-          <button id="add-rect-btn" class="btn btn-success btn-sm">
-            <i class="bi bi-bounding-box"></i>
-          </button>          
-
-          <button id="add-text-btn" class="btn btn-success btn-sm">
-            <i class="bi bi-chat-square-dots"></i>
-          </button>
-
-          <button id="draw-btn" class="btn btn-dark btn-sm">
-            <i class="bi bi-brush-fill"></i>
-          </button>
-          <button id="undo-btn" class="btn btn-warning btn-sm">
-            <i class="bi bi-arrow-counterclockwise"></i>
-          </button>
-
-          <button id="delete-line-btn" class="btn btn-warning btn-sm">
-            <i class="bi bi-trash"></i>
-          </button>
-
-          <button id="send-json" class="btn btn-danger btn-sm">
-            <i class="bi bi-cloud-arrow-up-fill"></i>
-          </button>
         </div>
         <!-- Draw control end -->
 
@@ -171,15 +124,8 @@
         <!-- Thêm modal-fluid -->
         <div class="modal-content">
           <div class="modal-header">
-            <h3 class="modal-title" id="settingsModalLabel">
-              Jump to which page?
-            </h3>
-            <button
-              type="button"
-              class="btn-close"
-              data-bs-dismiss="modal"
-              aria-label="Close"
-            ></button>
+            <h3 class="modal-title" id="settingsModalLabel"> Jump to which page? </h3>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" ></button>
           </div>
           <div class="modal-body">
             <div class="container mt-2">
@@ -199,15 +145,7 @@
             <!-- <hr class="my-4 border border-primary" /> -->
             <div class="range-container">
               <label for="range2" class="form-label">Stroke Width</label>
-              <input
-                type="range"
-                class="form-range"
-                id="id_line_stroke_width"
-                min="1"
-                max="9"
-                step="1"
-                value="3"
-              />
+              <input type="range" class="form-range" id="id_line_stroke_width" min="1" max="9" step="1" value="3" />
               <div class="range-labels">
                 <span>1</span>
                 <span>2</span>
@@ -223,34 +161,14 @@
 
             <!-- <hr class="my-4 border border-primary" /> -->
             <div class="range-container">
-              <label for="select_color" class="form-label"
-                >Select Color:
-              </label>
-              <input
-                type="text"
-                class="coloris instance1"
-                value="Tomato"
-                data-target="window"
-              />
+              <label for="select_color" class="form-label" >Select Color: </label>
+              <input type="text" class="coloris instance1" value="Tomato" data-target="window" />
             </div>
 
             <br />
             <div class="modal-footer">
-              <button
-                type="button"
-                class="btn btn-danger"
-                id="id_reset_app_data"
-                data-bs-dismiss="modal"
-              >
-                Reset
-              </button>
-              <button
-                type="button"
-                class="btn btn-primary"
-                data-bs-dismiss="modal"
-              >
-                Close
-              </button>
+              <button type="button" class="btn btn-danger" id="id_reset_app_data" data-bs-dismiss="modal" > Reset </button>
+              <button type="button" class="btn btn-primary" data-bs-dismiss="modal" > Close </button>
             </div>
           </div>
         </div>
@@ -278,60 +196,6 @@
     ></div>
 
 
-    <!--vocabulary start -->
-<!-- Vocabulary Modal -->
-<div class="modal fade" id="vocabModal" tabindex="-1" aria-labelledby="vocabModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
-    <div class="modal-content border-0 shadow-lg rounded-4">
-
-      <!-- Header nhỏ gọn -->
-      <div class="modal-header bg-primary text-white rounded-top-4 py-2 px-3 d-flex justify-content-between align-items-center" style="min-height:48px;">
-        <!-- Tiêu đề bên trái -->
-        <h6 class="modal-title fw-semibold d-flex align-items-center mb-0" id="vocabModalLabel" style="font-size:15px;">
-          <i class="bi bi-journal-text me-2" style="font-size:16px;"></i>
-          Danh sách từ vựng
-        </h6>
-
-        <!-- Nhóm nút bên phải -->
-        <div class="d-flex align-items-center gap-2">
-          <button id="vocab-play-all" class="btn btn-light btn-sm d-flex align-items-center gap-1 px-2 py-1" title="Phát toàn bộ" style="font-size:13px;">
-            <i class="bi bi-play-circle-fill text-success" style="font-size:16px;"></i> 
-          </button>
-
-          <button type="button" class="btn btn-outline-light btn-sm d-flex align-items-center justify-content-center px-2 py-1" data-bs-dismiss="modal" title="Đóng" style="font-size:13px;">
-            <i class="bi bi-x-lg"></i>
-          </button>
-        </div>
-      </div>
-
-      <!-- Body -->
-      <div class="modal-body bg-light p-3">
-<table id="vocab-table" class="table table-sm table-hover align-middle mb-0">
-  <thead class="table-primary sticky-top">
-    <tr>
-      <th style="width:50px;">#</th>
-      <th style="width:150px;">File</th>
-      <th style="width:90px;">Start</th>
-      <th style="width:90px;">End</th>
-      <th>Text</th>
-      <th style="width:150px;">Vietnamese</th>
-    </tr>
-  </thead>
-  <tbody></tbody>
-</table>
-
-        <!-- Hidden shared audio -->
-        <audio id="vocab-audio" preload="auto" style="display:none;"></audio>
-      </div>
-
-    </div>
-  </div>
-</div>
-
-
-    
-    <!--end -->
-
     <script src="global.js"></script>
     <script src="auth.js"></script>
     <script src="assets/coloris.js"></script>
@@ -341,7 +205,6 @@
      <script src="TooltipManager.js"></script>
     <script src="canvas.js"></script>
     <script src="audioService.js"></script>
-    <script src="vocab-modal.js"></script>
     <script src="button.js"></script>
     <script src="app.js"></script>
     

@@ -72,12 +72,12 @@ $(document).ready( function () {
   });
 
 
-  $("#show-vocabulary-btn").on("click", function () {
+  // $("#show-vocabulary-btn").on("click", function () {
 
-    VocabModal.load(CURRENT_PAGE_INDEX); 
-    const modal = new bootstrap.Modal(document.getElementById('vocabModal'));
-    modal.show();
-  });
+  //   VocabModal.load(CURRENT_PAGE_INDEX); 
+  //   const modal = new bootstrap.Modal(document.getElementById('vocabModal'));
+  //   modal.show();
+  // });
 
   $("#auto-play-btn").on("click", function () {
     const $btn = $(this);

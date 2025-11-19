@@ -5,9 +5,7 @@ $(document).ready(async function () {
 
   await loadOptions();
 
-  // createRadioButtons(); // from common.js
-
-    $('input[name="options"]').on("click", function () {
+  $('input[name="options"]').on("click", function () {
     var selectedValue = $(this).val();
     var currentPageIndex = $(this).data("current-page-index");
     var maxPageNum = $(this).data("max-page-num");
@@ -17,20 +15,9 @@ $(document).ready(async function () {
       window.location.href = "math.html";
     } else if (DATA_TYPE !== selectedValue) {
       DATA_TYPE = selectedValue;
-      setPageInfo(
-        DATA_TYPE,
-        currentPageIndex,
-        maxPageNum,
-        minPageNum,
-        fetchInfo
+      setPageInfo(DATA_TYPE, currentPageIndex, maxPageNum, minPageNum,fetchInfo
       );
-      popDropdown(
-        $("#json-dropdown"),
-        "Page",
-        MIN_PAGE_NUM,
-        MAX_PAGE_NUM,
-        CURRENT_PAGE_INDEX
-      );
+      popDropdown($("#json-dropdown"),"Page", MIN_PAGE_NUM, MAX_PAGE_NUM, CURRENT_PAGE_INDEX);
       APP_DATA = null;
       loadPage();
       $("#settingsModal").modal("hide");
@@ -144,9 +131,7 @@ $(document).ready(async function () {
     IS_EANBLE_SWIPE = true;
     if (typeof FETCH_DRAW_INFO === "undefined" || FETCH_DRAW_INFO === false) {
       // không cần phải load cho loại data type này vì nó không có draw gì cả.
-      console.log(
-        " không cần phải load cho loại data type này vì nó không có draw gì cả. "
-      );
+      console.log(" không cần phải load cho loại data type này vì nó không có draw gì cả. ");
       return;
     }
 
@@ -159,7 +144,7 @@ $(document).ready(async function () {
         headers: AuthService.getAuthHeaders(), // ← Thay đổi này
         body: JSON.stringify(dataToSend),
       })
-        .then(async (res) => {
+      .then(async (res) => {
           if (!res.ok) throw new Error("HTTP " + res.status);
           return res.json();
         })

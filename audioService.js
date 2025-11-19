@@ -143,6 +143,31 @@
   #subtitle-overlay {
     transition: all 0.3s ease !important;
   }
+
+//   #subtitle-overlay {
+//   display: none;
+//   position: fixed;
+//   top: 50%;
+//   left: 50%;
+//   transform: translate(-50%, -50%);
+//   z-index: 100000;
+//   /* Background động - thay đổi theo nội dung */
+//   background: rgba(0, 0, 0, 0.4) !important; /* Nền tối semi-transparent */
+//   color: white;
+//   padding: 15px 25px;
+//   border-radius: 8px;
+//   font-size: 26px;
+//   font-weight: 600;
+//   text-align: center;
+//   backdrop-filter: blur(8px);
+//   max-width: 80vw;
+//   word-wrap: break-word;
+//   box-shadow: 0 4px 20px rgba(0,0,0,0.3) !important;
+//   border: 1px solid rgba(255,255,255,0.1) !important;
+//   font-family: 'Comic Sans MS', 'Arial Rounded MT Bold', 'Arial', sans-serif;
+//   text-shadow: 1px 1px 3px rgba(0,0,0,0.7);
+// }
+    
 </style>`;
 
       const div = document.createElement('div');
@@ -843,10 +868,10 @@ function switchSubtitle(text, iconNode) {
       } else if ("2" == icon_type) { // Play Icon (video)
         // Continue  
       } else if ("3" == icon_type) { // Play Icon (text)
-        VocabModal.load(fileName); 
-        const modal = new bootstrap.Modal(document.getElementById('vocabModal'));
-        modal.show();      
-        return;
+        // VocabModal.load(fileName); 
+        // const modal = new bootstrap.Modal(document.getElementById('vocabModal'));
+        // modal.show();      
+        // return;
       } else if ("4" == icon_type) { // Play Icon (Image)
         // Continue
       } else if ("5" == icon_type) { // Play Icon (Next Pre page)
