@@ -36,6 +36,131 @@ function createRadioButtons() {
   setPageInfo(data_type);
 }
 
+// Hàm phân tách line thành các segment theo page boundary
+function splitLineByPageBoundary(line, bgDisplay, pageDisplayWidth) {
+  const pts = line.points();
+  const segments = {
+    page1: [],
+    page2: []
+  };
+  
+  let currentPage = null;
+  let currentSegment = [];
+  
+  for (let i = 0; i < pts.length; i += 2) {
+    const x = pts[i];
+    const y = pts[i + 1];
+    const relativeX = x - bgDisplay.x;
+    
+    // Xác định page cho điểm hiện tại
+    const pointPage = relativeX < pageDisplayWidth ? 1 : 2;
+    
+    if (currentPage === null) {
+      // Điểm đầu tiên
+      currentPage = pointPage;
+      currentSegment.push(x, y);
+    } else if (currentPage === pointPage) {
+      // Vẫn cùng page - tiếp tục segment
+      currentSegment.push(x, y);
+    } else {
+      // Chuyển page - kết thúc segment hiện tại và bắt đầu segment mới
+      if (currentSegment.length > 0) {
+        segments[`page${currentPage}`].push([...currentSegment]);
+      }
+      
+      // Bắt đầu segment mới với điểm hiện tại
+      currentPage = pointPage;
+      currentSegment = [x, y];
+    }
+  }
+  
+  // Thêm segment cuối cùng
+  if (currentSegment.length > 0) {
+    segments[`page${currentPage}`].push([...currentSegment]);
+  }
+  
+  return segments;
+}
+
+// Hàm normalize points độc lập
+function normalizePoints(points, bgDisplay, isPage1, isDualPage, pageDisplayWidth) {
+  const norm = [];
+  
+  for (let i = 0; i < points.length; i += 2) {
+    const x = Number(points[i]);
+    const y = Number(points[i + 1]);
+    
+    let nx, ny;
+    
+    if (isDualPage) {
+      // Dual page - normalize theo page width
+      const relativeX = x - bgDisplay.x;
+      const pageStartX = isPage1 ? 0 : pageDisplayWidth;
+      
+      nx = pageDisplayWidth ? (relativeX - pageStartX) / pageDisplayWidth : 0;
+      ny = bgDisplay.height ? (y - bgDisplay.y) / bgDisplay.height : 0;
+    } else {
+      // Single page - normalize theo toàn bộ width
+      nx = bgDisplay.width ? (x - bgDisplay.x) / bgDisplay.width : 0;
+      ny = bgDisplay.height ? (y - bgDisplay.y) / bgDisplay.height : 0;
+    }
+    
+    norm.push(formatNumber(nx, 8));
+    norm.push(formatNumber(ny, 8));
+  }
+  
+  return norm;
+}
+
+// Hàm xác định page chính cho line (dựa trên đa số điểm)
+function getMainPageForLine(points, bgDisplay, pageDisplayWidth) {
+  if (!bgDisplay || points.length === 0) return 1;
+  
+  let page1Count = 0;
+  let page2Count = 0;
+  
+  for (let i = 0; i < points.length; i += 2) {
+    const x = points[i];
+    const relativeX = x - bgDisplay.x;
+    
+    if (relativeX < pageDisplayWidth) {
+      page1Count++;
+    } else {
+      page2Count++;
+    }
+  }
+  
+  return page1Count >= page2Count ? 1 : 2;
+}
+
+function getCurrentPageForPoint(x, y) {
+  if (!backgroundImage || !isTwoPage()) return 1;
+  
+  const bgX = backgroundImage.x();
+  const bgW = backgroundImage.width();
+  const pageWidth = bgW / 2;
+  
+  const relativeX = x - bgX;
+  return relativeX < pageWidth ? 1 : 2;
+}
+
+function isTwoPage() {
+  return isNotMobile() && backgroundMode;
+}
+
+function getPageIndex(page) {
+  if (isTwoPage()) {
+      return (2*page - 1);
+  } else {
+    return page;
+  }
+}
+
+function getSubImagePath(page) {
+  var imageName = page + ".webp"
+  return isTwoPage() ? "2/" + imageName  : imageName;
+}
+
 function getLastSegment(soundData) {
     try {
         const soundStr = String(soundData || 'Play Audio');
@@ -61,11 +186,12 @@ function getLastSegment(soundData) {
   function setPageInfo(dataType) {
     const foundOption = OPTIONS_ARRAY.find((opt) => opt.data_type === dataType);
 
-     DATA_TYPE = dataType;
+    DATA_TYPE = dataType;
     CURRENT_PAGE_INDEX = foundOption.current;
     MAX_PAGE_NUM = foundOption.max;
     MIN_PAGE_NUM = foundOption.min;
     FETCH_DRAW_INFO = foundOption.fetch;
+    backgroundMode = foundOption.backgroundMode;
 
     if (foundOption && foundOption.ASSET_URL) {     
       ASSET_URL = foundOption.ASSET_URL;
@@ -78,6 +204,12 @@ function getLastSegment(soundData) {
       };
     }
 
+    // phải đặt sau cùng để check
+    if (isTwoPage()) {
+      MAX_PAGE_NUM = parseInt(MAX_PAGE_NUM/2);
+    }    
+
+    
     //TODO: for testing only
     if (isDebugMode()) {
       ASSET_URL = {

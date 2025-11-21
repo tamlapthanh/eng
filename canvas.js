@@ -422,63 +422,202 @@
         .finally(() => hideSpinner());
     }
 
-    function loadJsonBackgroundAndIcons(page, data) {
-      if (!data || !data.background) return;
 
-      const imageObj = new Image();
-      showSpinner("spinnerOverlay", "#f5f227ff");
-      imageObj.onload = function () {
-        hideSpinner();
-        if (backgroundImage) {
-          backgroundImage.destroy();
-        }
-        adjustBackgroundImage(imageObj);
+  function loadAssetJson2(page) {
+      showSpinner("spinnerOverlay", "#3527f5ff");
 
-        // destroy icons
-        playIcons.forEach((i) => i.destroy());
-        playIcons = [];
+    var pageIndex = getPageIndex(page) + 1;
+    console.log("pageIndex::", pageIndex);
 
-        // add icons from json
-        (data.icons || []).forEach((iconData) => {
-          const iconX = iconData.x * backgroundImage.width() + backgroundImage.x();
-          const iconY = iconData.y * backgroundImage.height() + backgroundImage.y();
-          var iconW, iconH;
+    const urlJson = global_const.PATH_JSON.replace("X", pageIndex);
 
-          // "width": 0.0242727326370449,
-          //   "height": 0.01809523809523809,
-          if (!iconData?.width) {
-            iconData.width = 0.0242727326370449;
-          }
-          if (!iconData?.height) {
-            iconData.height = 0.01809523809523809;
-          }
+      fetch(urlJson)
+        .then((res) => {
+          if (!res.ok) throw new Error(res.statusText);
+          return res.json();
+        })
+        .then((data) => {
 
-          if (typeof iconData.width === "number" && typeof iconData.height === "number") {
-            // Nếu là tỉ lệ nhỏ (<1) => hiểu là phần trăm
-            if (iconData.width <= 1 && iconData.height <= 1) {
-              iconW = iconData.width * backgroundImage.width();
-              iconH = iconData.height * backgroundImage.height();
-            } else {
-              // Nếu là pixel => chuyển tỉ lệ theo ảnh nền thực tế
-              iconW = (iconData.width / imageObj.naturalWidth) * backgroundImage.width();
-              iconH =(iconData.height / imageObj.naturalHeight) * backgroundImage.height();
-            }
-          } else {
-            // Nếu chưa có w/h, fallback theo ICON_SIZE
-            iconW =  (ICON_SIZE / imageObj.naturalWidth) * backgroundImage.width();
-            iconH =  (ICON_SIZE / imageObj.naturalHeight) * backgroundImage.height();
-          }
+         loadJsonBackgroundAndIcons2(data);
 
-          addPlayIcon(iconX, iconY, iconW, iconH, iconData);
-        });
-
-        // load lines (caller should pass APP_DATA map to CanvasManager.loadLinesByDraw if needed)
-        if (typeof cfg.onLoadLines === "function") {
-          cfg.onLoadLines(page);
-        }
-      };
-      imageObj.src = (cfg.global_const && cfg.global_const.PATH_IMG ? cfg.global_const.PATH_IMG : "") + data.background;
+        })
+        .catch((err) => {
+          console.error("Error loading JSON:", err);
+          if (typeof cfg.showToast === "function")
+            cfg.showToast("Error loading JSON", "danger");
+        })
+        .finally(() => hideSpinner());
     }
+
+function loadJsonBackgroundAndIcons(page, data) {
+  if (!data || !data.background) return;
+
+  const imageObj = new Image();
+  showSpinner("spinnerOverlay", "#f5f227ff");
+
+  imageObj.onload = function () {
+    hideSpinner();
+    if (backgroundImage) {
+      backgroundImage.destroy();
+    }
+    adjustBackgroundImage(imageObj);
+
+    const bgX = backgroundImage.x();
+    const bgY = backgroundImage.y();
+    const bgDisplayWidth = backgroundImage.width();
+    const bgDisplayHeight = backgroundImage.height();
+    const originalWidth = backgroundImage.getAttr('originalWidth') || imageObj.naturalWidth;
+    const originalHeight = backgroundImage.getAttr('originalHeight') || imageObj.naturalHeight;
+
+    // TÍNH TOÁN THEO BACKGROUND MODE
+    let pageDisplayWidth, pageOriginalWidth;
+    
+    if (isTwoPage()) {
+      // DESKTOP - 2 images (double)
+      pageDisplayWidth = bgDisplayWidth / 2;
+      pageOriginalWidth = originalWidth / 2;
+    } else {
+      // MOBILE - 1 image (single)
+      pageDisplayWidth = bgDisplayWidth;
+      pageOriginalWidth = originalWidth;
+    }
+
+    // destroy icons
+    playIcons.forEach((i) => i.destroy());
+    playIcons = [];
+
+    // add icons from json
+    (data.icons || []).forEach((iconData) => {
+      // Tính vị trí X theo mode
+      let iconX;
+      if (isTwoPage()) {
+        // Desktop - nửa trái
+        iconX = iconData.x * pageDisplayWidth + bgX;
+      } else {
+        // Mobile - full width
+        iconX = iconData.x * pageDisplayWidth + bgX;
+      }
+      
+      const iconY = iconData.y * bgDisplayHeight + bgY;
+      
+      let iconW, iconH;
+
+      if (!iconData?.width) {
+        iconData.width = 0.0242727326370449;
+      }
+      if (!iconData?.height) {
+        iconData.height = 0.01809523809523809;
+      }
+
+      if (typeof iconData.width === "number" && typeof iconData.height === "number") {
+        if (iconData.width <= 1 && iconData.height <= 1) {
+          // Tỉ lệ phần trăm
+          iconW = iconData.width * pageOriginalWidth;
+          iconH = iconData.height * originalHeight;
+        } else {
+          // Pixel
+          iconW = iconData.width;
+          iconH = iconData.height;
+        }
+      } else {
+        // Fallback
+        iconW = ICON_SIZE;
+        iconH = ICON_SIZE;
+      }
+
+      // Scale icon size
+      const scaleX = pageDisplayWidth / pageOriginalWidth;
+      const scaleY = bgDisplayHeight / originalHeight;
+      iconW *= scaleX;
+      iconH *= scaleY;   
+      
+      iconData.icon_opacity = 1;
+      addPlayIcon(iconX, iconY, iconW, iconH, iconData);
+    });
+
+    // Chỉ load page 2 nếu desktop mode
+    if (isTwoPage()) {
+      loadAssetJson2(page);
+    }
+    
+    if (typeof cfg.onLoadLines === "function") {
+      cfg.onLoadLines(page);
+    }
+  };
+  // imageObj.src = (cfg.global_const && cfg.global_const.PATH_IMG ? cfg.global_const.PATH_IMG : "") + getSubImagePath(page);
+
+    // THÊM CACHE-BUSTING PARAMETER
+  const imageUrl = (cfg.global_const && cfg.global_const.PATH_IMG ? cfg.global_const.PATH_IMG : "") + getSubImagePath(page);
+  const cacheBustedUrl = imageUrl + '?t=' + Date.now();
+  
+  imageObj.src = cacheBustedUrl;
+  
+  // Fallback nếu có lỗi
+  imageObj.onerror = function() {
+    console.warn('Failed to load image with cache busting, trying original URL');
+    imageObj.src = imageUrl;
+  };
+}
+
+function loadJsonBackgroundAndIcons2(data) {
+  // Chỉ load page 2 nếu desktop mode
+  if (!backgroundImage && !isTwoPage()) return;
+  
+  const bgX = backgroundImage.x();
+  const bgY = backgroundImage.y();
+  const bgDisplayWidth = backgroundImage.width();
+  const bgDisplayHeight = backgroundImage.height();
+  const originalWidth = backgroundImage.getAttr('originalWidth') || backgroundImage.image().naturalWidth;
+  const originalHeight = backgroundImage.getAttr('originalHeight') || backgroundImage.image().naturalHeight;
+
+  // DESKTOP MODE - 2 images
+  const pageDisplayWidth = bgDisplayWidth / 2;
+  const pageOriginalWidth = originalWidth / 2;
+
+  (data.icons || []).forEach((iconData) => {
+    // Desktop - nửa phải
+    const iconX = iconData.x * pageDisplayWidth + bgX + pageDisplayWidth;
+    const iconY = iconData.y * bgDisplayHeight + bgY;
+    
+    let iconW, iconH;
+
+    if (!iconData?.width) {
+      iconData.width = 0.0242727326370449;
+    }
+    if (!iconData?.height) {
+      iconData.height = 0.01809523809523809;
+    }
+
+    if (typeof iconData.width === "number" && typeof iconData.height === "number") {
+      if (iconData.width <= 1 && iconData.height <= 1) {
+        iconW = iconData.width * pageOriginalWidth;
+        iconH = iconData.height * originalHeight;
+      } else {
+        iconW = iconData.width;
+        iconH = iconData.height;
+      }
+    } else {
+      iconW = ICON_SIZE;
+      iconH = ICON_SIZE;
+    }
+
+    const scaleX = pageDisplayWidth / pageOriginalWidth;
+    const scaleY = bgDisplayHeight / originalHeight;
+    iconW *= scaleX;
+    iconH *= scaleY;
+
+    console.log(`Page2 - DOUBLE mode - Icon:`, { 
+      iconW, iconH, pageDisplayWidth, pageOriginalWidth 
+    });
+
+    iconData.icon_opacity = 1;
+    addPlayIcon(iconX, iconY, iconW, iconH, iconData);
+  });
+}
+
+
+
+
 
     function adjustBackgroundImage(imageObj) {
       const imageWidth = imageObj.width;
@@ -751,6 +890,7 @@
                 lineCap: "round",
                 lineJoin: "round",
                 saved_stroke: line_color,
+                page: getCurrentPageForPoint(pt.x, pt.y) // ← THÊM DÒNG NÀY
               });
               drawingLayer.add(lastLine);
               lines.push(lastLine);
@@ -770,6 +910,7 @@
               lineCap: "round",
               lineJoin: "round",
               saved_stroke: line_color,
+                page: getCurrentPageForPoint(pt.x, pt.y) // ← THÊM DÒNG NÀY
             });
             drawingLayer.add(lastLine);
             lines.push(lastLine);
@@ -1261,122 +1402,249 @@
       console.log("🎉 All shapes cleared successfully!");
     }
 
-    function loadShapes(page, parsed) {
+    // load 2 page if it is dual mode.
+    function loadShapes(imagePage) {
       clearAllShapes();
 
-      const linesArr = parsed && Array.isArray(parsed.lines) ? parsed.lines : [];
-      loadLinesByDraw(page, linesArr);
+      loadLinesByDraw(imagePage, true);
+      if (isTwoPage()) {
+          loadLinesByDraw(imagePage, false);
+        }      
 
-      const rectArr = parsed && Array.isArray(parsed.rects) ? parsed.rects : [];
-      loadRectFromExport(rectArr);
 
-      const textArr = parsed && Array.isArray(parsed.texts) ? parsed.texts : [];
-      loadTextsFromExport(textArr);
+      // const rectArr = parsed && Array.isArray(parsed.rects) ? parsed.rects : [];
+      // loadRectFromExport(rectArr);
+
+      // const textArr = parsed && Array.isArray(parsed.texts) ? parsed.texts : [];
+      // loadTextsFromExport(textArr);
     }
 
     // load lines (normalized display coords) — caller passes APP_DATA map or raw parsed
-    function loadLinesByDraw(page, rawLinesArray, tries = 0) {
-      if (rawLinesArray == null) return;
-      if (!backgroundImage || !backgroundImage.image()) {
-        if (tries < 5)
-          setTimeout(() => loadLinesByDraw(page, rawLinesArray, tries + 1), 60);
-        else
-          console.warn("backgroundImage not ready for loadLinesByDraw", page);
-        return;
+// load lines (normalized display coords)
+function loadLinesByDraw(imagePage, isPage1 = true, tries = 0) {
+  // Kiểm tra background đã sẵn sàng chưa
+  if (!backgroundImage || !backgroundImage.image()) {
+    if (tries < 5) {
+      setTimeout(() => loadLinesByDraw(imagePage, isPage1, tries + 1), 60);
+    } else {
+      console.warn("backgroundImage not ready for loadLinesByDraw", imagePage);
+    }
+    return;
+  }
+
+  var jsonPage = getPageIndex(imagePage);
+  if (!isPage1) {
+    jsonPage = jsonPage + 1;
+  }
+
+  // Kiểm tra dữ liệu có tồn tại không
+  const raw = APP_DATA.get(String(jsonPage));
+  if (!raw) {
+    console.warn(`No data found for page ${jsonPage}`);
+    return;
+  }
+
+  let parsedData;
+  try {
+    parsedData = JSON.parse(raw);
+  } catch (e) {
+    console.error(`Error parsing data for page ${jsonPage}:`, e);
+    return;
+  }
+
+  const rawLinesArray = Array.isArray(parsedData.lines) ? parsedData.lines : [];
+  
+  const bgX = backgroundImage.x();
+  const bgY = backgroundImage.y();
+  const bgW = backgroundImage.width();
+  const bgH = backgroundImage.height();
+
+  const isDualPage = isTwoPage();
+  const pageDisplayWidth = isDualPage ? bgW / 2 : bgW;
+
+  console.log(`Loading lines for page ${isPage1 ? 1 : 2}:`, {
+    jsonPage,
+    lineCount: rawLinesArray.length,
+    isDualPage
+  });
+
+  rawLinesArray.forEach((savedLine, index) => {
+    const pts = savedLine.points || [];
+    const restored = [];
+
+    for (let i = 0; i < pts.length; i += 2) {
+      const nx = Number(pts[i]) || 0;
+      const ny = Number(pts[i + 1]) || 0;
+
+      let actualX, actualY;
+
+      if (isDualPage) {
+        // Dual page - tính toán theo page
+        if (isPage1) {
+          // Page 1: nửa trái
+          actualX = nx * pageDisplayWidth + bgX;
+        } else {
+          // Page 2: nửa phải  
+          actualX = nx * pageDisplayWidth + bgX + pageDisplayWidth;
+        }
+      } else {
+        // Single page
+        actualX = nx * bgW + bgX;
       }
 
-      // remove old lines
-      // lines.forEach((l) => l.destroy());
-      // lines = [];
-
-      const bgX = backgroundImage.x();
-      const bgY = backgroundImage.y();
-      const bgW = backgroundImage.width();
-      const bgH = backgroundImage.height();
-
-      rawLinesArray.forEach((savedLine) => {
-        const pts = savedLine.points || [];
-        const restored = [];
-        // assume normalized_display (we saved like that)
-        for (let i = 0; i < pts.length; i += 2) {
-          const nx = Number(pts[i]) || 0;
-          const ny = Number(pts[i + 1]) || 0;
-          restored.push(nx * bgW + bgX);
-          restored.push(ny * bgH + bgY);
-        }
-        const line = new Konva.Line({
-          points: restored,
-          stroke: savedLine.stroke || line_color,
-          strokeWidth: savedLine.strokeWidth || line_stroke_width,
-          lineCap: savedLine.lineCap || "round",
-          lineJoin: savedLine.lineJoin || "round",
-          saved_stroke: savedLine.stroke || line_color,
-        });
-
-        line.moveToTop();
-        drawingLayer.add(line);
-        lines.push(line);
-      });
-
-      drawingLayer.batchDraw();
-      lineAddEvents();
+      actualY = ny * bgH + bgY;
+      restored.push(actualX);
+      restored.push(actualY);
     }
 
-    // export current drawn lines normalized relative to background display box
-    function exportDrawnLines() {
-      if (!backgroundImage) return null;
+    const line = new Konva.Line({
+      points: restored,
+      stroke: savedLine.stroke || line_color,
+      strokeWidth: savedLine.strokeWidth || line_stroke_width,
+      lineCap: savedLine.lineCap || "round",
+      lineJoin: savedLine.lineJoin || "round",
+      saved_stroke: savedLine.stroke || line_color,
+      page: savedLine.page || (isPage1 ? 1 : 2) // ← KHÔI PHỤC THUỘC TÍNH PAGE
+    });
 
-      const bgDisplay = {
-        x: backgroundImage.x(),
-        y: backgroundImage.y(),
-        width: backgroundImage.width(),
-        height: backgroundImage.height(),
-      };
+    line.moveToTop();
+    drawingLayer.add(line);
+    lines.push(line);
+  });
 
-      // export lines (existing logic, unchanged except rounding helper)
-      const drawnLines = lines.map((line) => {
-        const pts = line.points();
-        const norm = [];
-        for (let i = 0; i < pts.length; i += 2) {
-          const x = Number(pts[i]);
-          const y = Number(pts[i + 1]);
-          const nx = bgDisplay.width ? (x - bgDisplay.x) / bgDisplay.width : 0;
-          const ny = bgDisplay.height
-            ? (y - bgDisplay.y) / bgDisplay.height
-            : 0;
-          norm.push(formatNumber(nx));
-          norm.push(formatNumber(ny));
+  drawingLayer.batchDraw();
+  lineAddEvents();
+  
+  console.log(`✅ Successfully loaded ${rawLinesArray.length} lines for page ${isPage1 ? 1 : 2}`);
+}
+
+
+function exportDrawnLines(isPage1 = true) {
+  if (!backgroundImage) return null;
+
+  const bgDisplay = {
+    x: backgroundImage.x(),
+    y: backgroundImage.y(),
+    width: backgroundImage.width(),
+    height: backgroundImage.height(),
+  };
+
+  const isDualPage = isTwoPage();
+  const targetPage = isPage1 ? 1 : 2;
+  const pageDisplayWidth = isDualPage ? bgDisplay.width / 2 : bgDisplay.width;
+
+  // QUAN TRỌNG: Mobile mode chỉ có Page 1
+  if (!isDualPage && !isPage1) {
+    console.log('MOBILE mode: Cannot export page 2, returning empty data');
+    return {
+      lines: [],
+      texts: [],
+      rects: [],
+      meta: {
+        savedAtDisplay: bgDisplay,
+        isDualPage: false,
+        page: 2,
+        pageDisplayWidth: pageDisplayWidth,
+        coordSystem: "normalized_display",
+      },
+    };
+  }
+
+  const drawnLines = [];
+
+  lines.forEach((line) => {
+    if (isDualPage) {
+      // DUAL PAGE: Phân tách line theo page boundary
+      const segments = splitLineByPageBoundary(line, bgDisplay, pageDisplayWidth);
+      const targetSegments = segments[`page${targetPage}`];
+      
+      targetSegments.forEach((segmentPoints) => {
+        const norm = normalizePoints(segmentPoints, bgDisplay, isPage1, isDualPage, pageDisplayWidth);
+        
+        // CHỈ thêm vào nếu segment có ít nhất 2 điểm
+        if (norm.length >= 4) {
+          drawnLines.push({
+            points: norm,
+            stroke: line.stroke(),
+            strokeWidth: line.strokeWidth(),
+            lineCap: line.lineCap(),
+            lineJoin: line.lineJoin(),
+            page: targetPage,
+            isSegment: true // Đánh dấu đây là segment của line gốc
+          });
         }
-        return {
+      });
+    } else {
+      // SINGLE PAGE: Giữ nguyên line (chỉ page 1)
+      const linePage = line.getAttr('page') || 1;
+      if (linePage === targetPage) {
+        const norm = normalizePoints(line.points(), bgDisplay, isPage1, isDualPage, pageDisplayWidth);
+        
+        drawnLines.push({
           points: norm,
           stroke: line.stroke(),
           strokeWidth: line.strokeWidth(),
           lineCap: line.lineCap(),
           lineJoin: line.lineJoin(),
-        };
-      });
-
-      // save text nodes
-      const textNodes = saveTextNodes(bgDisplay);
-
-      // Save rects
-      const rects = saveCoverRects();
-
-      return {
-        lines: drawnLines,
-        texts: textNodes,
-        rects: rects,
-        meta: {
-          savedAtDisplay: {
-            x: bgDisplay.x,
-            y: bgDisplay.y,
-            width: bgDisplay.width,
-            height: bgDisplay.height,
-          },
-          coordSystem: "normalized_display",
-        },
-      };
+          page: targetPage
+        });
+      }
     }
+  });
+
+  console.log(`Exporting ${isDualPage ? 'DUAL' : 'SINGLE'} page ${targetPage}: ${drawnLines.length} lines (including segments)`);
+
+  // Lấy text nodes và rects cho page tương ứng
+  const textNodes = saveTextNodesForPage(bgDisplay, isPage1, isDualPage, pageDisplayWidth);
+  const rects = saveCoverRectsForPage(bgDisplay, isPage1, isDualPage, pageDisplayWidth);
+
+  return {
+    lines: drawnLines,
+    texts: textNodes,
+    rects: rects,
+    meta: {
+      savedAtDisplay: bgDisplay,
+      isDualPage: isDualPage,
+      page: targetPage,
+      pageDisplayWidth: pageDisplayWidth,
+      coordSystem: "normalized_display",
+    },
+  };
+}
+
+
+function saveTextNodesForPage(bgDisplay, isPage1, isDualPage, pageDisplayWidth) {
+  // Giả sử bạn có hàm saveTextNodes() hiện tại
+  const allTexts = saveTextNodes(bgDisplay);
+  
+  if (!isDualPage) {
+    return isPage1 ? allTexts : [];
+  }
+  
+  return allTexts.filter((text) => {
+    const x = text.x * bgDisplay.width + bgDisplay.x;
+    const relativeX = x - bgDisplay.x;
+    const belongsToPage1 = relativeX < pageDisplayWidth;
+    return isPage1 ? belongsToPage1 : !belongsToPage1;
+  });
+}
+
+
+function saveCoverRectsForPage(bgDisplay, isPage1, isDualPage, pageDisplayWidth) {
+  // Giả sử bạn có hàm saveCoverRects() hiện tại
+  const allRects = saveCoverRects();
+  
+  if (!isDualPage) {
+    return isPage1 ? allRects : [];
+  }
+  
+  return allRects.filter((rect) => {
+    const x = rect.x * bgDisplay.width + bgDisplay.x;
+    const relativeX = x - bgDisplay.x;
+    const belongsToPage1 = relativeX < pageDisplayWidth;
+    return isPage1 ? belongsToPage1 : !belongsToPage1;
+  });
+}
 
     // navigation helper (can be used by UI or swipe)
     function processNextPrePage(isNext = true) {

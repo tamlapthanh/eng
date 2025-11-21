@@ -6,9 +6,12 @@ JDK 17.0.10: Ensure JDK 17.0.10 is installed at D:\Working\Installed\jdk-17.0.10
 Maven: Maven must be installed and configured in your system.
 Windows Environment: The commands below are tailored for Windows using PowerShell.
 
-
+# Spring boot
 cd D:\Working\Study\KHoi\zizi\zizi-app
 mvn spring-boot:run
+
+# CMD window, addmin
+mklink /D "D:\Working\Study\KHoi\zizi\eng\assets\books\27\first_work_sheet" "D:\Working\Study\KHoi\zizi\store_images\assets\books\27\first_work_sheet"
 
 
 

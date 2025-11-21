@@ -875,7 +875,13 @@ function switchSubtitle(text, iconNode) {
       } else if ("4" == icon_type) { // Play Icon (Image)
         // Continue
       } else if ("5" == icon_type) { // Play Icon (Next Pre page)
-        $("#json-dropdown").val(fileName).change();
+
+        var page = fileName;
+        if (isTwoPage()) {  //TODO: dual page mode
+          page = parseInt(fileName/2) + 1;
+        }       
+        $("#json-dropdown").val(page).change();
+
         return;
       }
 

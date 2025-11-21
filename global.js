@@ -14,7 +14,7 @@ async function loadOptions() {
     const json = await response.json();
     // 👉 Lưu mảng và giá trị mặc định
     OPTIONS_ARRAY = json.data || [];
-    DEFAULT_DATA_TYPE = json.default_data_type || null;
+    DEFAULT_DATA_TYPE = json.default_data_type || null;    
 
     createRadioButtons();
   } catch (error) {
@@ -44,12 +44,14 @@ async function loadOptions() {
   let MAX_PAGE_NUM = 107;
   let MIN_PAGE_NUM = 1;
   let FETCH_DRAW_INFO = false;
+  let backgroundMode   = false; //TODO: display 1 or 2 background images.
 
   // const RUN_URL_SERVER = "https://zizi-app.onrender.com/";                          
   const RUN_URL_SERVER = "https://zizi-app-render.onrender.com/api";                          
   const RUN_URL_LOCAL = "http://localhost:8080/api";
   const API_LINE_KEY_METHOD = "/sheets/line_by_key";
   const API_LINE_ALL_METHOD = "/sheets/line_all";
+
   
   // const LOCAL_IP = "xx.127.0.0.1";
   const LOCAL_IP = "127.0.0.1";
