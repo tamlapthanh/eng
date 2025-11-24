@@ -36,7 +36,6 @@ function createRadioButtons() {
   setPageInfo(data_type);
 }
 
-// Hàm phân tách line thành các segment theo page boundary
 function splitLineByPageBoundary(line, bgDisplay, pageDisplayWidth) {
   const pts = line.points();
   const segments = {
@@ -44,45 +43,85 @@ function splitLineByPageBoundary(line, bgDisplay, pageDisplayWidth) {
     page2: []
   };
   
+  if (pts.length < 4) {
+    // Line quá ngắn, không thể phân tách - gán toàn bộ vào page chính
+    const linePage = getMainPageForLine(pts, bgDisplay, pageDisplayWidth);
+    segments[`page${linePage}`].push([...pts]);
+    return segments;
+  }
+  
   let currentPage = null;
   let currentSegment = [];
+  const boundaryX = bgDisplay.x + pageDisplayWidth;
   
   for (let i = 0; i < pts.length; i += 2) {
     const x = pts[i];
     const y = pts[i + 1];
-    const relativeX = x - bgDisplay.x;
     
     // Xác định page cho điểm hiện tại
-    const pointPage = relativeX < pageDisplayWidth ? 1 : 2;
+    const pointPage = x < boundaryX ? 1 : 2;
     
     if (currentPage === null) {
       // Điểm đầu tiên
       currentPage = pointPage;
       currentSegment.push(x, y);
     } else if (currentPage === pointPage) {
-      // Vẫn cùng page - tiếp tục segment
+      // Vẫn cùng page
       currentSegment.push(x, y);
     } else {
-      // Chuyển page - kết thúc segment hiện tại và bắt đầu segment mới
-      if (currentSegment.length > 0) {
+      // CHUYỂN PAGE: Tìm điểm giao cắt và tách segment
+      const prevX = pts[i - 2];
+      const prevY = pts[i - 1];
+      
+      // Tính điểm giao cắt tại biên giới
+      const t = (boundaryX - prevX) / (x - prevX);
+      const intersectionX = boundaryX;
+      const intersectionY = prevY + t * (y - prevY);
+      
+      // Kết thúc segment hiện tại với điểm giao cắt
+      currentSegment.push(intersectionX, intersectionY);
+      
+      // Lưu segment cũ (chỉ khi có ít nhất 2 điểm)
+      if (currentSegment.length >= 4) {
         segments[`page${currentPage}`].push([...currentSegment]);
       }
       
-      // Bắt đầu segment mới với điểm hiện tại
+      // Bắt đầu segment mới từ điểm giao cắt
       currentPage = pointPage;
-      currentSegment = [x, y];
+      currentSegment = [intersectionX, intersectionY, x, y];
     }
   }
   
-  // Thêm segment cuối cùng
-  if (currentSegment.length > 0) {
+  // Lưu segment cuối cùng (chỉ khi có ít nhất 2 điểm)
+  if (currentSegment.length >= 4) {
     segments[`page${currentPage}`].push([...currentSegment]);
   }
   
   return segments;
 }
 
-// Hàm normalize points độc lập
+// Hàm tính điểm giao cắt tại biên giới page
+function calculatePageIntersection(x1, y1, x2, y2, bgDisplay, pageDisplayWidth) {
+  const boundaryX = bgDisplay.x + pageDisplayWidth;
+  
+  // Kiểm tra xem line có cắt biên giới không
+  if ((x1 < boundaryX && x2 >= boundaryX) || (x1 >= boundaryX && x2 < boundaryX)) {
+    // Tính tỉ lệ từ x1 đến biên giới
+    const t = (boundaryX - x1) / (x2 - x1);
+    
+    // Tính tọa độ giao điểm
+    const intersectionX = boundaryX;
+    const intersectionY = y1 + t * (y2 - y1);
+    
+    return {
+      x: intersectionX,
+      y: intersectionY
+    };
+  }
+  
+  return null;
+}
+
 function normalizePoints(points, bgDisplay, isPage1, isDualPage, pageDisplayWidth) {
   const norm = [];
   
@@ -97,8 +136,21 @@ function normalizePoints(points, bgDisplay, isPage1, isDualPage, pageDisplayWidt
       const relativeX = x - bgDisplay.x;
       const pageStartX = isPage1 ? 0 : pageDisplayWidth;
       
+      // 🔥 Sửa: Tính relative position trong page
       nx = pageDisplayWidth ? (relativeX - pageStartX) / pageDisplayWidth : 0;
       ny = bgDisplay.height ? (y - bgDisplay.y) / bgDisplay.height : 0;
+      
+      // Debug log
+      if (i === 0) {
+        console.log('Normalize point:', {
+          original: { x, y },
+          relativeX,
+          pageStartX,
+          normalized: { nx, ny },
+          pageDisplayWidth,
+          bgDisplay
+        });
+      }
     } else {
       // Single page - normalize theo toàn bộ width
       nx = bgDisplay.width ? (x - bgDisplay.x) / bgDisplay.width : 0;
@@ -111,6 +163,26 @@ function normalizePoints(points, bgDisplay, isPage1, isDualPage, pageDisplayWidt
   
   return norm;
 }
+
+function debugCoordinateSystem(bgDisplay, isDualPage, pageDisplayWidth, targetPage) {
+  console.log('🔍 DEBUG COORDINATE SYSTEM:', {
+    bgDisplay,
+    isDualPage,
+    pageDisplayWidth,
+    targetPage,
+    viewport: {
+      width: window.innerWidth,
+      height: window.innerHeight
+    },
+    stage: stage ? {
+      scaleX: stage.scaleX(),
+      scaleY: stage.scaleY(),
+      x: stage.x(),
+      y: stage.y()
+    } : null
+  });
+}
+
 
 // Hàm xác định page chính cho line (dựa trên đa số điểm)
 function getMainPageForLine(points, bgDisplay, pageDisplayWidth) {
@@ -133,15 +205,21 @@ function getMainPageForLine(points, bgDisplay, pageDisplayWidth) {
   return page1Count >= page2Count ? 1 : 2;
 }
 
+// Trong pointerdown event, thêm logic xác định page ban đầu
 function getCurrentPageForPoint(x, y) {
-  if (!backgroundImage || !isTwoPage()) return 1;
+  if (!backgroundImage) return 1;
   
-  const bgX = backgroundImage.x();
-  const bgW = backgroundImage.width();
-  const pageWidth = bgW / 2;
-  
-  const relativeX = x - bgX;
-  return relativeX < pageWidth ? 1 : 2;
+  if (!isTwoPage()) {
+    // MOBILE MODE: Luôn trả về page 1 (vì chỉ có 1 page)
+    return 1;
+  } else {
+    // DESKTOP MODE: Xác định page dựa trên vị trí X
+    const bgX = backgroundImage.x();
+    const bgW = backgroundImage.width();
+    const pageWidth = bgW / 2;
+    const relativeX = x - bgX;
+    return relativeX < pageWidth ? 1 : 2;
+  }
 }
 
 function isTwoPage() {
@@ -150,7 +228,8 @@ function isTwoPage() {
 
 function getPageIndex(page) {
   if (isTwoPage()) {
-      return (2*page - 1);
+    // 🔥 Sửa: UI page -> JSON page mapping
+    return (page * 2) - 1; // Chỉ trả về page trái, page phải = page trái + 1
   } else {
     return page;
   }

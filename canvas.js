@@ -696,9 +696,9 @@ function loadJsonBackgroundAndIcons2(data) {
       iconLayer = new Konva.Layer();
       drawingLayer = new Konva.Layer();
       stage.add(backgroundLayer);
-
+stage.add(iconLayer);
       stage.add(drawingLayer);
-      stage.add(iconLayer);
+      
 
       // ensure container touch-action none recommended in CSS: #canvas { touch-action: none; }
       setupPointerHandlers();
@@ -910,7 +910,7 @@ function loadJsonBackgroundAndIcons2(data) {
               lineCap: "round",
               lineJoin: "round",
               saved_stroke: line_color,
-                page: getCurrentPageForPoint(pt.x, pt.y) // ← THÊM DÒNG NÀY
+              page: getCurrentPageForPoint(pt.x, pt.y) // ← THÊM DÒNG NÀY
             });
             drawingLayer.add(lastLine);
             lines.push(lastLine);
@@ -1402,45 +1402,58 @@ function loadJsonBackgroundAndIcons2(data) {
       console.log("🎉 All shapes cleared successfully!");
     }
 
-    // load 2 page if it is dual mode.
-    function loadShapes(imagePage) {
-      clearAllShapes();
+function loadShapes(imagePage) {
+  clearAllShapes();
 
-      loadLinesByDraw(imagePage, true);
-      if (isTwoPage()) {
-          loadLinesByDraw(imagePage, false);
-        }      
+  loadLinesByDraw(imagePage, 1);
+  
+  // ✅ QUAN TRỌNG: Chỉ load page 2 nếu desktop mode
+  if (isTwoPage()) {
+    loadLinesByDraw(imagePage, 2);
+  }
+}
 
+function loadLinesByDraw(imagePage, targetPage = 1, tries = 0) {
 
-      // const rectArr = parsed && Array.isArray(parsed.rects) ? parsed.rects : [];
-      // loadRectFromExport(rectArr);
-
-      // const textArr = parsed && Array.isArray(parsed.texts) ? parsed.texts : [];
-      // loadTextsFromExport(textArr);
-    }
-
-    // load lines (normalized display coords) — caller passes APP_DATA map or raw parsed
-// load lines (normalized display coords)
-function loadLinesByDraw(imagePage, isPage1 = true, tries = 0) {
-  // Kiểm tra background đã sẵn sàng chưa
   if (!backgroundImage || !backgroundImage.image()) {
     if (tries < 5) {
-      setTimeout(() => loadLinesByDraw(imagePage, isPage1, tries + 1), 60);
+      setTimeout(() => loadLinesByDraw(imagePage, targetPage, tries + 1), 60);
     } else {
       console.warn("backgroundImage not ready for loadLinesByDraw", imagePage);
     }
     return;
   }
 
-  var jsonPage = getPageIndex(imagePage);
-  if (!isPage1) {
-    jsonPage = jsonPage + 1;
+  // 🔥 QUAN TRỌNG: Sửa logic mapping page
+  let jsonPage;
+  const isDualPage = isTwoPage();
+  
+  if (isDualPage) {
+    // DESKTOP: page UI -> JSON page mapping
+    // Page 1 UI -> JSON 1 & 2
+    // Page 2 UI -> JSON 3 & 4  
+    // Page 3 UI -> JSON 5 & 6
+    // Page 4 UI -> JSON 7 & 8
+    if (targetPage === 1) {
+      jsonPage = (imagePage * 2) - 1; // Page trái
+    } else {
+      jsonPage = imagePage * 2;       // Page phải
+    }
+  } else {
+    // MOBILE: direct mapping
+    jsonPage = imagePage;
   }
 
-  // Kiểm tra dữ liệu có tồn tại không
+  console.log(`🔄 LOAD DEBUG: UI Page ${imagePage}, Target ${targetPage} -> JSON Page ${jsonPage}`, {
+    isDualPage,
+    imagePage,
+    targetPage,
+    jsonPage
+  });
+
   const raw = APP_DATA.get(String(jsonPage));
   if (!raw) {
-    console.warn(`No data found for page ${jsonPage}`);
+    console.warn(`No data found for JSON page ${jsonPage} (UI: ${imagePage}, target: ${targetPage})`);
     return;
   }
 
@@ -1458,15 +1471,10 @@ function loadLinesByDraw(imagePage, isPage1 = true, tries = 0) {
   const bgY = backgroundImage.y();
   const bgW = backgroundImage.width();
   const bgH = backgroundImage.height();
-
-  const isDualPage = isTwoPage();
+  
   const pageDisplayWidth = isDualPage ? bgW / 2 : bgW;
 
-  console.log(`Loading lines for page ${isPage1 ? 1 : 2}:`, {
-    jsonPage,
-    lineCount: rawLinesArray.length,
-    isDualPage
-  });
+  console.log(`📥 Loading page ${targetPage} from JSON ${jsonPage}: ${rawLinesArray.length} lines`);
 
   rawLinesArray.forEach((savedLine, index) => {
     const pts = savedLine.points || [];
@@ -1479,16 +1487,14 @@ function loadLinesByDraw(imagePage, isPage1 = true, tries = 0) {
       let actualX, actualY;
 
       if (isDualPage) {
-        // Dual page - tính toán theo page
-        if (isPage1) {
-          // Page 1: nửa trái
+        // Desktop: khôi phục vị trí thực tế
+        if (targetPage === 1) {
           actualX = nx * pageDisplayWidth + bgX;
         } else {
-          // Page 2: nửa phải  
           actualX = nx * pageDisplayWidth + bgX + pageDisplayWidth;
         }
       } else {
-        // Single page
+        // Mobile: luôn từ góc trái
         actualX = nx * bgW + bgX;
       }
 
@@ -1497,30 +1503,38 @@ function loadLinesByDraw(imagePage, isPage1 = true, tries = 0) {
       restored.push(actualY);
     }
 
-    const line = new Konva.Line({
-      points: restored,
-      stroke: savedLine.stroke || line_color,
-      strokeWidth: savedLine.strokeWidth || line_stroke_width,
-      lineCap: savedLine.lineCap || "round",
-      lineJoin: savedLine.lineJoin || "round",
-      saved_stroke: savedLine.stroke || line_color,
-      page: savedLine.page || (isPage1 ? 1 : 2) // ← KHÔI PHỤC THUỘC TÍNH PAGE
-    });
+    if (restored.length >= 4) {
+      const line = new Konva.Line({
+        points: restored,
+        stroke: savedLine.stroke || line_color,
+        strokeWidth: savedLine.strokeWidth || line_stroke_width,
+        lineCap: savedLine.lineCap || "round",
+        lineJoin: savedLine.lineJoin || "round",
+        saved_stroke: savedLine.stroke || line_color,
+        page: targetPage
+      });
 
-    line.moveToTop();
-    drawingLayer.add(line);
-    lines.push(line);
+      console.log(`↪️ Line ${index} restored to page ${targetPage}`, {
+        pointsPreview: restored.slice(0, 4)
+      });
+
+      line.moveToTop();
+      drawingLayer.add(line);
+      lines.push(line);
+    }
   });
 
   drawingLayer.batchDraw();
   lineAddEvents();
-  
-  console.log(`✅ Successfully loaded ${rawLinesArray.length} lines for page ${isPage1 ? 1 : 2}`);
 }
 
 
-function exportDrawnLines(isPage1 = true) {
-  if (!backgroundImage) return null;
+
+function exportDrawnLines(targetPage = 1) {
+  if (!backgroundImage) {
+    console.error("No background image for export");
+    return null;
+  }
 
   const bgDisplay = {
     x: backgroundImage.x(),
@@ -1530,55 +1544,55 @@ function exportDrawnLines(isPage1 = true) {
   };
 
   const isDualPage = isTwoPage();
-  const targetPage = isPage1 ? 1 : 2;
   const pageDisplayWidth = isDualPage ? bgDisplay.width / 2 : bgDisplay.width;
 
-  // QUAN TRỌNG: Mobile mode chỉ có Page 1
-  if (!isDualPage && !isPage1) {
-    console.log('MOBILE mode: Cannot export page 2, returning empty data');
-    return {
-      lines: [],
-      texts: [],
-      rects: [],
-      meta: {
-        savedAtDisplay: bgDisplay,
-        isDualPage: false,
-        page: 2,
-        pageDisplayWidth: pageDisplayWidth,
-        coordSystem: "normalized_display",
-      },
-    };
-  }
+  console.log('📤 EXPORT DEBUG:', { bgDisplay, isDualPage, pageDisplayWidth, targetPage });
 
   const drawnLines = [];
+  const state = CanvasManager.getState();
+  const currentLines = state.lines || [];
 
-  lines.forEach((line) => {
+  currentLines.forEach((line, lineIndex) => {
+    const points = line.points();
+    const linePage = line.getAttr('page') || 1;
+    
+    console.log(`Processing line ${lineIndex}:`, {
+      points: points.slice(0, 4), // 2 điểm đầu
+      linePage,
+      targetPage
+    });
+
     if (isDualPage) {
-      // DUAL PAGE: Phân tách line theo page boundary
+      // DESKTOP MODE: Phân tách line thành segments theo page boundary
       const segments = splitLineByPageBoundary(line, bgDisplay, pageDisplayWidth);
       const targetSegments = segments[`page${targetPage}`];
       
-      targetSegments.forEach((segmentPoints) => {
-        const norm = normalizePoints(segmentPoints, bgDisplay, isPage1, isDualPage, pageDisplayWidth);
-        
-        // CHỈ thêm vào nếu segment có ít nhất 2 điểm
-        if (norm.length >= 4) {
-          drawnLines.push({
-            points: norm,
-            stroke: line.stroke(),
-            strokeWidth: line.strokeWidth(),
-            lineCap: line.lineCap(),
-            lineJoin: line.lineJoin(),
-            page: targetPage,
-            isSegment: true // Đánh dấu đây là segment của line gốc
-          });
-        }
-      });
+      if (Array.isArray(targetSegments) && targetSegments.length > 0) {
+        targetSegments.forEach((segmentPoints, segmentIndex) => {
+          if (Array.isArray(segmentPoints) && segmentPoints.length >= 4) {
+            const norm = normalizePoints(segmentPoints, bgDisplay, targetPage === 1, isDualPage, pageDisplayWidth);
+            
+            console.log(`Segment ${segmentIndex} normalized:`, {
+              original: segmentPoints.slice(0, 4),
+              normalized: norm.slice(0, 4)
+            });
+            
+            drawnLines.push({
+              points: norm,
+              stroke: line.stroke(),
+              strokeWidth: line.strokeWidth(),
+              lineCap: line.lineCap(),
+              lineJoin: line.lineJoin(),
+              page: targetPage,
+              isSegment: true
+            });
+          }
+        });
+      }
     } else {
-      // SINGLE PAGE: Giữ nguyên line (chỉ page 1)
-      const linePage = line.getAttr('page') || 1;
+      // MOBILE MODE: Chỉ xử lý lines thuộc page đang export
       if (linePage === targetPage) {
-        const norm = normalizePoints(line.points(), bgDisplay, isPage1, isDualPage, pageDisplayWidth);
+        const norm = normalizePoints(points, bgDisplay, targetPage === 1, isDualPage, pageDisplayWidth);
         
         drawnLines.push({
           points: norm,
@@ -1592,11 +1606,10 @@ function exportDrawnLines(isPage1 = true) {
     }
   });
 
-  console.log(`Exporting ${isDualPage ? 'DUAL' : 'SINGLE'} page ${targetPage}: ${drawnLines.length} lines (including segments)`);
+  console.log(`✅ Exporting page ${targetPage}: ${drawnLines.length} lines`);
 
-  // Lấy text nodes và rects cho page tương ứng
-  const textNodes = saveTextNodesForPage(bgDisplay, isPage1, isDualPage, pageDisplayWidth);
-  const rects = saveCoverRectsForPage(bgDisplay, isPage1, isDualPage, pageDisplayWidth);
+  const textNodes = saveTextNodesForPage(bgDisplay, targetPage === 1, isDualPage, pageDisplayWidth);
+  const rects = saveCoverRectsForPage(bgDisplay, targetPage === 1, isDualPage, pageDisplayWidth);
 
   return {
     lines: drawnLines,
@@ -1611,6 +1624,9 @@ function exportDrawnLines(isPage1 = true) {
     },
   };
 }
+
+
+
 
 
 function saveTextNodesForPage(bgDisplay, isPage1, isDualPage, pageDisplayWidth) {
@@ -1730,8 +1746,6 @@ function saveCoverRectsForPage(bgDisplay, isPage1, isDualPage, pageDisplayWidth)
       changeImageUrl,
       getSoundStartEnd,
       loadShapes,
-      // loadLinesByDraw,
-      // loadTextsFromExport,
       exportDrawnLines,
       clearCanvas,
       deleteSelectedLine,

@@ -94,6 +94,8 @@ $(document).ready(async function () {
     loadPage();
   });
 
+
+
 function processExportData(isPage1 = true) {
   if (!CanvasManager.getState().backgroundImage) {
     showToast("Không có background, không thể lưu!", "warning");
@@ -101,33 +103,30 @@ function processExportData(isPage1 = true) {
   }
 
   const isDualPage = isTwoPage();
+  
   var imagePage = $("#json-dropdown").val();
   var jsonPage = getPageIndex(imagePage);
-  
   if (!isPage1) {
     jsonPage = jsonPage + 1;
   }
 
-  const jsonData = CanvasManager.exportDrawnLines(isPage1);
+  const targetPageNumber = isPage1 ? 1 : 2;
+  const jsonData = CanvasManager.exportDrawnLines(targetPageNumber);  
   
-  // KIỂM TRA: Nếu không có dữ liệu thì bỏ qua
-  if ((!jsonData.lines || jsonData.lines.length === 0) && 
-      (!jsonData.texts || jsonData.texts.length === 0) && 
-      (!jsonData.rects || jsonData.rects.length === 0)) {
-    console.log(`No data to save for page ${isPage1 ? 1 : 2}`);
+  // ✅ KIỂM TRA: Nếu không có data thì không gửi lên server
+  if (jsonData.lines.length === 0 && jsonData.texts.length === 0 && jsonData.rects.length === 0) {
+    console.log(`No data to save for page ${isPage1 ? 1 : 2}, skipping`);
     
-    // Nếu đang save page 2 mà không có data, chuyển sang hoàn thành
-    if (!isPage1 || !isDualPage) {
+    if (isPage1 && isDualPage) {
+      // Desktop: tiếp tục với page 2
+      processExportData(false);
+    } else {
+      // Hoàn thành
       showToast("Lưu bài làm thành công!");
       APP_DATA = null;
       listDrawingPagesDetailed(imagePage.toString(), true);
-      return;
     }
-    
-    // Nếu đang save page 1 mà không có data, vẫn tiếp tục save page 2 (nếu dual page)
-    if (isPage1 && isDualPage) {
-      console.log('No data for page 1, but continuing to page 2...');
-    }
+    return;
   }
 
   const dataToSend = {
@@ -142,16 +141,19 @@ function processExportData(isPage1 = true) {
     headers: AuthService.getAuthHeaders(),
     body: JSON.stringify(dataToSend),
   })
-    .then((resp) => resp)
+    .then((resp) => {
+      // FIX: Kiểm tra response status
+      if (!resp.ok) {
+        throw new Error(`HTTP ${resp.status}: ${resp.statusText}`);
+      }
+      return resp.text().then(text => text ? JSON.parse(text) : {});
+    })
     .then((d) => {
-      console.log(`✅ Saved page ${isPage1 ? 1 : 2} (JSON page ${jsonPage}): ${jsonData.lines.length} lines`);
+      console.log(`✅ Saved page ${isPage1 ? 1 : 2}: ${jsonData.lines.length} lines`);
       
       if (isPage1 && isDualPage) {
-        // Desktop: gọi lưu page 2 SAU KHI page 1 thành công
-        console.log('DUAL mode: Saving page 2 next...');
-        setTimeout(() => {
-          processExportData(false);
-        }, 100); // Delay nhỏ để tránh overload
+        // Desktop: gọi lưu page 2
+        processExportData(false);
       } else {
         // Mobile: hoàn thành sau page 1, Desktop: hoàn thành sau page 2
         showToast("Lưu bài làm thành công!");
@@ -160,16 +162,13 @@ function processExportData(isPage1 = true) {
       }        
     })
     .catch((err) => {
-      console.error('Save error:', err);
-      showToast("Lỗi khi lưu", "danger");
+      console.error("Save error:", err);
+      showToast("Lỗi khi lưu: " + err.message, "danger");
     })
-    .finally(() => {
-      // CHỈ hide spinner khi hoàn thành cả 2 page (desktop) hoặc page 1 (mobile)
-      if (!isPage1 || !isDualPage) {
-        hideSpinner();
-      }
-    });    
+    .finally(() => hideSpinner());    
 }
+
+
   // sendJsonToServer - using CanvasManager.exportDrawnLines()
   $("#send-json").click(function () {
       processExportData(true);
