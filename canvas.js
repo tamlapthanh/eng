@@ -400,55 +400,83 @@
     }
 
     // --- chỉnh sửa loadAssetJson: không clear layer ngay lập tức ---
-    function loadAssetJson(page, url) {
-      showSpinner("spinnerOverlay", "#3527f5ff");
-      fetch(url)
-        .then((res) => {
-          if (!res.ok) throw new Error(res.statusText);
-          return res.json();
-        })
-        .then((data) => {
-          // don't clear background/icon here — wait until new image loaded successfully
-          loadJsonBackgroundAndIcons(page, data);
-        })
-        .catch((err) => {
-          console.error("Error loading JSON:", err);
-          if (typeof cfg.showToast === "function")
-            cfg.showToast("Error loading JSON", "danger");
-        })
-        .finally(() => hideSpinner());
-    }
+function loadAssetJson(page, url = null, isPage2 = false) {
+  showSpinner("spinnerOverlay", "#3527f5ff");
+  
+  // Nếu không có url, tự động tạo từ page (cho page2)
+  const finalUrl = url || global_const.PATH_JSON.replace("X", getPageIndex(page) + (isPage2 ? 1 : 0));
+  
+  fetch(finalUrl)
+    .then((res) => {
+      if (!res.ok) throw new Error(res.statusText);
+      return res.json();
+    })
+    .then((data) => {
+      // GỌI TRỰC TIẾP loadJsonBackgroundAndIcons với tham số isPage2
+      loadJsonBackgroundAndIcons(page, data, isPage2);
+    })
+    .catch((err) => {
+      console.error("Error loading JSON:", err);
+      if (typeof cfg.showToast === "function")
+        cfg.showToast("Error loading JSON", "danger");
+    })
+    .finally(() => hideSpinner());
+}
 
-
-  function loadAssetJson2(page) {
-      showSpinner("spinnerOverlay", "#3527f5ff");
-
-    var pageIndex = getPageIndex(page) + 1;
-    console.log("pageIndex::", pageIndex);
-
-    const urlJson = global_const.PATH_JSON.replace("X", pageIndex);
-
-      fetch(urlJson)
-        .then((res) => {
-          if (!res.ok) throw new Error(res.statusText);
-          return res.json();
-        })
-        .then((data) => {
-
-         loadJsonBackgroundAndIconsPage2(data);
-
-        })
-        .catch((err) => {
-          console.error("Error loading JSON:", err);
-          if (typeof cfg.showToast === "function")
-            cfg.showToast("Error loading JSON", "danger");
-        })
-        .finally(() => hideSpinner());
-    }
-
-function loadJsonBackgroundAndIcons(page, data) {
+function loadJsonBackgroundAndIcons(page, data, isPage2 = false) {
   if (!data || !data.background) return;
 
+  // Nếu là page2, chỉ cần load icons, không cần background
+  if (isPage2) {
+    if (!backgroundImage || !isTwoPage()) return;
+    
+    const bgX = backgroundImage.x();
+    const bgY = backgroundImage.y();
+    const bgDisplayWidth = backgroundImage.width();
+    const bgDisplayHeight = backgroundImage.height();
+    const originalWidth = backgroundImage.getAttr('originalWidth') || backgroundImage.image().naturalWidth;
+    const originalHeight = backgroundImage.getAttr('originalHeight') || backgroundImage.image().naturalHeight;
+
+    // DESKTOP MODE - 2 images
+    const pageDisplayWidth = bgDisplayWidth / 2;
+    const pageOriginalWidth = originalWidth / 2;
+
+    (data.icons || []).forEach((iconData) => {
+      // Desktop - nửa phải
+      const iconX = iconData.x * pageDisplayWidth + bgX + pageDisplayWidth;
+      const iconY = iconData.y * bgDisplayHeight + bgY;
+      
+      let iconW, iconH;
+
+      if (!iconData?.width) iconData.width = 0.0242727326370449;
+      if (!iconData?.height) iconData.height = 0.01809523809523809;
+
+      if (typeof iconData.width === "number" && typeof iconData.height === "number") {
+        if (iconData.width <= 1 && iconData.height <= 1) {
+          iconW = iconData.width * pageOriginalWidth;
+          iconH = iconData.height * originalHeight;
+        } else {
+          iconW = iconData.width;
+          iconH = iconData.height;
+        }
+      } else {
+        iconW = ICON_SIZE;
+        iconH = ICON_SIZE;
+      }
+
+      const scaleX = pageDisplayWidth / pageOriginalWidth;
+      const scaleY = bgDisplayHeight / originalHeight;
+      iconW *= scaleX;
+      iconH *= scaleY;
+
+      iconData.icon_opacity = 1;
+      addPlayIcon(iconX, iconY, iconW, iconH, iconData);
+    });
+    
+    return;
+  }
+
+  // PHẦN ORIGINAL CHO PAGE 1
   const imageObj = new Image();
   showSpinner("spinnerOverlay", "#f5f227ff");
 
@@ -470,11 +498,9 @@ function loadJsonBackgroundAndIcons(page, data) {
     let pageDisplayWidth, pageOriginalWidth;
     
     if (isTwoPage()) {
-      // DESKTOP - 2 images (double)
       pageDisplayWidth = bgDisplayWidth / 2;
       pageOriginalWidth = originalWidth / 2;
     } else {
-      // MOBILE - 1 image (single)
       pageDisplayWidth = bgDisplayWidth;
       pageOriginalWidth = originalWidth;
     }
@@ -485,13 +511,10 @@ function loadJsonBackgroundAndIcons(page, data) {
 
     // add icons from json
     (data.icons || []).forEach((iconData) => {
-      // Tính vị trí X theo mode
       let iconX;
       if (isTwoPage()) {
-        // Desktop - nửa trái
         iconX = iconData.x * pageDisplayWidth + bgX;
       } else {
-        // Mobile - full width
         iconX = iconData.x * pageDisplayWidth + bgX;
       }
       
@@ -499,30 +522,22 @@ function loadJsonBackgroundAndIcons(page, data) {
       
       let iconW, iconH;
 
-      if (!iconData?.width) {
-        iconData.width = 0.0242727326370449;
-      }
-      if (!iconData?.height) {
-        iconData.height = 0.01809523809523809;
-      }
+      if (!iconData?.width) iconData.width = 0.0242727326370449;
+      if (!iconData?.height) iconData.height = 0.01809523809523809;
 
       if (typeof iconData.width === "number" && typeof iconData.height === "number") {
         if (iconData.width <= 1 && iconData.height <= 1) {
-          // Tỉ lệ phần trăm
           iconW = iconData.width * pageOriginalWidth;
           iconH = iconData.height * originalHeight;
         } else {
-          // Pixel
           iconW = iconData.width;
           iconH = iconData.height;
         }
       } else {
-        // Fallback
         iconW = ICON_SIZE;
         iconH = ICON_SIZE;
       }
 
-      // Scale icon size
       const scaleX = pageDisplayWidth / pageOriginalWidth;
       const scaleY = bgDisplayHeight / originalHeight;
       iconW *= scaleX;
@@ -532,87 +547,27 @@ function loadJsonBackgroundAndIcons(page, data) {
       addPlayIcon(iconX, iconY, iconW, iconH, iconData);
     });
 
-    // Chỉ load page 2 nếu desktop mode
+    // Chỉ load page 2 nếu desktop mode - GỌI LẠI CHÍNH HÀM NÀY VỚI isPage2 = true
     if (isTwoPage()) {
-      loadAssetJson2(page);
+      loadAssetJson(page, null, true); // Gọi loadAssetJson với isPage2 = true
     }
     
     if (typeof cfg.onLoadPagesDetailed === "function") {
       cfg.onLoadPagesDetailed(page);
     }
+        
   };
-  // imageObj.src = (cfg.global_const && cfg.global_const.PATH_IMG ? cfg.global_const.PATH_IMG : "") + getSubImagePath(page);
 
-    // THÊM CACHE-BUSTING PARAMETER
   const imageUrl = (cfg.global_const && cfg.global_const.PATH_IMG ? cfg.global_const.PATH_IMG : "") + getSubImagePath(page);
   const cacheBustedUrl = imageUrl + '?t=' + Date.now();
   
   imageObj.src = cacheBustedUrl;
   
-  // Fallback nếu có lỗi
   imageObj.onerror = function() {
     console.warn('Failed to load image with cache busting, trying original URL');
     imageObj.src = imageUrl;
   };
 }
-
-function loadJsonBackgroundAndIconsPage2(data) {
-  // Chỉ load page 2 nếu desktop mode
-  if (!backgroundImage && !isTwoPage()) return;
-  
-  const bgX = backgroundImage.x();
-  const bgY = backgroundImage.y();
-  const bgDisplayWidth = backgroundImage.width();
-  const bgDisplayHeight = backgroundImage.height();
-  const originalWidth = backgroundImage.getAttr('originalWidth') || backgroundImage.image().naturalWidth;
-  const originalHeight = backgroundImage.getAttr('originalHeight') || backgroundImage.image().naturalHeight;
-
-  // DESKTOP MODE - 2 images
-  const pageDisplayWidth = bgDisplayWidth / 2;
-  const pageOriginalWidth = originalWidth / 2;
-
-  (data.icons || []).forEach((iconData) => {
-    // Desktop - nửa phải
-    const iconX = iconData.x * pageDisplayWidth + bgX + pageDisplayWidth;
-    const iconY = iconData.y * bgDisplayHeight + bgY;
-    
-    let iconW, iconH;
-
-    if (!iconData?.width) {
-      iconData.width = 0.0242727326370449;
-    }
-    if (!iconData?.height) {
-      iconData.height = 0.01809523809523809;
-    }
-
-    if (typeof iconData.width === "number" && typeof iconData.height === "number") {
-      if (iconData.width <= 1 && iconData.height <= 1) {
-        iconW = iconData.width * pageOriginalWidth;
-        iconH = iconData.height * originalHeight;
-      } else {
-        iconW = iconData.width;
-        iconH = iconData.height;
-      }
-    } else {
-      iconW = ICON_SIZE;
-      iconH = ICON_SIZE;
-    }
-
-    const scaleX = pageDisplayWidth / pageOriginalWidth;
-    const scaleY = bgDisplayHeight / originalHeight;
-    iconW *= scaleX;
-    iconH *= scaleY;
-
-    console.log(`Page2 - DOUBLE mode - Icon:`, { 
-      iconW, iconH, pageDisplayWidth, pageOriginalWidth 
-    });
-
-    iconData.icon_opacity = 1;
-    addPlayIcon(iconX, iconY, iconW, iconH, iconData);
-  });
-}
-
-
 
 
 

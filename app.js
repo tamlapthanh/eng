@@ -67,7 +67,7 @@ $(document).ready(async function () {
     },
     onLoadPagesDetailed: function (page) {
       // called by CanvasManager after background+icons loaded
-      listDrawingPagesDetailed(String(page), true);
+      showPagesDetailed(String(page), true);
     },
     onPageChangeRequest: function (isNext) {
       // called by CanvasManager swipe -> we handle page index change & load
@@ -124,7 +124,7 @@ function processExportData(isPage1 = true) {
       // Hoàn thành
       showToast("Lưu bài làm thành công!");
       APP_DATA = null;
-      listDrawingPagesDetailed(imagePage.toString(), true);
+      showPagesDetailed(imagePage.toString(), true);
     }
     return;
   }
@@ -158,7 +158,7 @@ function processExportData(isPage1 = true) {
         // Mobile: hoàn thành sau page 1, Desktop: hoàn thành sau page 2
         showToast("Lưu bài làm thành công!");
         APP_DATA = null;
-        listDrawingPagesDetailed(imagePage.toString(), true);
+        showPagesDetailed(imagePage.toString(), true);
       }        
     })
     .catch((err) => {
@@ -175,7 +175,7 @@ function processExportData(isPage1 = true) {
   });
 
   // load lines list (uses APP_DATA and shapes)
-  function listDrawingPagesDetailed(imagePage = null, isClearCache = true) {
+  function showPagesDetailed(imagePage = null, isClearCache = true) {
     IS_EANBLE_SWIPE = true;
     if (typeof FETCH_DRAW_INFO === "undefined" || FETCH_DRAW_INFO === false) {
       // không cần phải load cho loại data type này vì nó không có draw gì cả.
@@ -212,7 +212,7 @@ function processExportData(isPage1 = true) {
   window.App = {
     global_const,
     loadPage,
-    listDrawingPagesDetailed,
+    showPagesDetailed,
     processNextPrePage,
     CanvasManager,
   };
