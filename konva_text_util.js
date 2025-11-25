@@ -589,7 +589,7 @@ function saveTextNodes(bgDisplay) {
       });
     });
   } catch (err) {
-    console.warn("exportDrawnLines: error enumerating Text nodes", err);
+    console.warn("saveTextNodes: error enumerating Text nodes", err);
   }
 
   return textNodes;

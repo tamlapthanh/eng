@@ -96,7 +96,7 @@ $(document).ready(async function () {
 
 
 
-function processExportData(isPage1 = true) {
+function processSavePage(isPage1 = true) {
   if (!CanvasManager.getState().backgroundImage) {
     showToast("Không có background, không thể lưu!", "warning");
     return;
@@ -111,7 +111,7 @@ function processExportData(isPage1 = true) {
   }
 
   const targetPageNumber = isPage1 ? 1 : 2;
-  const jsonData = CanvasManager.exportDrawnLines(targetPageNumber);  
+  const jsonData = CanvasManager.exportShapes(targetPageNumber);  
   
   // ✅ KIỂM TRA: Nếu không có data thì không gửi lên server
   if (jsonData.lines.length === 0 && jsonData.texts.length === 0 && jsonData.rects.length === 0) {
@@ -119,7 +119,7 @@ function processExportData(isPage1 = true) {
     
     if (isPage1 && isDualPage) {
       // Desktop: tiếp tục với page 2
-      processExportData(false);
+      processSavePage(false);
     } else {
       // Hoàn thành
       showToast("Lưu bài làm thành công!");
@@ -153,7 +153,7 @@ function processExportData(isPage1 = true) {
       
       if (isPage1 && isDualPage) {
         // Desktop: gọi lưu page 2
-        processExportData(false);
+        processSavePage(false);
       } else {
         // Mobile: hoàn thành sau page 1, Desktop: hoàn thành sau page 2
         showToast("Lưu bài làm thành công!");
@@ -169,9 +169,9 @@ function processExportData(isPage1 = true) {
 }
 
 
-  // sendJsonToServer - using CanvasManager.exportDrawnLines()
+  // sendJsonToServer - using CanvasManager.exportShapes()
   $("#send-json").click(function () {
-      processExportData(true);
+      processSavePage(true);
   });
 
   // load lines list (uses APP_DATA and shapes)

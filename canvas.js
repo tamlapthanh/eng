@@ -1478,7 +1478,7 @@ function loadLinesByDraw(imagePage, targetPage = 1, tries = 0) {
 
 
 
-function exportDrawnLines(targetPage = 1) {
+function exportShapes(targetPage = 1) {
   if (!backgroundImage) {
     console.error("No background image for export");
     return null;
@@ -1694,7 +1694,7 @@ function saveCoverRectsForPage(bgDisplay, isPage1, isDualPage, pageDisplayWidth)
       changeImageUrl,
       getSoundStartEnd,
       loadShapes,
-      exportDrawnLines,
+      exportShapes,
       clearCanvas,
       deleteSelectedLine,
       setDrawingMode: function (flag) {
