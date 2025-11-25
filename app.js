@@ -65,7 +65,7 @@ $(document).ready(async function () {
     onToggleLock: function (isLock) {
       toggleLockIcon(isLock);
     },
-    onLoadLines: function (page) {
+    onLoadPagesDetailed: function (page) {
       // called by CanvasManager after background+icons loaded
       listDrawingPagesDetailed(String(page), true);
     },

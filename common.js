@@ -222,10 +222,12 @@ function getCurrentPageForPoint(x, y) {
   }
 }
 
+// là đang ở desktop và có config cho hiển thị 2 page, có những book chỉ hiển thị 1 page mà thôi.
 function isTwoPage() {
   return isNotMobile() && backgroundMode;
 }
 
+// nếu là hiển thị 2 page thì sẽ tính toán để trả về đúng json data.
 function getPageIndex(page) {
   if (isTwoPage()) {
     // 🔥 Sửa: UI page -> JSON page mapping
@@ -235,6 +237,7 @@ function getPageIndex(page) {
   }
 }
 
+// trường họp có hiển thị 2 page thì /2 folder nằm trong img folder.
 function getSubImagePath(page) {
   var imageName = page + ".webp"
   return isTwoPage() ? "2/" + imageName  : imageName;

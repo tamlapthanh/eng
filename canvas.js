@@ -268,10 +268,7 @@
         return;
       }
 
-      const size =
-        typeof cfg.getIconSize === "function"
-          ? cfg.getIconSize(ICON_SIZE)
-          : ICON_SIZE;
+      const size = typeof cfg.getIconSize === "function" ? cfg.getIconSize(ICON_SIZE) : ICON_SIZE;
 
       var iconPathFile = getAssetPath(sound); // iconPathIdle;
       var icon_opacity = iconData?.icon_opacity || "0.1";
@@ -438,7 +435,7 @@
         })
         .then((data) => {
 
-         loadJsonBackgroundAndIcons2(data);
+         loadJsonBackgroundAndIconsPage2(data);
 
         })
         .catch((err) => {
@@ -540,8 +537,8 @@ function loadJsonBackgroundAndIcons(page, data) {
       loadAssetJson2(page);
     }
     
-    if (typeof cfg.onLoadLines === "function") {
-      cfg.onLoadLines(page);
+    if (typeof cfg.onLoadPagesDetailed === "function") {
+      cfg.onLoadPagesDetailed(page);
     }
   };
   // imageObj.src = (cfg.global_const && cfg.global_const.PATH_IMG ? cfg.global_const.PATH_IMG : "") + getSubImagePath(page);
@@ -559,7 +556,7 @@ function loadJsonBackgroundAndIcons(page, data) {
   };
 }
 
-function loadJsonBackgroundAndIcons2(data) {
+function loadJsonBackgroundAndIconsPage2(data) {
   // Chỉ load page 2 nếu desktop mode
   if (!backgroundImage && !isTwoPage()) return;
   
@@ -635,11 +632,7 @@ function loadJsonBackgroundAndIcons2(data) {
       }
       let x = 0,
         y = 0;
-      if (
-        typeof cfg.isNotMobile === "function"
-          ? cfg.isNotMobile()
-          : window.innerWidth >= 768
-      ) {
+      if (typeof cfg.isNotMobile === "function" ? cfg.isNotMobile() : window.innerWidth >= 768) {
         // keep horizontal center, but align to top (y = 0)
         x = (stageWidth - newWidth) / 2;
         y = 0;
