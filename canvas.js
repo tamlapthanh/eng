@@ -1354,15 +1354,15 @@ stage.add(iconLayer);
 function loadShapes(imagePage) {
   clearAllShapes();
 
-  loadLinesByDraw(imagePage, 1);
-  loadTextNode(imagePage, 1);
+  loadLinesByDraw(imagePage, 1);  
   loadRectNode(imagePage, 1); // ✅ THÊM DÒNG NÀY
+  loadTextNode(imagePage, 1);
   
   // ✅ QUAN TRỌNG: Chỉ load page 2 nếu desktop mode
   if (isTwoPage()) {
     loadLinesByDraw(imagePage, 2);
-    loadTextNode(imagePage, 2);
-     loadRectNode(imagePage, 2); // ✅ THÊM DÒNG NÀY
+    loadRectNode(imagePage, 2); // ✅ THÊM DÒNG NÀY    
+    loadTextNode(imagePage, 2);     
   }
 }
 

@@ -1,16 +1,34 @@
 function createRect() {
   console.log('🆕 CREATING NEW RECT...');
   
+
+  // "xNorm":0.04915,"yNorm":0.224196,"widthNorm":0.882245,"heightNorm":0.108222
+
   const coverRect = createLoadCoverRect({
     x: 300,  // Vị trí rõ ràng để dễ debug
     y: 200,
     width: 240,
     height: 140,
     // fill: "#ff0000", 
-    fill: "#c0c0c0", // 🎨 ĐỔI MÀU Ở ĐÂY
+    fill: "#ffffff", // 🎨 ĐỔI MÀU Ở ĐÂY
     draggable: true,
     locked: false,
   });
+
+    // ✅ Đảm bảo giá trị hợp lệ
+    const xNorm = 0.037597;
+    const yNorm = 0.223296;
+    const widthNorm = 0.924806; // minimum width
+    const heightNorm = 0.11108; // minimum height  
+
+    // ✅ TRUYỀN ĐỦ DỮ LIỆU (bao gồm page)
+    coverRect.fromRelative({
+      xNorm: xNorm,
+      yNorm: yNorm,
+      widthNorm: widthNorm,
+      heightNorm: heightNorm,
+      page: 1 // ✅ THÊM PAGE VÀO ĐÂY
+    });  
   
   if (coverRect && coverRect.node) {
     console.log('✅ New rect created SUCCESS:', {
@@ -328,21 +346,42 @@ tr.on("dragend transformend", () => {
   drawingLayer.batchDraw();
 });
 
-    // --- Rotate icon mở color popup (an toàn) ---
-    tr.on("mousedown touchstart", function (evt) {
+// TRONG createLoadCoverRect - SỬA PHẦN TRANSFORMER:
 
-        if (isLocked) return;
+// --- Rotate icon mở color popup (giống text) ---
+tr.on("mousedown touchstart", function (evt) {
+  if (isLocked) return;
 
-      const target = evt.target;
-      const isRotater =
-        (typeof target.name === "function" && target.name() === "rotater") ||
-        (typeof target.hasName === "function" && target.hasName("rotater"));
-      if (isRotater) {
-        evt.cancelBubble = true;
-        evt.evt?.preventDefault?.();
-        deleteCoverRect(rect);
-      }
-    });  
+  const target = evt.target;
+  
+  // 🔴 ROTATER = ĐỔI MÀU (giống text)
+  const isRotater =
+    (typeof target.name === "function" && target.name() === "rotater") ||
+    (typeof target.hasName === "function" && target.hasName("rotater"));
+  
+  if (isRotater) {
+    evt.cancelBubble = true;
+    evt.evt?.preventDefault?.();
+    showColorisPopupForRect(rect);
+    return;
+  }
+
+  // 🗑️ TOP-LEFT CORNER = XÓA (dễ nhớ)
+  const isTopLeft =
+    (typeof target.name === "function" && target.name() === "top-left") ||
+    (typeof target.hasName === "function" && target.hasName("top-left"));
+  
+  if (isTopLeft) {
+    evt.cancelBubble = true;
+    evt.evt?.preventDefault?.();
+    
+    if (confirm('Bạn có muốn xóa rect này không?')) {
+      console.log('🗑️ Deleting rect via top-left corner:', rect.id());
+      deleteCoverRect(rect);
+    }
+    return;
+  }
+});
 
   // sync while moving/resizing
   rect.on("dragmove transform move", () => {
@@ -870,3 +909,4 @@ function debugStageRects() {
     }))
   });
 }
+

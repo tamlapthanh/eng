@@ -5,11 +5,10 @@ let iconLayer = null;
 let drawingLayer = null;
 let backgroundImage = null;
 
-let RECT_TEXT_DEFAULT_COLOR = "#000000";
-let RECT_TEXT_MOVED_COLOR = "blue";
+let RECT_TEXT_DEFAULT_COLOR = "blue";
 
 // Thêm vào phần internal vars
-let BASE_FONT_SIZE = 15; // Font size mặc định ở zoom 100%
+let BASE_FONT_SIZE = 16; // Font size mặc định ở zoom 100%
 let currentZoom = 1.0; // Tỷ lệ zoom hiện tại
 
 
@@ -178,10 +177,10 @@ function generateTextNode(
     const baseFontSize = t.baseFontSize || BASE_FONT_SIZE;
     const fontSize = Math.max(8, baseFontSize * currentZoom); // ✅ Tính theo zoom
 
-    if (isMobile()) {
-      y -= 2;
-      t.fontSize = BASE_FONT_SIZE;
-    }
+    // if (isMobile()) {
+    //   y -= 2;
+    //   t.fontSize = BASE_FONT_SIZE;
+    // }
     
 
     // padding/corner cho background
@@ -195,6 +194,8 @@ function generateTextNode(
       text: typeof t.text === "string" ? t.text : "",
       fontSize: fontSize, // ✅ Dùng fontSize đã tính toán
       fontFamily: t.fontFamily || "Arial",
+      fontStyle: 'bold',
+      fontWeight: 'bold', // ✅ CẢ HAI ĐỀU ĐƯỢC      
       fill: t.fill || "blue",
       width: Math.max(10, Math.round(w || fontSize * 4)),
       draggable: true,
@@ -794,19 +795,82 @@ function updateFontSizeForZoom(zoomLevel) {
     const textNodes = drawingLayer ? drawingLayer.find("Text") : [];
     
     textNodes.forEach(textNode => {
-        // Lấy font size gốc từ attribute hoặc dùng BASE_FONT_SIZE
         const baseSize = textNode.getAttr('baseFontSize') || BASE_FONT_SIZE;
-        const newSize = Math.max(8, baseSize * zoomLevel); // Giới hạn min font size
+        const newSize = Math.max(8, baseSize * zoomLevel);
         
         textNode.fontSize(newSize);
         
-        // Cập nhật background nếu có
-        if (textNode._bgRect && typeof updateBackground === 'function') {
-            updateBackground.call(textNode);
-        }
+        // ✅ AUTO-FIT WIDTH ĐỘNG theo nội dung thực tế
+        autoFitTextWidth(textNode);
+        
+        // Cập nhật background
+        updateTextBackground(textNode);
     });
     
     if (drawingLayer) {
         drawingLayer.batchDraw();
+    }
+}
+
+function autoFitTextWidth(textNode) {
+    try {
+        const currentText = textNode.text().trim();
+        if (!currentText) return;
+        
+        // ✅ PHƯƠNG PHÁP 1: Reset width để text tự co giãn
+        textNode.width(null);
+        
+        // ✅ PHƯƠNG PHÁP 2: Dùng Konva's measurement
+        let textWidth;
+        try {
+            textWidth = textNode.getTextWidth();
+        } catch (e) {
+            // Fallback: tính thủ công
+            const ctx = document.createElement("canvas").getContext("2d");
+            const fs = textNode.fontSize();
+            const ff = textNode.fontFamily() || "Arial";
+            ctx.font = `${fs}px ${ff}`;
+            
+            const lines = currentText.split("\n");
+            textWidth = lines.length 
+                ? Math.max(...lines.map(line => ctx.measureText(line).width))
+                : ctx.measureText(currentText).width;
+        }
+        
+        // ✅ SET WIDTH MỚI VỚI PADDING
+        const paddingCalc = 12 * currentZoom; // Tăng padding một chút
+        const newWidth = Math.max(40, Math.ceil(textWidth + paddingCalc));
+        
+        textNode.width(newWidth);
+        
+        console.log('✅ Auto-fit successful:', {
+            text: currentText.substring(0, 30) + '...',
+            textWidth: Math.round(textWidth),
+            newWidth,
+            zoom: currentZoom
+        });
+        
+    } catch (err) {
+        console.warn('autoFitTextWidth failed', err);
+    }
+}
+
+
+// ✅ Hàm cập nhật background cho text
+function updateTextBackground(textNode) {
+    if (!textNode._bgRect) return;
+    
+    const PADDING = 8 * currentZoom; // ✅ Padding scale theo zoom
+    
+    textNode._bgRect.x(textNode.x() - PADDING);
+    textNode._bgRect.y(textNode.y() - PADDING);
+    textNode._bgRect.width(textNode.width() + PADDING * 2);
+    textNode._bgRect.height(textNode.height() + PADDING * 2);
+    
+    // Cập nhật transformer nếu có
+    if (textNode._transformer) {
+        try {
+            textNode._transformer.forceUpdate();
+        } catch (e) {}
     }
 }

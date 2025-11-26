@@ -605,26 +605,6 @@ function showColorisPopup(textNode, isText = true) {
         } else {
           deleteRectNode(textNode);
         }
-        
-        // // remove Transformer nodes attached to this textNode
-        // const transformers = drawingLayer.find("Transformer");
-        // transformers.forEach((tr) => {
-        //   try {
-        //     if (tr.node && tr.node() === textNode) tr.destroy();
-        //   } catch (e) {}
-        // });
-
-        // // remove dblclick handler if exists
-        // if (textNode._containerDbl && stage && stage.container) {
-        //   try {
-        //     stage
-        //       .container()
-        //       .removeEventListener("dblclick", textNode._containerDbl, true);
-        //   } catch (e) {}
-        // }
-
-        // textNode.destroy();
-        // drawingLayer.batchDraw();
 
       } catch (err) {
         console.warn("Failed to delete textNode", err);
@@ -670,7 +650,7 @@ function showColorisPopup(textNode, isText = true) {
       const target = inputEl.dataset.target;
       if (target === "app") {
         textNode.fill(color);
-        iconLayer.batchDraw();
+        drawingLayer.batchDraw();
       }
       Coloris.close();
       wrapper.remove();
@@ -854,4 +834,201 @@ function playTickSound() {
 
 function formatNumber(n, decimals = 6) {
   return Number(n.toFixed(decimals));
+}
+
+function showColorisPopupForRect(rectNode) {
+  // remove old popup if exists
+  const old = document.getElementById("coloris-popup");
+  if (old) old.remove();
+
+  const wrapper = document.createElement("div");
+  wrapper.id = "coloris-popup";
+  Object.assign(wrapper.style, {
+    position: "fixed",
+    left: "50%",
+    top: "50%",
+    transform: "translate(-50%, -50%)",
+    background: "#fff",
+    padding: "16px",
+    borderRadius: "8px",
+    boxShadow: "0 4px 20px rgba(0,0,0,0.2)",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: "10px",
+    zIndex: 1
+  });
+
+  const label = document.createElement("label");
+  label.textContent = "Select Color:";
+  label.style.fontWeight = "600";
+  wrapper.appendChild(label);
+
+  const input = document.createElement("input");
+  input.type = "text";
+  input.className = "coloris instance1";
+  input.value = rectNode.fill ? rectNode.fill().toString() || "#c0c0c0" : "#c0c0c0";
+  input.style.width = "120px";
+  input.dataset.target = "app";
+  wrapper.appendChild(input);
+
+  // === OPTIONS SECTION ===
+  const optionsContainer = document.createElement("div");
+  optionsContainer.style.display = "flex";
+  optionsContainer.style.flexDirection = "column";
+  optionsContainer.style.gap = "6px";
+  optionsContainer.style.marginTop = "6px";
+
+  // --- Show Rect ---
+  const showRectRow = document.createElement("label");
+  showRectRow.style.display = "flex";
+  showRectRow.style.alignItems = "center";
+  showRectRow.style.gap = "8px";
+  const chkShowRect = document.createElement("input");
+  chkShowRect.type = "checkbox";
+  chkShowRect.checked = rectNode.visible();
+  const lblShowRect = document.createElement("span");
+  lblShowRect.textContent = "Show rect";
+  showRectRow.appendChild(chkShowRect);
+  showRectRow.appendChild(lblShowRect);
+  optionsContainer.appendChild(showRectRow);
+
+  chkShowRect.addEventListener("change", (e) => {
+    const visible = e.target.checked;
+    rectNode.visible(visible);
+    if (rectNode._dashed) rectNode._dashed.visible(visible);
+    if (rectNode._transformer) rectNode._transformer.visible(visible);
+    drawingLayer.batchDraw();
+  });
+
+  // --- Show Border ---
+  const showBorderRow = document.createElement("label");
+  showBorderRow.style.display = "flex";
+  showBorderRow.style.alignItems = "center";
+  showBorderRow.style.gap = "8px";
+  const chkShowBorder = document.createElement("input");
+  chkShowBorder.type = "checkbox";
+  chkShowBorder.checked = rectNode.stroke() !== "transparent" && rectNode.strokeWidth() > 0;
+  const lblShowBorder = document.createElement("span");
+  lblShowBorder.textContent = "Show border";
+  showBorderRow.appendChild(chkShowBorder);
+  showBorderRow.appendChild(lblShowBorder);
+  optionsContainer.appendChild(showBorderRow);
+
+  chkShowBorder.addEventListener("change", (e) => {
+    const enable = e.target.checked;
+    rectNode.stroke(enable ? "#ffffff" : "transparent");
+    rectNode.strokeWidth(enable ? 1 : 0);
+    drawingLayer.batchDraw();
+  });
+
+  wrapper.appendChild(optionsContainer);
+
+  // === BUTTONS SECTION ===
+  const row = document.createElement("div");
+  Object.assign(row.style, {
+    display: "flex",
+    gap: "8px",
+    marginTop: "10px"
+  });
+  wrapper.appendChild(row);
+
+  // Delete button
+  const deleteBtn = document.createElement("button");
+  deleteBtn.innerHTML = `<i class="bi bi-trash3"></i> Delete`;
+  Object.assign(deleteBtn.style, {
+    display: "flex",
+    alignItems: "center",
+    gap: "6px",
+    padding: "6px 12px",
+    border: "1px solid #d9534f",
+    background: "#d9534f",
+    color: "#fff",
+    cursor: "pointer",
+    borderRadius: "6px",
+  });
+
+  deleteBtn.addEventListener("click", (ev) => {
+    ev.stopPropagation();
+    try {
+      deleteCoverRect(rectNode);
+    } catch (err) {
+      console.warn("Failed to delete rectNode", err);
+    } finally {
+      wrapper.remove();
+    }
+  }, { passive: false });
+  row.appendChild(deleteBtn);
+
+  // Close button
+  const closeBtn = document.createElement("button");
+  closeBtn.innerHTML = `<i class="bi bi-x-circle"></i> Close`;
+  Object.assign(closeBtn.style, {
+    display: "flex",
+    alignItems: "center",
+    gap: "6px",
+    padding: "6px 12px",
+    border: "1px solid #ddd",
+    background: "#f5f5f5",
+    cursor: "pointer",
+    borderRadius: "6px"
+  });
+  closeBtn.addEventListener("click", () => wrapper.remove(), { passive: false });
+  row.appendChild(closeBtn);
+
+  document.body.appendChild(wrapper);
+
+  // === Initialize Coloris ===
+  Coloris({
+    el: ".coloris.instance1",
+    themeMode: "light",
+    swatches: [
+      "#000000", "#444444", "#7f8c8d",
+      "#c0392b", "#e74c3c", "#ff6b6b",
+      "#f39c12", "#f1c40f", "#27ae60", 
+      "#2ecc71", "#2980b9", "#3498db",
+      "#8e44ad", "#9b59b6", "#ffffff",
+      "#c0c0c0", "#6496ff", "#ffa500"
+    ],
+    // ✅ CHỈ ĐÓNG COLOR PICKER, GIỮ NGUYÊN POPUP
+    onChange: (color, inputEl) => {
+      if (!inputEl) return;
+      const target = inputEl.dataset.target;
+      if (target === "app") {
+        rectNode.fill(color);
+        drawingLayer.batchDraw();
+        
+        // ✅ CẬP NHẬT GIÁ TRỊ INPUT VỚI MÀU MỚI
+        inputEl.value = color;
+        
+        // ✅ CHỈ ĐÓNG BẢNG MÀU, GIỮ NGUYÊN POPUP
+        Coloris.close();
+        
+        console.log('🎨 Rect color changed to:', color);
+      }
+    },
+    
+    // ✅ TỰ ĐỘNG ĐÓNG KHI CHỌN MÀU XONG (giống text)
+    autoClose: true
+  });
+
+  // Focus input
+  setTimeout(() => {
+    input.focus();
+  }, 100);
+
+  // Đóng popup khi click ra ngoài (giống text)
+  setTimeout(() => {
+    const closeOnOutsideClick = (e) => {
+      // Kiểm tra không click vào popup, color picker, hoặc các phần tử liên quan
+      if (!wrapper.contains(e.target) && 
+          !e.target.closest('.clr-picker') &&
+          !e.target.closest('.clr-popup') &&
+          !e.target.closest('.coloris')) {
+        wrapper.remove();
+        document.removeEventListener('click', closeOnOutsideClick);
+      }
+    };
+    document.addEventListener('click', closeOnOutsideClick);
+  }, 100);
 }
