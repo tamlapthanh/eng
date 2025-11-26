@@ -796,7 +796,7 @@ function updateFontSizeForZoom(zoomLevel) {
     textNodes.forEach(textNode => {
         // Lấy font size gốc từ attribute hoặc dùng BASE_FONT_SIZE
         const baseSize = textNode.getAttr('baseFontSize') || BASE_FONT_SIZE;
-        const newSize = Math.max(8, baseSize * zoomLevel*0.8); // Giới hạn min font size
+        const newSize = Math.max(8, baseSize * zoomLevel); // Giới hạn min font size
         
         textNode.fontSize(newSize);
         

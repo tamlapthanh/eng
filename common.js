@@ -205,21 +205,22 @@ function getMainPageForLine(points, bgDisplay, pageDisplayWidth) {
   return page1Count >= page2Count ? 1 : 2;
 }
 
-// Trong pointerdown event, thêm logic xác định page ban đầu
+// Thêm vào file helper functions
 function getCurrentPageForPoint(x, y) {
-  if (!backgroundImage) return 1;
+  if (!backgroundImage || !isTwoPage()) return 1;
   
-  if (!isTwoPage()) {
-    // MOBILE MODE: Luôn trả về page 1 (vì chỉ có 1 page)
-    return 1;
-  } else {
-    // DESKTOP MODE: Xác định page dựa trên vị trí X
-    const bgX = backgroundImage.x();
-    const bgW = backgroundImage.width();
-    const pageWidth = bgW / 2;
-    const relativeX = x - bgX;
-    return relativeX < pageWidth ? 1 : 2;
-  }
+  const bgX = backgroundImage.x();
+  const bgW = backgroundImage.width();
+  const pageWidth = bgW / 2;
+  const midPoint = bgX + pageWidth;
+  
+  const page = x < midPoint ? 1 : 2;
+  
+  console.log('📍 Page detection:', {
+    x, bgX, bgW, pageWidth, midPoint, page
+  });
+  
+  return page;
 }
 
 // là đang ở desktop và có config cho hiển thị 2 page, có những book chỉ hiển thị 1 page mà thôi.
@@ -256,11 +257,11 @@ function getLastSegment(soundData) {
 
 
 
-function getRawLinesArray(jsonPage, imagePage, targetPage, dataType=1) {
+function getRawLinesArray(jsonPage, imagePage, targetPage, dataType = 1) {
   const raw = APP_DATA.get(String(jsonPage));
   if (!raw) {
     console.warn(`No data found for JSON page ${jsonPage} (UI: ${imagePage}, target: ${targetPage})`);
-    return ;
+    return []; // ✅ FIX: Trả về mảng rỗng thay vì undefined
   }
 
   let parsedData;
@@ -268,20 +269,18 @@ function getRawLinesArray(jsonPage, imagePage, targetPage, dataType=1) {
     parsedData = JSON.parse(raw);
   } catch (e) {
     console.error(`Error parsing data for page ${jsonPage}:`, e);
-    return;
+    return []; // ✅ FIX: Trả về mảng rỗng thay vì undefined
   }
 
-  // const rawLinesArray = Array.isArray(parsedData.lines) ? parsedData.lines : [];
   if (1 == dataType) {
     return Array.isArray(parsedData.lines) ? parsedData.lines : [];
   } else if (2 == dataType) {
     return Array.isArray(parsedData.texts) ? parsedData.texts : [];
   } else if (3 == dataType) {
-    return Array.isArray(parsedData.rects) ? parsedData.rects : [];
+    return Array.isArray(parsedData.rects) ? parsedData.rects : []; // ✅ FIX: Đảm bảo luôn trả về array
   }
 
-  return ;
-  
+  return []; // ✅ FIX: Trả về mảng rỗng thay vì undefined
 }
 
   // pop dropdown

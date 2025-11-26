@@ -95,7 +95,6 @@ $(document).ready(async function () {
   });
 
 
-
 function processSavePage(isPage1 = true) {
   if (!CanvasManager.getState().backgroundImage) {
     showToast("Không có background, không thể lưu!", "warning");
@@ -111,11 +110,27 @@ function processSavePage(isPage1 = true) {
   }
 
   const targetPageNumber = isPage1 ? 1 : 2;
+  
+  console.log('💾 START SAVE PROCESS:', {
+    imagePage,
+    jsonPage,
+    isPage1,
+    targetPageNumber,
+    isDualPage
+  });
+  
   const jsonData = CanvasManager.exportShapes(targetPageNumber);  
+  
+  console.log('📊 SAVE DATA CHECK:', {
+    lines: jsonData.lines.length,
+    texts: jsonData.texts.length,
+    rects: jsonData.rects.length,
+    rectsDetails: jsonData.rects
+  });
   
   // ✅ KIỂM TRA: Nếu không có data thì không gửi lên server
   if (jsonData.lines.length === 0 && jsonData.texts.length === 0 && jsonData.rects.length === 0) {
-    console.log(`No data to save for page ${isPage1 ? 1 : 2}, skipping`);
+    console.log(`❌ No data to save for page ${isPage1 ? 1 : 2}, skipping`);
     
     if (isPage1 && isDualPage) {
       // Desktop: tiếp tục với page 2
@@ -135,6 +150,12 @@ function processSavePage(isPage1 = true) {
     json: JSON.stringify(jsonData),
   };
 
+  console.log('🚀 SENDING TO SERVER:', {
+    sheet_name: DATA_TYPE,
+    page: jsonPage.toString(),
+    jsonSize: JSON.stringify(jsonData).length
+  });
+
   showSpinner("spinnerOverlay", "#F54927");
   fetch(global_const.API_LINE_KEY_METHOD, {
     method: "POST",
@@ -149,7 +170,11 @@ function processSavePage(isPage1 = true) {
       return resp.text().then(text => text ? JSON.parse(text) : {});
     })
     .then((d) => {
-      console.log(`✅ Saved page ${isPage1 ? 1 : 2}: ${jsonData.lines.length} lines`);
+      console.log(`✅ Saved page ${isPage1 ? 1 : 2}:`, {
+        lines: jsonData.lines.length,
+        texts: jsonData.texts.length, 
+        rects: jsonData.rects.length
+      });
       
       if (isPage1 && isDualPage) {
         // Desktop: gọi lưu page 2

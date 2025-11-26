@@ -1356,13 +1356,50 @@ function loadShapes(imagePage) {
 
   loadLinesByDraw(imagePage, 1);
   loadTextNode(imagePage, 1);
+  loadRectNode(imagePage, 1); // ✅ THÊM DÒNG NÀY
   
   // ✅ QUAN TRỌNG: Chỉ load page 2 nếu desktop mode
   if (isTwoPage()) {
     loadLinesByDraw(imagePage, 2);
     loadTextNode(imagePage, 2);
+     loadRectNode(imagePage, 2); // ✅ THÊM DÒNG NÀY
   }
 }
+
+function loadRectNode(imagePage, targetPage = 1) {
+  let jsonPage;
+  const isDualPage = isTwoPage();
+  
+  if (isDualPage) {
+    if (targetPage === 1) {
+      jsonPage = (imagePage * 2) - 1;
+    } else {
+      jsonPage = imagePage * 2;
+    }
+  } else {
+    jsonPage = imagePage;
+  }
+  
+  console.log(`📦 LOAD RECT: UI Page ${imagePage}, Target ${targetPage} -> JSON Page ${jsonPage}`);
+  
+  const rawRectsArray = getRawLinesArray(jsonPage, imagePage, targetPage, 3);
+  
+  // ✅ FIX: Kiểm tra nếu không có data thì không gọi load
+  if (!rawRectsArray || !Array.isArray(rawRectsArray) || rawRectsArray.length === 0) {
+    console.log(`📦 No rects data for page ${jsonPage}`);
+    return;
+  }
+  
+  // ✅ Gán page cho từng rect trước khi load
+  rawRectsArray.forEach(rect => {
+    if (!rect.page) {
+      rect.page = isDualPage ? targetPage : jsonPage;
+    }
+  });
+  
+  loadRectFromExport(rawRectsArray);
+}
+
 
 function loadTextNode(imagePage, targetPage = 1) {
   let jsonPage;
@@ -1506,9 +1543,26 @@ function loadLinesByDraw(imagePage, targetPage = 1, tries = 0) {
   lineAddEvents();
 }
 
-
+// Thêm vào canvas.js
+function debugStageRects() {
+  const rects = drawingLayer.find('.maskRect');
+  console.log('🔍 DEBUG Stage Rects:', {
+    total: rects.length,
+    details: rects.map((rect, index) => ({
+      index,
+      id: rect.id(),
+      page: rect.getAttr('page'),
+      position: { x: rect.x(), y: rect.y() },
+      size: { width: rect.width(), height: rect.height() }
+    }))
+  });
+}
 
 function exportShapes(targetPage = 1) {
+
+    // Debug trước khi save
+  debugStageRects();
+
   if (!backgroundImage) {
     console.error("No background image for export");
     return null;
@@ -1523,6 +1577,19 @@ function exportShapes(targetPage = 1) {
 
   const isDualPage = isTwoPage();
   const pageDisplayWidth = isDualPage ? bgDisplay.width / 2 : bgDisplay.width;
+
+  console.log('📤 EXPORT DEBUG:', { 
+    bgDisplay, 
+    isDualPage, 
+    pageDisplayWidth, 
+    targetPage,
+    backgroundImagePosition: {
+      x: backgroundImage.x(),
+      y: backgroundImage.y(),
+      width: backgroundImage.width(),
+      height: backgroundImage.height()
+    }
+  });
 
   console.log('📤 EXPORT DEBUG:', { bgDisplay, isDualPage, pageDisplayWidth, targetPage });
 
@@ -1591,6 +1658,17 @@ function exportShapes(targetPage = 1) {
 
   const rects = saveCoverRectsForPage(bgDisplay, targetPage === 1, isDualPage, pageDisplayWidth);
 
+  console.log(`🎯 FINAL EXPORT RESULT for page ${targetPage}:`, {
+    lines: drawnLines.length,
+    texts: textNodes.length,
+    rects: rects.length,
+    rectsDetails: rects.map(r => ({
+      page: r.page,
+      position: { xNorm: r.xNorm, yNorm: r.yNorm },
+      size: { widthNorm: r.widthNorm, heightNorm: r.heightNorm }
+    }))
+  });
+
   return {
     lines: drawnLines,
     texts: textNodes,
@@ -1624,20 +1702,47 @@ function saveTextNodesForPage(bgDisplay, isPage1, isDualPage, pageDisplayWidth) 
 }
 
 function saveCoverRectsForPage(bgDisplay, isPage1, isDualPage, pageDisplayWidth) {
-  // Giả sử bạn có hàm saveCoverRects() hiện tại
-  const allRects = saveCoverRects();
+  console.log('🔍 saveCoverRectsForPage DEBUG:', {
+    bgDisplay,
+    isPage1,
+    isDualPage,
+    pageDisplayWidth,
+    targetPage: isPage1 ? 1 : 2
+  });
+
+  const allRects = saveCoverRects(bgDisplay, isPage1, isDualPage, pageDisplayWidth);
   
+  console.log(`📊 Rect filtering: ${allRects.length} total rects before filter`);
+  
+  // ✅ MOBILE: trả về tất cả rects (vì mobile chỉ có 1 page)
   if (!isDualPage) {
-    return isPage1 ? allRects : [];
+    console.log('📱 Mobile mode: returning all rects');
+    return allRects;
   }
   
-  return allRects.filter((rect) => {
-    const x = rect.x * bgDisplay.width + bgDisplay.x;
-    const relativeX = x - bgDisplay.x;
-    const belongsToPage1 = relativeX < pageDisplayWidth;
-    return isPage1 ? belongsToPage1 : !belongsToPage1;
+  // ✅ DESKTOP: filter theo page attribute (GIỐNG TEXT)
+  const targetPage = isPage1 ? 1 : 2;
+  
+  const filteredRects = allRects.filter((rect) => {
+    const rectPage = rect.page || 1;
+    const shouldKeep = rectPage === targetPage;
+    
+    console.log(`🔍 Rect filter check:`, {
+      rectId: rect.id,
+      rectPage,
+      targetPage,
+      shouldKeep,
+      position: { xNorm: rect.xNorm, yNorm: rect.yNorm }
+    });
+    
+    return shouldKeep;
   });
+  
+  console.log(`✅ Filtered ${filteredRects.length} rects for page ${targetPage}`);
+  return filteredRects;
 }
+
+
 
     // navigation helper (can be used by UI or swipe)
     function processNextPrePage(isNext = true) {
