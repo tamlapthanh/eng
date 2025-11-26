@@ -254,6 +254,36 @@ function getLastSegment(soundData) {
     }
 }
 
+
+
+function getRawLinesArray(jsonPage, imagePage, targetPage, dataType=1) {
+  const raw = APP_DATA.get(String(jsonPage));
+  if (!raw) {
+    console.warn(`No data found for JSON page ${jsonPage} (UI: ${imagePage}, target: ${targetPage})`);
+    return ;
+  }
+
+  let parsedData;
+  try {
+    parsedData = JSON.parse(raw);
+  } catch (e) {
+    console.error(`Error parsing data for page ${jsonPage}:`, e);
+    return;
+  }
+
+  // const rawLinesArray = Array.isArray(parsedData.lines) ? parsedData.lines : [];
+  if (1 == dataType) {
+    return Array.isArray(parsedData.lines) ? parsedData.lines : [];
+  } else if (2 == dataType) {
+    return Array.isArray(parsedData.texts) ? parsedData.texts : [];
+  } else if (3 == dataType) {
+    return Array.isArray(parsedData.rects) ? parsedData.rects : [];
+  }
+
+  return ;
+  
+}
+
   // pop dropdown
   function popDropdown(dropdown, text, start, end, default_index) {
     dropdown.empty();

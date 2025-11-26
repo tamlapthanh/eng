@@ -8,6 +8,10 @@ let backgroundImage = null;
 let RECT_TEXT_DEFAULT_COLOR = "#000000";
 let RECT_TEXT_MOVED_COLOR = "blue";
 
+// Thêm vào phần internal vars
+let BASE_FONT_SIZE = 15; // Font size mặc định ở zoom 100%
+let currentZoom = 1.0; // Tỷ lệ zoom hiện tại
+
 
 function createText(defaultText = TEXT_DEFAULT) {
   // groupText();
@@ -43,7 +47,58 @@ function createText(defaultText = TEXT_DEFAULT) {
     align: "center", // căn phải cho phù hợp với vị trí góc phải
     lineHeight: 1,
     attrs: {}, // có thể để trống
+    baseFontSize: BASE_FONT_SIZE // ✅ Lưu font size gốc
   };
+
+   // --- ASSIGN PAGE BASED ON ABSOLUTE POSITION (OPTIMAL FIX) ---
+  try {
+    // lấy thông tin background
+    if (backgroundImage && backgroundImage.image) {
+      const bgX = backgroundImage.x();
+      const bgY = backgroundImage.y();
+      const bgW = backgroundImage.width();
+      const bgH = backgroundImage.height();
+
+      // kiểm tra mode 2-page nếu helper isTwoPage có tồn tại
+      const isDual = (typeof isTwoPage === "function") ? isTwoPage() : false;
+      const pageDisplayWidth = isDual ? bgW / 2 : bgW;
+
+      // Nếu có biến CURRENT_PAGE_INDEX (ứng dụng có thể set), ưu tiên dùng
+      let assignedPage = (typeof CURRENT_PAGE_INDEX !== "undefined" && CURRENT_PAGE_INDEX)
+        ? Number(CURRENT_PAGE_INDEX)
+        : null;
+
+      // tính toạ độ tuyệt đối dựa trên xNorm/yNorm theo logic của generateTextNode:
+      // NOTE: xNorm/yNorm được hiểu là tỷ lệ *trên một trang* khi isDual = true
+      const xNorm = (typeof t.xNorm !== "undefined") ? Number(t.xNorm) : 0.5;
+      const yNorm = (typeof t.yNorm !== "undefined") ? Number(t.yNorm) : 0.5;
+
+      // nếu CURRENT_PAGE_INDEX đã cho và là 2 thì offsetX add pageDisplayWidth
+      const pageOffset = (assignedPage === 2 && isDual) ? pageDisplayWidth : 0;
+      const absX = bgX + pageOffset + xNorm * pageDisplayWidth;
+      const absY = bgY + yNorm * bgH;
+
+      // nếu chưa có assignedPage thì thử dùng helper getCurrentPageForPoint nếu tồn tại
+      if (!assignedPage) {
+        if (typeof getCurrentPageForPoint === "function") {
+          assignedPage = getCurrentPageForPoint(absX, absY) || 1;
+        } else {
+          assignedPage = 1; // fallback an toàn
+        }
+      }
+
+      // gán page vào object text trước khi generate node
+      t.page = assignedPage;
+      // optional debug (bỏ comment nếu cần)
+      // console.log('createText: assigned page', t.page, 'absX,absY=', absX, absY);
+    } else {
+      // fallback nếu background chưa sẵn sàng
+      t.page = t.page || 1;
+    }
+  } catch (err) {
+    console.warn("createText: error assigning page", err);
+    t.page = t.page || 1;
+  }
   generateTextNode(t, -1, backgroundImage, true, true, true, false);
   drawingLayer.batchDraw();
 }
@@ -65,6 +120,14 @@ function loadTexts(textsArray, options = {}) {
 
   textsArray.forEach((t, idx) => {
     IS_EANBLE_SWIPE = false;
+    // ✅ Đảm bảo page attribute tồn tại (fallback = 1)
+    if (!t.page) {
+      t.page = 1;
+    }    
+    // ✅ Đảm bảo có baseFontSize khi load
+    if (!t.baseFontSize) {
+        t.baseFontSize = t.fontSize || BASE_FONT_SIZE;
+    }    
     generateTextNode(t, idx, backgroundImage, true, true, false, true );
   });
 
@@ -81,6 +144,7 @@ function generateTextNode(
   isShowBorder = true,
   readOny = false
 ) {
+
   try {
     const htmlTooltip = document.getElementById("tooltip");
 
@@ -89,17 +153,36 @@ function generateTextNode(
     const bgW = backgroundImage.width();
     const bgH = backgroundImage.height();
 
-    const x = bgX + (t.xNorm || 0) * bgW;
-    let y = bgY + (t.yNorm || 0) * bgH;
+    // ✅ Xác định mode và page width
+    const isDualPage = isTwoPage();
+    const pageDisplayWidth = isDualPage ? bgW / 2 : bgW;
+
+    // ✅ Xác định page của text này
+    const textPage = t.page || 1;
+
+    let x, y, w;
+
+    if (isDualPage) {
+      // ✅ DESKTOP MODE: Restore theo page width
+      const pageStartX = (textPage === 1) ? 0 : pageDisplayWidth;
+      x = bgX + pageStartX + (t.xNorm || 0) * pageDisplayWidth;
+      y = bgY + (t.yNorm || 0) * bgH;
+      w = (Number(t.widthNorm) || 0) * pageDisplayWidth;
+    } else {
+      // ✅ MOBILE MODE: Restore theo toàn bộ width
+      x = bgX + (t.xNorm || 0) * bgW;
+      y = bgY + (t.yNorm || 0) * bgH;
+      w = (Number(t.widthNorm) || 0) * bgW;
+    }
     
+    const baseFontSize = t.baseFontSize || BASE_FONT_SIZE;
+    const fontSize = Math.max(8, baseFontSize * currentZoom); // ✅ Tính theo zoom
+
     if (isMobile()) {
       y -= 2;
-      t.fontSize = 12;
+      t.fontSize = BASE_FONT_SIZE;
     }
-
-    const w = (Number(t.widthNorm) || 0) * bgW;
-    const fontSize = Number(t.fontSize) || 15;
-
+    
 
     // padding/corner cho background
     const PADDING = t.padding ?? 8;
@@ -110,7 +193,7 @@ function generateTextNode(
       x: Math.round(x),
       y: Math.round(y),
       text: typeof t.text === "string" ? t.text : "",
-      fontSize,
+      fontSize: fontSize, // ✅ Dùng fontSize đã tính toán
       fontFamily: t.fontFamily || "Arial",
       fill: t.fill || "blue",
       width: Math.max(10, Math.round(w || fontSize * 4)),
@@ -120,7 +203,11 @@ function generateTextNode(
       lineHeight: t.lineHeight || 1,
       id: t.id || undefined,
       listening: true,
+      page: textPage  // ✅ THÊM DÒNG NÀY
     });
+
+    // ✅ Lưu baseFontSize để có thể tính lại khi zoom
+    textNode.setAttr('baseFontSize', baseFontSize);    
 
     // Restore attributes và flags lên textNode (giữ logic của bạn)
     textNode.fill(t.fill);
@@ -174,12 +261,43 @@ function generateTextNode(
       // đặt vị trí bgRect dựa vào textNode
       bgRect.x(textNode.x() - PADDING);
       bgRect.y(textNode.y() - PADDING);
+
+      // ✅ THÊM: Đồng bộ page attribute
+      bgRect.setAttr('page', textNode.getAttr('page'));      
     }
     updateBackground();
+
+    // ✅ Lưu reference để dễ quản lý
+    textNode._bgRect = bgRect;    
 
     // --- Add to layer: bgRect trước, textNode sau để text hiển thị trên nền ---
     drawingLayer.add(bgRect);
     drawingLayer.add(textNode);
+
+    // ✅ THÊM: Đồng bộ khi kéo bgRect
+    bgRect.on("dragmove", () => {
+      // Khi kéo bgRect → cập nhật vị trí textNode
+      textNode.x(bgRect.x() + PADDING);
+      textNode.y(bgRect.y() + PADDING);
+      updateBackground();
+    });
+
+    bgRect.on("dragend", () => {
+      // ✅ Cập nhật page cho cả bgRect và textNode
+      const newX = bgRect.x() + PADDING; // vị trí text trong bgRect
+      const newY = bgRect.y() + PADDING;
+      
+      if (isTwoPage()) {
+        const newPage = getCurrentPageForPoint(newX, newY);
+        const oldPage = textNode.getAttr('page');
+        
+        if (newPage !== oldPage) {
+          console.log(`📝 Text (via bgRect) moved: page ${oldPage} → ${newPage}`);
+          textNode.setAttr('page', newPage);
+          bgRect.setAttr('page', newPage);
+        }
+      }
+    });    
 
     
       // --- AUTO-FIT WIDTH SAU KHI TẠO ---
@@ -279,14 +397,42 @@ function generateTextNode(
 
 
     // Drag events (sync updated background khi kéo)
+
     textNode.on("dragstart", () => {
       setCursor("pointer");
+      // ✅ Lưu page ban đầu để debug
+      textNode.setAttr('_dragStartPage', textNode.getAttr('page'));
     });
+
     textNode.on("dragmove", () => {
       setCursor("pointer");
     });
+
     textNode.on("dragend", () => {
       setCursor("default");
+      
+      // ✅ Cập nhật page dựa trên vị trí mới
+      const newX = textNode.x();
+      const newY = textNode.y();
+      
+      // Chỉ cập nhật page trong Desktop mode (dual pages)
+      if (isTwoPage()) {
+        const newPage = getCurrentPageForPoint(newX, newY);
+        const oldPage = textNode.getAttr('page');
+        
+        if (newPage !== oldPage) {
+          console.log(`📝 Text moved: page ${oldPage} → ${newPage}`);
+          textNode.setAttr('page', newPage);
+          
+          // ✅ Cập nhật màu fill để debug (optional)
+          // if (newPage === 1) {
+          //   textNode.fill('blue');
+          // } else {
+          //   textNode.fill('red');
+          // }
+        }
+      }
+      // Mobile mode: page không thay đổi (luôn là JSON page hiện tại)
     });
 
     // --- TOOLTIP (an toàn check htmlTooltip/stage) ---
@@ -537,7 +683,7 @@ function generateTextNode(
 
 
 
-function saveTextNodes(bgDisplay) {
+function saveTextNodes(bgDisplay, isPage1 = true, isDualPage = false, pageDisplayWidth = null) {
   var textNodes = [];
   try {
     const texts = drawingLayer ? drawingLayer.find("Text") : [];
@@ -546,10 +692,28 @@ function saveTextNodes(bgDisplay) {
       const absY = tn.y();
       const w = tn.width();
       const h = tn.height();
-      const nx = bgDisplay.width ? (absX - bgDisplay.x) / bgDisplay.width : 0;
-      const ny = bgDisplay.height ? (absY - bgDisplay.y) / bgDisplay.height : 0;
-      const nw = bgDisplay.width ? w / bgDisplay.width : 0;
-      const nh = bgDisplay.height ? h / bgDisplay.height : 0;
+      
+      let nx, ny, nw, nh;
+      
+      if (isDualPage) {
+        // ✅ DESKTOP MODE: Normalize theo PAGE width
+        const relativeX = absX - bgDisplay.x;
+        const pageStartX = isPage1 ? 0 : pageDisplayWidth;
+        
+        // Normalize x theo page width
+        nx = pageDisplayWidth ? (relativeX - pageStartX) / pageDisplayWidth : 0;
+        ny = bgDisplay.height ? (absY - bgDisplay.y) / bgDisplay.height : 0;
+        
+        // Width/height cũng normalize theo page width
+        nw = pageDisplayWidth ? w / pageDisplayWidth : 0;
+        nh = bgDisplay.height ? h / bgDisplay.height : 0;
+      } else {
+        // ✅ MOBILE MODE: Normalize theo toàn bộ background width
+        nx = bgDisplay.width ? (absX - bgDisplay.x) / bgDisplay.width : 0;
+        ny = bgDisplay.height ? (absY - bgDisplay.y) / bgDisplay.height : 0;
+        nw = bgDisplay.width ? w / bgDisplay.width : 0;
+        nh = bgDisplay.height ? h / bgDisplay.height : 0;
+      }
 
       // Lấy attrs nhưng lọc ra các trường đã lưu riêng (tránh duplicate)
       let savedAttrs = {};
@@ -571,9 +735,11 @@ function saveTextNodes(bgDisplay) {
         savedAttrs = null;
       }
 
+      
       textNodes.push({
         text: tn.text(),
-        fontSize: tn.fontSize(),
+        fontSize: tn.getAttr('baseFontSize') || BASE_FONT_SIZE, // ✅ Lưu font size gốc
+        baseFontSize: tn.getAttr('baseFontSize') || BASE_FONT_SIZE, // ✅ Thêm baseFontSize
         fontFamily: tn.fontFamily ? tn.fontFamily() : undefined,
         fill: tn.fill ? tn.fill() : undefined,
         align: tn.align ? tn.align() : undefined,
@@ -586,6 +752,7 @@ function saveTextNodes(bgDisplay) {
         draggable: !!tn.draggable(),
         id: tn.id() || null,
         attrs: savedAttrs,
+        page: tn.getAttr('page') || 1  // ✅ THÊM DÒNG NÀY
       });
     });
   } catch (err) {
@@ -619,4 +786,27 @@ function deleteTextNode(textNode) {
   } catch (err) {
     console.warn("deleteTextNode failed", err);
   }
+}
+
+
+function updateFontSizeForZoom(zoomLevel) {
+    currentZoom = zoomLevel;
+    const textNodes = drawingLayer ? drawingLayer.find("Text") : [];
+    
+    textNodes.forEach(textNode => {
+        // Lấy font size gốc từ attribute hoặc dùng BASE_FONT_SIZE
+        const baseSize = textNode.getAttr('baseFontSize') || BASE_FONT_SIZE;
+        const newSize = Math.max(8, baseSize * zoomLevel*0.8); // Giới hạn min font size
+        
+        textNode.fontSize(newSize);
+        
+        // Cập nhật background nếu có
+        if (textNode._bgRect && typeof updateBackground === 'function') {
+            updateBackground.call(textNode);
+        }
+    });
+    
+    if (drawingLayer) {
+        drawingLayer.batchDraw();
+    }
 }

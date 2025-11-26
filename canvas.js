@@ -485,7 +485,7 @@ function loadJsonBackgroundAndIcons(page, data, isPage2 = false) {
     if (backgroundImage) {
       backgroundImage.destroy();
     }
-    adjustBackgroundImage(imageObj);
+    adjustBackgroundImage(imageObj, page);
 
     const bgX = backgroundImage.x();
     const bgY = backgroundImage.y();
@@ -571,7 +571,7 @@ function loadJsonBackgroundAndIcons(page, data, isPage2 = false) {
 
 
 
-    function adjustBackgroundImage(imageObj) {
+  function adjustBackgroundImage(imageObj, currentPage) {
       const imageWidth = imageObj.width;
       const imageHeight = imageObj.height;
       const stageWidth = stage.width();
@@ -604,6 +604,7 @@ function loadJsonBackgroundAndIcons(page, data, isPage2 = false) {
       backgroundImage.setAttrs({
         originalWidth: imageObj.naturalWidth,
         originalHeight: imageObj.naturalHeight,
+        currentPage: currentPage || 1  // ✅ LƯU PAGE HIỆN TẠI
       });
 
       backgroundLayer.add(backgroundImage);
@@ -1354,11 +1355,51 @@ function loadShapes(imagePage) {
   clearAllShapes();
 
   loadLinesByDraw(imagePage, 1);
+  loadTextNode(imagePage, 1);
   
   // ✅ QUAN TRỌNG: Chỉ load page 2 nếu desktop mode
   if (isTwoPage()) {
     loadLinesByDraw(imagePage, 2);
+    loadTextNode(imagePage, 2);
   }
+}
+
+function loadTextNode(imagePage, targetPage = 1) {
+  let jsonPage;
+  const isDualPage = isTwoPage();
+  
+  if (isDualPage) {
+    if (targetPage === 1) {
+      jsonPage = (imagePage * 2) - 1;
+    } else {
+      jsonPage = imagePage * 2;
+    }
+  } else {
+    jsonPage = imagePage;
+  }
+  
+  console.log(`📝 LOAD TEXT: UI Page ${imagePage}, Target ${targetPage} -> JSON Page ${jsonPage}`, {
+    isDualPage,
+    imagePage,
+    targetPage,
+    jsonPage
+  });
+  
+  const rawLinesArray = getRawLinesArray(jsonPage, imagePage, targetPage, 2);
+  
+  // ✅ THÊM: Gán page vào từng text trước khi load
+  if (rawLinesArray && Array.isArray(rawLinesArray)) {
+    rawLinesArray.forEach(text => {
+      if (!text.page) {
+        // Nếu text chưa có page, gán theo logic:
+        // - Desktop: targetPage (1 hoặc 2)
+        // - Mobile: jsonPage (1, 2, 3, 4...)
+        text.page = isDualPage ? targetPage : jsonPage;
+      }
+    });
+  }
+  
+  loadTexts(rawLinesArray);
 }
 
 function loadLinesByDraw(imagePage, targetPage = 1, tries = 0) {
@@ -1399,21 +1440,10 @@ function loadLinesByDraw(imagePage, targetPage = 1, tries = 0) {
     jsonPage
   });
 
-  const raw = APP_DATA.get(String(jsonPage));
-  if (!raw) {
-    console.warn(`No data found for JSON page ${jsonPage} (UI: ${imagePage}, target: ${targetPage})`);
-    return;
+  const rawLinesArray = getRawLinesArray(jsonPage, imagePage, targetPage, 1); 
+  if (!rawLinesArray) {
+    return ;
   }
-
-  let parsedData;
-  try {
-    parsedData = JSON.parse(raw);
-  } catch (e) {
-    console.error(`Error parsing data for page ${jsonPage}:`, e);
-    return;
-  }
-
-  const rawLinesArray = Array.isArray(parsedData.lines) ? parsedData.lines : [];
   
   const bgX = backgroundImage.x();
   const bgY = backgroundImage.y();
@@ -1422,7 +1452,7 @@ function loadLinesByDraw(imagePage, targetPage = 1, tries = 0) {
   
   const pageDisplayWidth = isDualPage ? bgW / 2 : bgW;
 
-  console.log(`📥 Loading page ${targetPage} from JSON ${jsonPage}: ${rawLinesArray.length} lines`);
+  // console.log(`📥 Loading page ${targetPage} from JSON ${jsonPage}: ${rawLinesArray.length} lines`);
 
   rawLinesArray.forEach((savedLine, index) => {
     const pts = savedLine.points || [];
@@ -1556,7 +1586,9 @@ function exportShapes(targetPage = 1) {
 
   console.log(`✅ Exporting page ${targetPage}: ${drawnLines.length} lines`);
 
+  // save text node
   const textNodes = saveTextNodesForPage(bgDisplay, targetPage === 1, isDualPage, pageDisplayWidth);
+
   const rects = saveCoverRectsForPage(bgDisplay, targetPage === 1, isDualPage, pageDisplayWidth);
 
   return {
@@ -1573,26 +1605,23 @@ function exportShapes(targetPage = 1) {
   };
 }
 
-
-
-
-
 function saveTextNodesForPage(bgDisplay, isPage1, isDualPage, pageDisplayWidth) {
-  // Giả sử bạn có hàm saveTextNodes() hiện tại
-  const allTexts = saveTextNodes(bgDisplay);
+  // ✅ Truyền đủ tham số vào saveTextNodes để normalize đúng
+  const allTexts = saveTextNodes(bgDisplay, isPage1, isDualPage, pageDisplayWidth);
   
+  // Mobile mode: trả về tất cả texts
   if (!isDualPage) {
-    return isPage1 ? allTexts : [];
+    return allTexts;
   }
   
+  // Desktop mode: filter theo page attribute
+  const targetPage = isPage1 ? 1 : 2;
+  
   return allTexts.filter((text) => {
-    const x = text.x * bgDisplay.width + bgDisplay.x;
-    const relativeX = x - bgDisplay.x;
-    const belongsToPage1 = relativeX < pageDisplayWidth;
-    return isPage1 ? belongsToPage1 : !belongsToPage1;
+    const textPage = text.page || 1;
+    return textPage === targetPage;
   });
 }
-
 
 function saveCoverRectsForPage(bgDisplay, isPage1, isDualPage, pageDisplayWidth) {
   // Giả sử bạn có hàm saveCoverRects() hiện tại
@@ -1647,21 +1676,25 @@ function saveCoverRectsForPage(bgDisplay, isPage1, isDualPage, pageDisplayWidth)
     }
 
     function zoomIn(centerPoint) {
+      
       const oldScale = stage ? stage.scaleX() : zoomLevel;
       const newScale = Math.min(maxZoom, oldScale + zoomStep);
       setZoomAt(newScale, centerPoint);
+      updateFontSizeForZoom(zoomLevel); // call từ konva_text_utils
     }
 
     function zoomOut(centerPoint) {
       const oldScale = stage ? stage.scaleX() : zoomLevel;
       const newScale = Math.max(minZoom, oldScale - zoomStep);
       setZoomAt(newScale, centerPoint);
+      updateFontSizeForZoom(zoomLevel); // call từ konva_text_utils
     }
 
     function resetZoom() {
       const clamped = clampPositionForScale(0, 0, 1);
       zoomLevel = 1;
       animateStageTo(1, clamped, 0.25);
+      updateFontSizeForZoom(zoomLevel); // call từ konva_text_utils
     }
 
     // ----- Undo (remove last drawn line) -----
