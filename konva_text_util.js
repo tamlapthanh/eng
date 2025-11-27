@@ -40,15 +40,27 @@ function createText(defaultText = TEXT_DEFAULT) {
   const xNorm = (maxX - minX) + minX;
   const yNorm = Math.random() * (maxY - minY) + minY;  
 
+  // ✅ XỬ LÝ TOOLTIP: Tách text và tooltip từ defaultText
+  let displayText = defaultText;
+  let tooltipText = defaultText;
+  
+  // Nếu text có dạng "Text (Tooltip)" thì tách ra
+  const tooltipMatch = defaultText.match(/^([^(]+)\s*\((.*)\)$/);
+  if (tooltipMatch) {
+    displayText = tooltipMatch[1].trim();
+    tooltipText = defaultText; // Giữ nguyên toàn bộ text làm tooltip
+  }
+
   const t =  {
-    text: defaultText,
+    text: displayText, // ✅ Chỉ hiển thị phần trước dấu ()
+    tooltip: tooltipText, // ✅ Lưu toàn bộ text làm tooltip
     // đặt mặc định ở góc phải dưới (relative to background)
     xNorm,
     yNorm,
     widthNorm: 0.3, // chiều rộng tương đối
     fontSize: 20,
     fontFamily: "Arial",
-    fill: RECT_TEXT_DEFAULT_COLOR,
+    fill: `hsl(${Math.random() * 360}, 80%, ${30 + Math.random() * 40}%)`,
     align: "center", // căn phải cho phù hợp với vị trí góc phải
     lineHeight: 1,
     attrs: {}, // có thể để trống
@@ -130,7 +142,11 @@ function loadTexts(textsArray, options = {}) {
     // ✅ Đảm bảo có baseFontSize khi load
     if (!t.baseFontSize) {
         t.baseFontSize = t.fontSize || BASE_FONT_SIZE;
-    }    
+    }
+    // ✅ Đảm bảo có tooltip khi load (nếu không có thì dùng text)
+    if (!t.tooltip && t.text) {
+      t.tooltip = t.text;
+    }
     generateTextNode(t, idx, backgroundImage, true, true, false, true );
   });
 
@@ -224,6 +240,9 @@ function generateTextNode(
 
     // ✅ Lưu baseFontSize để có thể tính lại khi zoom
     textNode.setAttr('baseFontSize', baseFontSize);    
+
+    // ✅ Lưu tooltip vào textNode
+    textNode.setAttr('tooltip', t.tooltip || t.text);
 
     // Restore attributes và flags lên textNode (giữ logic của bạn)
     textNode.fill(t.fill);
@@ -462,7 +481,9 @@ function generateTextNode(
         if (pointer && htmlTooltip) {
           htmlTooltip.style.left = pointer.x + 10 + "px";
           htmlTooltip.style.top = pointer.y + 10 + "px";
-          htmlTooltip.textContent = textNode.text();
+          // ✅ SỬA: Hiển thị tooltip từ thuộc tính tooltip thay vì text
+          const tooltipContent = textNode.getAttr('tooltip') || textNode.text();
+          htmlTooltip.textContent = tooltipContent;
           htmlTooltip.style.display = "block";
           htmlTooltip.style.opacity = "1";
         }
@@ -550,7 +571,9 @@ function generateTextNode(
 
       const textarea = document.createElement("textarea");
       document.body.appendChild(textarea);
-      textarea.value = textNode.text();
+      // ✅ SỬA: Hiển thị tooltip (toàn bộ text) trong editor thay vì chỉ display text
+      const tooltipContent = textNode.getAttr('tooltip') || textNode.text();
+      textarea.value = tooltipContent;
       textarea.style.position = "absolute";
       textarea.style.top = areaY + "px";
       textarea.style.left = areaX + "px";
@@ -594,10 +617,23 @@ function generateTextNode(
 
       function handleOutsideClick(ev) {
         if (ev.target !== textarea) {
-          textNode.text(textarea.value);
+          // ✅ SỬA: Xử lý text và tooltip khi kết thúc edit
+          const editedText = textarea.value;
+          
+          // Tách display text và tooltip từ edited text
+          const tooltipMatch = editedText.match(/^([^(]+)\s*\((.*)\)$/);
+          if (tooltipMatch) {
+            // Có dạng "Text (Tooltip)" - tách ra
+            textNode.text(tooltipMatch[1].trim());
+            textNode.setAttr('tooltip', editedText);
+          } else {
+            // Không có tooltip - dùng toàn bộ làm cả display và tooltip
+            textNode.text(editedText);
+            textNode.setAttr('tooltip', editedText);
+          }
 
           // đo lại width cho textNode dựa vào nội dung
-          const lines = textarea.value.split("\n");
+          const lines = textNode.text().split("\n");
           const ctx = document.createElement("canvas").getContext("2d");
           ctx.font = textNode.fontSize() + "px " + textNode.fontFamily();
           const maxWidth = Math.max(
@@ -618,8 +654,22 @@ function generateTextNode(
       textarea.addEventListener("keydown", (ev) => {
         if (ev.key === "Enter" && !ev.shiftKey) {
           ev.preventDefault();
-          textNode.text(textarea.value);
-          const lines = textarea.value.split("\n");
+          // ✅ SỬA: Xử lý text và tooltip khi nhấn Enter
+          const editedText = textarea.value;
+          
+          // Tách display text và tooltip từ edited text
+          const tooltipMatch = editedText.match(/^([^(]+)\s*\((.*)\)$/);
+          if (tooltipMatch) {
+            // Có dạng "Text (Tooltip)" - tách ra
+            textNode.text(tooltipMatch[1].trim());
+            textNode.setAttr('tooltip', editedText);
+          } else {
+            // Không có tooltip - dùng toàn bộ làm cả display và tooltip
+            textNode.text(editedText);
+            textNode.setAttr('tooltip', editedText);
+          }
+
+          const lines = textNode.text().split("\n");
           const ctx = document.createElement("canvas").getContext("2d");
           ctx.font = textNode.fontSize() + "px " + textNode.fontFamily();
           const maxWidth = Math.max(
@@ -779,6 +829,7 @@ function saveTextNodes(bgDisplay, isPage1 = true, isDualPage = false, pageDispla
       
       textNodes.push({
         text: tn.text(),
+        tooltip: tn.getAttr('tooltip') || tn.text(), // ✅ Lưu tooltip
         fontSize: tn.getAttr('baseFontSize') || BASE_FONT_SIZE, // ✅ Lưu font size gốc
         baseFontSize: tn.getAttr('baseFontSize') || BASE_FONT_SIZE, // ✅ Thêm baseFontSize
         fontFamily: tn.fontFamily ? tn.fontFamily() : undefined,
@@ -1201,4 +1252,3 @@ function initializeTextUtils() {
         }
     }, 100);
 }
-
