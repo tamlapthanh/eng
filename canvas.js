@@ -469,7 +469,7 @@ function loadJsonBackgroundAndIcons(page, data, isPage2 = false) {
       iconW *= scaleX;
       iconH *= scaleY;
 
-      iconData.icon_opacity = 1;
+      // iconData.icon_opacity = 1;
       addPlayIcon(iconX, iconY, iconW, iconH, iconData);
     });
     
@@ -543,7 +543,7 @@ function loadJsonBackgroundAndIcons(page, data, isPage2 = false) {
       iconW *= scaleX;
       iconH *= scaleY;   
       
-      iconData.icon_opacity = 1;
+      // iconData.icon_opacity = 1;
       addPlayIcon(iconX, iconY, iconW, iconH, iconData);
     });
 
@@ -645,7 +645,7 @@ function loadJsonBackgroundAndIcons(page, data, isPage2 = false) {
       iconLayer = new Konva.Layer();
       drawingLayer = new Konva.Layer();
       stage.add(backgroundLayer);
-stage.add(iconLayer);
+      stage.add(iconLayer);
       stage.add(drawingLayer);
       
 
@@ -1061,9 +1061,7 @@ stage.add(iconLayer);
       cfg = Object.assign(cfg, options || {});
       ICON_SIZE = options.iconSize || ICON_SIZE;
       iconPathIdle = options.iconPathIdle ? options.iconPathIdle : iconPathIdle;
-      iconPathPlaying = options.iconPathPlaying
-        ? options.iconPathPlaying
-        : iconPathPlaying;
+      iconPathPlaying = options.iconPathPlaying ? options.iconPathPlaying : iconPathPlaying;
 
       // ✅ preload ảnh icon để tránh lag
       preloadIdleIcon();

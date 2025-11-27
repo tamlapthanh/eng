@@ -99,7 +99,19 @@ $(document).ready( function () {
     }
   });
 
+  $("#move-text-btn").on("click", function () {
+
+      $(this).toggleClass("btn-secondary btn-primary");
+      if (isMoveMode) {
+        disableMoveMode();
+               
+      } else {
+         enableMoveMode();
+      }
+  });    
+
     $("#lock-btn").on("click", function () {
+
     // replicate original toggleLockIcon behavior
     const icon = document.getElementById("lock-btn").querySelector("i");
     if (icon.classList.contains("bi-lock-fill")) {
@@ -107,6 +119,7 @@ $(document).ready( function () {
     } else {
       toggleLockIcon(true);
     }
+
   });
 
   // zoom buttons -> delegate to CanvasManager (so logic sống ở canvas.js)

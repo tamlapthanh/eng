@@ -12,6 +12,12 @@ let BASE_FONT_SIZE = 16; // Font size mặc định ở zoom 100%
 let currentZoom = 1.0; // Tỷ lệ zoom hiện tại
 
 
+// Thêm vào phần internal vars
+let selectedTextNode = null;
+let isMoveMode = false;
+
+
+
 function createText(defaultText = TEXT_DEFAULT) {
   // groupText();
   if (!backgroundImage || !backgroundImage.image()) {
@@ -63,9 +69,7 @@ function createText(defaultText = TEXT_DEFAULT) {
       const pageDisplayWidth = isDual ? bgW / 2 : bgW;
 
       // Nếu có biến CURRENT_PAGE_INDEX (ứng dụng có thể set), ưu tiên dùng
-      let assignedPage = (typeof CURRENT_PAGE_INDEX !== "undefined" && CURRENT_PAGE_INDEX)
-        ? Number(CURRENT_PAGE_INDEX)
-        : null;
+      let assignedPage = (typeof CURRENT_PAGE_INDEX !== "undefined" && CURRENT_PAGE_INDEX) ? Number(CURRENT_PAGE_INDEX) : null;
 
       // tính toạ độ tuyệt đối dựa trên xNorm/yNorm theo logic của generateTextNode:
       // NOTE: xNorm/yNorm được hiểu là tỷ lệ *trên một trang* khi isDual = true
@@ -132,6 +136,12 @@ function loadTexts(textsArray, options = {}) {
 
   // redraw once
   drawingLayer.batchDraw();
+
+  // initMoveMode();
+  // enableMoveMode();
+
+    // Thay vì gọi trực tiếp, gọi hàm initialize
+    initializeTextUtils();  
 }
 
 function generateTextNode(
@@ -187,6 +197,8 @@ function generateTextNode(
     const PADDING = t.padding ?? 8;
     const CORNER_RADIUS = t.cornerRadius ?? 6;
 
+
+
     // --- TẠO TEXT --- (giữ nguyên vị trí theo code cũ)
     const textNode = new Konva.Text({
       x: Math.round(x),
@@ -206,6 +218,9 @@ function generateTextNode(
       listening: true,
       page: textPage  // ✅ THÊM DÒNG NÀY
     });
+
+    // ✅ THÊM: Gán PADDING vào textNode để sử dụng ở nơi khác
+    textNode._padding = PADDING;        
 
     // ✅ Lưu baseFontSize để có thể tính lại khi zoom
     textNode.setAttr('baseFontSize', baseFontSize);    
@@ -267,6 +282,9 @@ function generateTextNode(
       bgRect.setAttr('page', textNode.getAttr('page'));      
     }
     updateBackground();
+
+    // ✅ THÊM: Gán hàm updateBackground vào textNode để có thể gọi từ bên ngoài
+    textNode._updateBackground = updateBackground;
 
     // ✅ Lưu reference để dễ quản lý
     textNode._bgRect = bgRect;    
@@ -625,41 +643,54 @@ function generateTextNode(
       });
     }
 
-    // --- Dblclick/tap attach (fallbacks) ---
-    (function attachMouseClickDbl(node, opts = {}) {
-      const dblTimeout = opts.dblTimeout || 350;
-      const moveThreshold = opts.moveThreshold || 6;
-      let lastClickTime = 0;
-      let downPos = null;
+(function attachMouseClickDbl(node, opts = {}) {
+  // ✅ TRONG MOVE MODE: KHÔNG gắn sự kiện gì cả
+  if (isMoveMode) {
+    return;
+  }
 
-      node.on("mousedown", (ev) => {
-        const evt = ev.evt;
-        downPos = evt ? { x: evt.clientX, y: evt.clientY } : null;
-      });
+  const dblTimeout = opts.dblTimeout || 350;
+  const moveThreshold = opts.moveThreshold || 6;
+  let lastClickTime = 0;
+  let downPos = null;
 
-      node.on("mouseup", (ev) => {
-        const evt = ev.evt;
-        const now = Date.now();
-        let moved = false;
-        if (downPos && evt) {
-          const dx = Math.abs(evt.clientX - downPos.x);
-          const dy = Math.abs(evt.clientY - downPos.y);
-          moved = Math.hypot(dx, dy) > moveThreshold;
-        }
-        downPos = null;
-        if (moved) return;
+  node.on("mousedown", (ev) => {
+    const evt = ev.evt;
+    downPos = evt ? { x: evt.clientX, y: evt.clientY } : null;
+  });
 
-        if (now - lastClickTime <= dblTimeout) {
-          lastClickTime = 0;
-          openTextEditor(ev);
-        } else {
-          lastClickTime = now;
-          setTimeout(() => {
-            lastClickTime = 0;
-          }, dblTimeout + 5);
-        }
-      });
-    })(textNode);
+  node.on("mouseup", (ev) => {
+    const evt = ev.evt;
+    const now = Date.now();
+    let moved = false;
+    if (downPos && evt) {
+      const dx = Math.abs(evt.clientX - downPos.x);
+      const dy = Math.abs(evt.clientY - downPos.y);
+      moved = Math.hypot(dx, dy) > moveThreshold;
+    }
+    downPos = null;
+    if (moved) return;
+
+    if (now - lastClickTime <= dblTimeout) {
+      lastClickTime = 0;
+      openTextEditor(ev);
+    } else {
+      lastClickTime = now;
+      setTimeout(() => {
+        lastClickTime = 0;
+      }, dblTimeout + 5);
+    }
+  });
+})(textNode);
+
+
+textNode.on("touchstart", (ev) => {
+  if (isMoveMode) {
+    // ✅ TRONG MOVE MODE: KHÔNG làm gì cả
+    return;
+  }
+});
+
 
     (function addDesktopDblHandler(node) {
       const container = stage.container();
@@ -674,12 +705,21 @@ function generateTextNode(
     })(textNode);
 
     textNode.on("dbltap dblclick", (e) => openTextEditor(e));
+
     textNode.on("click", (e) => {
-      /* optional debug */
-    });
-  } catch (err) {
-    console.warn("generateTextNode: failed to restore", idx, err, t);
-  }
+    // ✅ THÊM DÒNG NÀY - hỗ trợ move mode
+        // if (isMoveMode && !selectedTextNode) {
+        //     handleStageClick(e);
+        //     e.cancelBubble = true; // ngừng lan ra stage click
+        // }
+
+          /* optional debug */
+        });
+
+
+      } catch (err) {
+        console.warn("generateTextNode: failed to restore", idx, err, t);
+      }
 }
 
 
@@ -867,6 +907,9 @@ function updateTextBackground(textNode) {
     textNode._bgRect.width(textNode.width() + PADDING * 2);
     textNode._bgRect.height(textNode.height() + PADDING * 2);
     
+    // ✅ GIỮ NGUYÊN stroke settings khi cập nhật
+    // Không reset stroke ở đây
+    
     // Cập nhật transformer nếu có
     if (textNode._transformer) {
         try {
@@ -874,3 +917,288 @@ function updateTextBackground(textNode) {
         } catch (e) {}
     }
 }
+
+
+
+// Thêm hàm để kích hoạt chế độ di chuyển
+function enableMoveMode() {
+    isMoveMode = true;
+    if (stage && stage.container()) {
+        stage.container().style.cursor = "crosshair";
+    }
+    console.log("🔄 Move mode enabled - Stage cursor:", stage?.container()?.style.cursor);
+}
+
+// Thêm hàm để tắt chế độ di chuyển
+function disableMoveMode() {
+    isMoveMode = false;
+    selectedTextNode = null;
+    if (stage && stage.container()) {
+        stage.container().style.cursor = "default";
+    }
+    console.log("❌ Move mode disabled");
+}
+
+// Hàm debug để kiểm tra vị trí
+function debugTextPosition(textNode) {
+    if (!textNode) return;
+    
+    console.log('🔍 DEBUG Text Position:', {
+        text: textNode.text().substring(0, 20),
+        textX: textNode.x(),
+        textY: textNode.y(),
+        textWidth: textNode.width(),
+        textHeight: textNode.height(),
+        bgRectX: textNode._bgRect ? textNode._bgRect.x() : 'N/A',
+        bgRectY: textNode._bgRect ? textNode._bgRect.y() : 'N/A',
+        bgRectWidth: textNode._bgRect ? textNode._bgRect.width() : 'N/A',
+        bgRectHeight: textNode._bgRect ? textNode._bgRect.height() : 'N/A',
+        hasUpdateBackground: !!textNode._updateBackground
+    });
+}
+
+// Hàm xử lý sự kiện click trên stage
+function handleStageClick(ev) {
+    console.log("🎯 Stage click/tap event triggered", ev.type);
+    
+    if (!isMoveMode) {
+        console.log("❌ Move mode not active");
+        return;
+    }
+    
+    if (!stage) {
+        console.log("❌ Stage not available");
+        return;
+    }
+    
+    // Lấy vị trí click từ event
+    let pos;
+    if (ev.evt) {
+        // Konva event
+        pos = stage.getPointerPosition();
+    } else {
+        // Native event
+        const rect = stage.container().getBoundingClientRect();
+        pos = {
+            x: ev.clientX - rect.left,
+            y: ev.clientY - rect.top
+        };
+    }
+    
+    if (!pos) {
+        console.log("❌ No pointer position");
+        return;
+    }
+    
+    console.log("🎯 Click position:", pos.x, pos.y);
+    
+    // TÌM TEXT NODE tại vị trí click
+    const allTexts = drawingLayer.find('Text');
+    let clickedTextNode = null;
+    
+    // Kiểm tra từng text node xem có bị click không
+    for (let textNode of allTexts) {
+        const rect = textNode.getClientRect();
+        if (pos.x >= rect.x && pos.x <= rect.x + rect.width &&
+            pos.y >= rect.y && pos.y <= rect.y + rect.height) {
+            clickedTextNode = textNode;
+            console.log("🎯 Found text node at click position:", textNode.text());
+            break;
+        }
+    }
+    
+    if (clickedTextNode) {
+        // Click vào text node: CHỌN hoặc DI CHUYỂN text
+        if (selectedTextNode !== clickedTextNode) {
+            // Chọn text node mới
+            selectTextNode(clickedTextNode);
+        } else {
+            // ✅ SỬA: Click vào text node ĐÃ CHỌN - DI CHUYỂN nó đến vị trí click
+            console.log("🎯 Moving selected text to new click position");
+            moveSelectedTextToPosition(pos.x, pos.y);
+        }
+    } else {
+        // Click vào vùng trống: DI CHUYỂN text đã chọn
+        if (selectedTextNode) {
+            console.log("🎯 Moving selected text to new position");
+            moveSelectedTextToPosition(pos.x, pos.y);
+        } else {
+            console.log("⚠️ No text selected, please click a text first");
+        }
+    }
+}
+
+
+// Hàm chọn text node
+function selectTextNode(textNode) {
+    // Bỏ chọn text node cũ (nếu có)
+    if (selectedTextNode && selectedTextNode !== textNode) {
+        if (selectedTextNode._bgRect) {
+            selectedTextNode._bgRect.stroke('transparent');
+            selectedTextNode._bgRect.strokeWidth(1);
+        }
+    }
+    
+    selectedTextNode = textNode;
+    
+    // Highlight text được chọn
+    if (selectedTextNode._bgRect) {
+        selectedTextNode._bgRect.stroke('red');
+        selectedTextNode._bgRect.strokeWidth(2);
+        selectedTextNode._bgRect.strokeEnabled(true);
+        
+        // ✅ SỬA: Force update transformer để hiển thị border vàng ngay lập tức
+        if (selectedTextNode._transformer) {
+            try {
+                selectedTextNode._transformer.forceUpdate();
+            } catch (e) {}
+        }
+    }
+    
+    console.log("✅ Text selected:", selectedTextNode.text().substring(0, 20) + "...");
+    drawingLayer.batchDraw();
+}
+
+// Hàm bỏ chọn text node
+function deselectTextNode() {
+    if (selectedTextNode && selectedTextNode._bgRect) {
+        selectedTextNode._bgRect.stroke('transparent');
+        selectedTextNode._bgRect.strokeWidth(1);
+        
+        // ✅ Cập nhật transformer để áp dụng thay đổi
+        if (selectedTextNode._transformer) {
+            try {
+                selectedTextNode._transformer.forceUpdate();
+            } catch (e) {}
+        }
+    }
+    selectedTextNode = null;
+}
+
+// Sửa lại moveSelectedTextToPosition để dùng PADDING từ textNode
+function moveSelectedTextToPosition(x, y) {
+    if (!selectedTextNode) {
+        console.log("❌ No text selected to move");
+        return;
+    }
+    
+    try {
+        console.log("🎯 Moving text from:", selectedTextNode.x(), selectedTextNode.y(), "to:", x, y);
+        
+        // ✅ SỬA: Sử dụng PADDING từ chính textNode
+        const PADDING = selectedTextNode._padding || 8;
+        
+        // Đặt text node trực tiếp tại vị trí click (căn giữa)
+        selectedTextNode.x(x - selectedTextNode.width() / 2);
+        selectedTextNode.y(y - selectedTextNode.height() / 2);
+        
+        // ✅ Cập nhật background rect với PADDING chính xác
+        if (selectedTextNode._bgRect) {
+            selectedTextNode._bgRect.x(selectedTextNode.x() - PADDING);
+            selectedTextNode._bgRect.y(selectedTextNode.y() - PADDING);
+            selectedTextNode._bgRect.width(selectedTextNode.width() + PADDING * 2);
+            selectedTextNode._bgRect.height(selectedTextNode.height() + PADDING * 2);
+            
+            // Đảm bảo border vàng vẫn hiển thị
+            selectedTextNode._bgRect.stroke('red');
+            selectedTextNode._bgRect.strokeWidth(2);
+            selectedTextNode._bgRect.strokeEnabled(true);
+        }
+        
+        // Cập nhật transformer
+        if (selectedTextNode._transformer) {
+            try {
+                selectedTextNode._transformer.forceUpdate();
+            } catch (e) {}
+        }
+        
+        console.log(`✅ Text moved to: x=${Math.round(selectedTextNode.x())}, y=${Math.round(selectedTextNode.y())}`);
+        drawingLayer.batchDraw();
+        
+    } catch (error) {
+        console.error("❌ Error moving text:", error);
+    }
+}
+
+
+
+// Hàm để thêm sự kiện click vào stage (gọi khi khởi tạo)
+function initMoveMode() {
+    if (stage && stage.container()) {
+        console.log("🔧 Initializing move mode with container events");
+        
+        const container = stage.container();
+        
+        // Remove existing listeners
+        container.removeEventListener('click', handleContainerClick);
+        stage.off('click tap');
+        
+        // Add container event (more reliable)
+        container.addEventListener('click', handleContainerClick);
+        container.addEventListener('touchstart', handleContainerClick);
+        
+        // Also keep Konva events as backup
+        stage.on('click tap', handleStageClick);
+        
+        console.log("✅ Move mode events attached to container");
+    } else {
+        console.log("❌ Stage container not available");
+    }
+}
+
+// Hàm xử lý sự kiện container
+function handleContainerClick(ev) {
+    console.log("🎯 Container click event");
+    handleStageClick(ev);
+}
+
+// Hàm utility để kiểm tra xem move mode có đang active không
+function isMoveModeActive() {
+    return isMoveMode;
+}
+
+// Thêm vào phần export/public functions nếu bạn có module pattern
+// Ví dụ:
+// return {
+//     createText,
+//     loadTexts,
+//     saveTextNodes,
+//     deleteTextNode,
+//     updateFontSizeForZoom,
+//     enableMoveMode,
+//     disableMoveMode,
+//     isMoveModeActive,
+//     initMoveMode
+// };
+
+// Hàm để bỏ chọn text node hiện tại
+function clearTextSelection() {
+    deselectTextNode();
+    console.log("🗑️ Text selection cleared");
+}
+
+// Sửa hàm disableMoveMode
+function disableMoveMode() {
+    isMoveMode = false;
+    deselectTextNode(); // Bỏ chọn text khi tắt move mode
+    if (stage && stage.container()) {
+        stage.container().style.cursor = "default";
+    }
+    console.log("❌ Move mode disabled");
+}
+
+// Sửa phần cuối file - đảm bảo stage đã tồn tại
+function initializeTextUtils() {
+    // Đợi một chút để đảm bảo stage đã được tạo
+    setTimeout(() => {
+        if (stage) {
+            initMoveMode();
+            // enableMoveMode();
+            console.log("✅ Text utils initialized with move mode");
+        } else {
+            console.log("❌ Stage not ready, retrying...");
+            initializeTextUtils(); // Retry
+        }
+    }, 100);
+}
+
