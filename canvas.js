@@ -417,14 +417,16 @@ function loadAssetJson(page, url = null, isPage2 = false) {
     })
     .catch((err) => {
       console.error("Error loading JSON:", err);
-      if (typeof cfg.showToast === "function")
-        cfg.showToast("Error loading JSON", "danger");
+      // if (typeof cfg.showToast === "function")
+      //   cfg.showToast("Error loading JSON", "danger");
+      // Nếu không tìm thấy json thì chỉ cần load background image thôi là đủ.
+      loadJsonBackgroundAndIcons(page, {}, isPage2);
     })
     .finally(() => hideSpinner());
 }
 
 function loadJsonBackgroundAndIcons(page, data, isPage2 = false) {
-  if (!data || !data.background) return;
+  if (!data) return;
 
   // Nếu là page2, chỉ cần load icons, không cần background
   if (isPage2) {
